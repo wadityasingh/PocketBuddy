@@ -1,0 +1,58 @@
+[
+  {
+    "id": "stu_z1a3qddmu6h6whz",
+    "name": "Aditya Singh",
+    "email": "sadityasingh6275520@gmail.com",
+    "phone": "8957190542",
+    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "collegeName": "College",
+    "course": "Student",
+    "yearOfStudy": "",
+    "upiId": "adityasingh@upi",
+    "monthlyPocketMoney": 0,
+    "hasCompletedTour": false,
+    "createdAt": "2026-09-18T04:45:52.775Z"
+  },
+  {
+    "id": "stu_99qqoyqmu6ha1np",
+    "name": "TEST1",
+    "email": "test1@gmail.com",
+    "phone": "8957190543",
+    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "collegeName": "College",
+    "course": "Student",
+    "yearOfStudy": "",
+    "upiId": "test1@upi",
+    "monthlyPocketMoney": 0,
+    "hasCompletedTour": false,
+    "createdAt": "2026-09-18T04:48:19.429Z"
+  },
+  {
+    "id": "stu_5gr9kxgmu6hj1nu",
+    "name": "TEST2",
+    "email": "test2@gmail.com",
+    "phone": "8957190541",
+    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "collegeName": "College",
+    "course": "Student",
+    "yearOfStudy": "",
+    "upiId": "test2@upi",
+    "monthlyPocketMoney": 0,
+    "hasCompletedTour": false,
+    "createdAt": "2026-09-18T04:55:19.338Z"
+  },
+  {
+    "id": "stu_uu4eaxvmu6hm9mn",
+    "name": "TEST3",
+    "email": "test3@gmail.com",
+    "phone": "8957190544",
+    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "collegeName": "College",
+    "course": "Student",
+    "yearOfStudy": "",
+    "upiId": "test3@upi",
+    "monthlyPocketMoney": 0,
+    "hasCompletedTour": false,
+    "createdAt": "2026-09-18T04:57:49.631Z"
+  }
+]

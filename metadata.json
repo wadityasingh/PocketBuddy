@@ -1,0 +1,7 @@
+{
+  "name": "PocketBuddy",
+  "description": "PocketBuddy — Student smart money manager for tracking monthly allowance, Cash/UPI wallets, shared room expenses, splits, who owes whom, and student bills.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
