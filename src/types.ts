@@ -217,8 +217,10 @@ export interface StudentUser {
   phone?: string;
   collegeName?: string;
   course?: string;
+  branch?: string;
   yearOfStudy?: string;
   upiId?: string;
+  roomSplit?: string;
   photoUrl?: string;
   monthlyPocketMoney: number;
   initialCash?: number;

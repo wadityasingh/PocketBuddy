@@ -98,27 +98,16 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
   const currentDay = now.getDate();
   const daysLeft = Math.max(1, totalDaysInMonth - currentDay + 1);
 
-  // Financial pool math
-  const discretionaryRemaining =
-    propDiscretionaryRemaining !== undefined
-      ? propDiscretionaryRemaining
-      : Math.max(0, allowance - variableSpent - unpaidBillsReserve);
-
-  const safeDailyBudget = Math.max(0, Math.round(discretionaryRemaining / daysLeft));
-  const effectiveAllowance = allowance > 0 ? allowance : variableSpent + discretionaryRemaining;
-  const spentPct = effectiveAllowance > 0 ? Math.min(100, Math.round((variableSpent / effectiveAllowance) * 100)) : 0;
-  const remainingPct = Math.max(0, 100 - spentPct);
-
   // Unpaid bills count
   const unpaidBillsList = (bills || []).filter((b) => !b.isPaid);
   const unpaidBillsCount = unpaidBillsList.length;
 
-  // Wallet calculations
-  const cashInHand = wallets?.cash ?? 0;
-  const upiInHand = wallets?.upi ?? 0;
-  const totalLiquidity = cashInHand + upiInHand;
+  // 1. Fixed Wallet Balances (Original added amounts, never reduced by expenses)
+  const fixedCash = wallets?.cash ?? 0;
+  const fixedUpi = wallets?.upi ?? 0;
+  const totalOriginalMoney = fixedCash + fixedUpi;
 
-  // Track Cash & UPI Outflows
+  // 2. Track Cash & UPI Outflows (Expenses)
   const safeTransactions = Array.isArray(transactions) ? transactions : [];
   const thisMonthExpenses = safeTransactions.filter((t) => {
     if (!t || t.type !== 'expense') return false;
@@ -137,8 +126,26 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
     .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
 
   const upiSpentThisMonth = thisMonthExpenses
-    .filter((t) => t.paymentMode === 'UPI')
+    .filter((t) => t.paymentMode === 'UPI' || t.paymentMode === 'Bank')
     .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+
+  // Total spent is sum of UPI spent + Cash spent (or variableSpent if greater)
+  const totalSpentCalculated = upiSpentThisMonth + cashSpentThisMonth;
+  const totalSpent = variableSpent > 0 ? Math.max(variableSpent, totalSpentCalculated) : totalSpentCalculated;
+
+  // 3. Current Remaining Available Balances after expenses
+  const availableCash = Math.max(0, fixedCash - cashSpentThisMonth);
+  const availableUpi = Math.max(0, fixedUpi - upiSpentThisMonth);
+  // Calculate remaining balance separately from total spending:
+  const availableInHandBalance = Math.max(
+    0,
+    (totalOriginalMoney > 0 ? totalOriginalMoney : allowance) - totalSpent - (unpaidBillsReserve || 0)
+  );
+
+  const safeDailyBudget = Math.max(0, Math.round(availableInHandBalance / daysLeft));
+  const effectiveAllowance = totalOriginalMoney > 0 ? totalOriginalMoney : (allowance > 0 ? allowance : totalSpent + availableInHandBalance);
+  const spentPct = effectiveAllowance > 0 ? Math.min(100, Math.round((totalSpent / effectiveAllowance) * 100)) : 0;
+  const remainingPct = Math.max(0, 100 - spentPct);
 
   // Cash and Money Added Calculations
   const cashAddedThisMonth = safeTransactions
@@ -203,12 +210,15 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
 
   const handleSaveWallets = (e: React.FormEvent) => {
     e.preventDefault();
+    const c = Math.max(0, parseFloat(tempCash) || 0);
+    const u = Math.max(0, parseFloat(tempUpi) || 0);
     if (onUpdateWallets) {
       onUpdateWallets({
-        cash: Math.max(0, parseFloat(tempCash) || 0),
-        upi: Math.max(0, parseFloat(tempUpi) || 0),
+        cash: c,
+        upi: u,
       });
     }
+    onUpdateAllowance(c + u);
     setActiveWalletModal('none');
   };
 
@@ -249,35 +259,35 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               id="hub-total-liquidity-value"
               className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight whitespace-nowrap"
             >
-              {formatINR(totalLiquidity)}
+              {formatINR(availableInHandBalance)}
             </span>
             <div className="flex items-center gap-1.5 text-xs flex-wrap">
               <button
                 type="button"
                 onClick={() => {
-                  setTempCash((wallets?.cash ?? 0).toString());
-                  setTempUpi((wallets?.upi ?? 0).toString());
+                  setTempCash(fixedCash.toString());
+                  setTempUpi(fixedUpi.toString());
                   setActiveWalletModal(activeWalletModal === 'edit' ? 'none' : 'edit');
                 }}
-                className="px-2 py-1 rounded-lg bg-slate-50 text-slate-700 border border-slate-200/80 font-semibold hover:bg-slate-100 transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs"
-                title="Cash in Hand (Click to adjust)"
+                className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-semibold hover:bg-emerald-100 transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs"
+                title="Available Cash in Hand (Click to adjust fixed wallet)"
               >
                 <Banknote className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Cash: {formatINR(cashInHand)}</span>
+                <span>Cash: {formatINR(availableCash)}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
-                  setTempCash((wallets?.cash ?? 0).toString());
-                  setTempUpi((wallets?.upi ?? 0).toString());
+                  setTempCash(fixedCash.toString());
+                  setTempUpi(fixedUpi.toString());
                   setActiveWalletModal(activeWalletModal === 'edit' ? 'none' : 'edit');
                 }}
-                className="px-2 py-1 rounded-lg bg-slate-50 text-slate-700 border border-slate-200/80 font-semibold hover:bg-slate-100 transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs"
-                title="UPI / Bank Balance (Click to adjust)"
+                className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200/80 font-semibold hover:bg-indigo-100 transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs"
+                title="Available UPI Balance (Click to adjust fixed wallet)"
               >
                 <Smartphone className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                <span>UPI: {formatINR(upiInHand)}</span>
+                <span>UPI: {formatINR(availableUpi)}</span>
               </button>
             </div>
           </div>
@@ -310,21 +320,21 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
             id="btn-wallet-edit"
             type="button"
             onClick={() => {
-              setTempCash((wallets?.cash ?? 0).toString());
-              setTempUpi((wallets?.upi ?? 0).toString());
+              setTempCash(fixedCash.toString());
+              setTempUpi(fixedUpi.toString());
               setActiveWalletModal(activeWalletModal === 'edit' ? 'none' : 'edit');
             }}
             className="h-9 w-9 rounded-xl text-slate-500 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 transition inline-flex items-center justify-center cursor-pointer shrink-0"
-            title="Edit Exact Balances"
+            title="Edit Fixed Wallet Balances"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* 2. Budget Summary: 3-column clean grid (UPI Money, Spent, Remaining) */}
+      {/* 2. Budget Summary: 3-column clean grid (UPI Money & Fixed Cash, Spent, Available Balance) */}
       <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5">
-        {/* Metric 1: UPI Money & Fixed Cash */}
+        {/* Metric 1: UPI Money & Fixed Cash (Original wallet amounts added) */}
         <div
           id="card-monthly-budget"
           className="bg-slate-50/70 rounded-xl p-2 sm:p-3.5 border border-slate-200/80 flex flex-col justify-between min-w-0"
@@ -339,8 +349,8 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                 id="edit-allowance-btn"
                 type="button"
                 onClick={() => {
-                  setEditUpiVal((wallets?.upi ?? 0).toString());
-                  setEditCashVal((wallets?.cash ?? 0).toString());
+                  setEditUpiVal(fixedUpi.toString());
+                  setEditCashVal(fixedCash.toString());
                   setIsEditingAllowance(true);
                 }}
                 className="p-0.5 text-slate-400 hover:text-indigo-600 rounded transition cursor-pointer"
@@ -356,7 +366,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               <div>
                 <label className="text-[9px] font-bold text-indigo-900 block flex items-center gap-0.5 truncate">
                   <Smartphone className="w-2.5 h-2.5 text-indigo-600 shrink-0" />
-                  <span>UPI (₹)</span>
+                  <span>UPI Money (₹)</span>
                 </label>
                 <input
                   id="input-upi-money"
@@ -405,9 +415,9 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               <div
                 id="display-monthly-allowance"
                 className="text-xs sm:text-base md:text-xl font-black text-slate-900 mt-1 truncate"
-                title={`UPI Balance: ${formatINR(wallets?.upi ?? 0)}`}
+                title={`Original UPI Money: ${formatINR(fixedUpi)}`}
               >
-                {formatINR(wallets?.upi ?? 0)}
+                {formatINR(fixedUpi)}
               </div>
 
               {/* Fixed Cash row where user can see and tap to enter/edit fixed cash */}
@@ -415,8 +425,8 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                 id="btn-edit-fixed-cash"
                 type="button"
                 onClick={() => {
-                  setEditUpiVal((wallets?.upi ?? 0).toString());
-                  setEditCashVal((wallets?.cash ?? 0).toString());
+                  setEditUpiVal(fixedUpi.toString());
+                  setEditCashVal(fixedCash.toString());
                   setIsEditingAllowance(true);
                 }}
                 className="w-full mt-1.5 flex items-center justify-between gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200/80 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg transition text-left cursor-pointer group"
@@ -424,7 +434,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               >
                 <span className="flex items-center gap-1 truncate">
                   <Banknote className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600 shrink-0" />
-                  <span className="truncate">Fixed Cash: {formatINR(wallets?.cash ?? 0)}</span>
+                  <span className="truncate">Fixed Cash: {formatINR(fixedCash)}</span>
                 </span>
                 <Edit3 className="w-2.5 h-2.5 text-emerald-600 opacity-60 group-hover:opacity-100 shrink-0" />
               </button>
@@ -432,40 +442,45 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
           )}
         </div>
 
-        {/* Metric 2: Spent This Month */}
+        {/* Metric 2: Spent (Shows spending separately: Total Spent, UPI Spent, Cash Spent) */}
         <div
           id="card-total-spent"
           className="bg-slate-50/70 rounded-xl p-2 sm:p-3.5 border border-slate-200/80 flex flex-col justify-between min-w-0"
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs font-semibold text-slate-500">
-            <span className="whitespace-nowrap">Spent</span>
+            <span className="whitespace-nowrap">Total Spent</span>
           </div>
           <div
             id="display-total-spent"
             className="text-xs sm:text-base md:text-xl font-black text-slate-900 mt-1 truncate"
-            title={`Total spent: ${formatINR(variableSpent)}`}
+            title={`Total spent: ${formatINR(totalSpent)}`}
           >
-            {formatINR(variableSpent)}
+            {formatINR(totalSpent)}
           </div>
-          <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 truncate">
-            {todaySpent && todaySpent > 0 ? `Today: ${formatINR(todaySpent)}` : 'This month'}
+          <div className="mt-1 flex flex-col gap-0.5 text-[9px] sm:text-[10px]">
+            <div className="flex items-center justify-between text-indigo-700 bg-indigo-50/70 px-1 py-0.5 rounded truncate font-medium">
+              <span className="truncate">UPI Spent: {formatINR(upiSpentThisMonth)}</span>
+            </div>
+            <div className="flex items-center justify-between text-emerald-700 bg-emerald-50/70 px-1 py-0.5 rounded truncate font-medium">
+              <span className="truncate">Cash Spent: {formatINR(cashSpentThisMonth)}</span>
+            </div>
           </div>
         </div>
 
-        {/* Metric 3: Remaining Balance */}
+        {/* Metric 3: Available In-Hand Balance */}
         <div
           id="card-remaining-balance"
           className="bg-slate-50/70 rounded-xl p-2 sm:p-3.5 border border-slate-200/80 flex flex-col justify-between min-w-0"
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs font-semibold text-slate-500">
-            <span className="whitespace-nowrap">Remaining</span>
+            <span className="truncate" title="Available In-Hand Balance">Available In-Hand Balance</span>
           </div>
           <div
             id="display-remaining-balance"
             className="text-xs sm:text-base md:text-xl font-black text-slate-900 mt-1 truncate"
-            title={`Remaining: ${formatINR(Math.max(0, effectiveAllowance - variableSpent))}`}
+            title={`Available In-Hand Balance: ${formatINR(availableInHandBalance)}`}
           >
-            {formatINR(Math.max(0, effectiveAllowance - variableSpent))}
+            {formatINR(availableInHandBalance)}
           </div>
           <div className="text-[10px] sm:text-[11px] text-indigo-600 font-semibold mt-0.5 truncate">
             ~{formatINR(safeDailyBudget)}/day safe
@@ -493,7 +508,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
           className="p-3.5 bg-slate-50 rounded-xl border border-indigo-200/80 space-y-2.5 animate-in fade-in duration-150"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Set Exact Cash &amp; UPI Balances</span>
+            <span className="text-xs font-bold text-slate-900">Set Fixed Wallet Balances</span>
             <button
               type="button"
               onClick={() => setActiveWalletModal('none')}
@@ -504,7 +519,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">Cash in Hand (₹)</label>
+              <label className="text-[10px] font-bold text-slate-600 block mb-1">Fixed Cash (₹)</label>
               <input
                 id="input-edit-cash"
                 type="number"
@@ -516,7 +531,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">UPI / Bank Balance (₹)</label>
+              <label className="text-[10px] font-bold text-slate-600 block mb-1">UPI Money (₹)</label>
               <input
                 id="input-edit-upi"
                 type="number"

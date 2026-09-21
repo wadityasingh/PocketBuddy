@@ -1,0 +1,51 @@
+{
+  "monthlyPocketMoney": 1200,
+  "wallets": {
+    "upi": 1000,
+    "cash": 200
+  },
+  "transactions": [
+    {
+      "title": "Pocket Money added to UPI",
+      "amount": 2500,
+      "type": "income",
+      "category": "Pocket Money",
+      "paymentMode": "UPI",
+      "date": "2026-09-21",
+      "notes": "Added ₹2500 to UPI & increased this month's budget allowance",
+      "id": "id_teo6ukwmubkhw1c"
+    },
+    {
+      "title": "yy",
+      "amount": 200,
+      "type": "expense",
+      "category": "Expense",
+      "paymentMode": "Cash",
+      "date": "2026-09-21",
+      "id": "id_dlgslo5mubkjtlh"
+    },
+    {
+      "title": "Pocket Money added to UPI",
+      "amount": 4000,
+      "type": "income",
+      "category": "Pocket Money",
+      "paymentMode": "UPI",
+      "date": "2026-09-18",
+      "notes": "Added ₹4000 to UPI & increased this month's budget allowance",
+      "id": "id_jtgw0kpmu74uxd7"
+    }
+  ],
+  "roomGroups": [],
+  "activeRoomId": null,
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "udhaarRecords": [],
+  "bills": [],
+  "goals": [],
+  "hasCompletedTour": false
+}

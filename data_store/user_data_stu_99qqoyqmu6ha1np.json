@@ -1,5 +1,5 @@
 {
-  "monthlyPocketMoney": 4400,
+  "monthlyPocketMoney": 400,
   "wallets": {
     "cash": 0,
     "upi": 4000,
@@ -19,10 +19,10 @@
   ],
   "roomGroups": [
     {
-      "id": "room_1789746200112_ejoq",
-      "name": "ROOMATE",
+      "id": "room_1789707154532_yhxk",
+      "name": "house",
       "type": "Flat",
-      "inviteCode": "ZBXPNE",
+      "inviteCode": "JK4K7G",
       "ownerId": "stu_99qqoyqmu6ha1np",
       "members": [
         {
@@ -61,85 +61,11 @@
       ],
       "expenses": [
         {
-          "id": "exp_v141g4jmu77tiyr",
-          "roomId": "room_1789746200112_ejoq",
-          "title": "ww",
-          "totalAmount": 22,
-          "amount": 22,
-          "category": "General",
-          "paidByUserId": "stu_uu4eaxvmu6hm9mn",
-          "paidBy": "TEST3",
-          "createdByUserId": "stu_99qqoyqmu6ha1np",
-          "createdBy": "TEST1",
-          "splitType": "equal",
-          "participants": [
-            {
-              "userId": "stu_5gr9kxgmu6hj1nu",
-              "name": "TEST2",
-              "share": 7.34,
-              "hasPaid": false
-            },
-            {
-              "userId": "stu_uu4eaxvmu6hm9mn",
-              "name": "TEST3",
-              "share": 7.33,
-              "hasPaid": true
-            },
-            {
-              "userId": "stu_99qqoyqmu6ha1np",
-              "name": "TEST1",
-              "share": 7.33,
-              "hasPaid": false
-            }
-          ],
-          "date": "2026-09-18",
-          "notes": "",
-          "createdAt": "2026-09-18T17:12:16.462Z",
-          "status": "pending"
-        },
-        {
-          "id": "exp_hgdkl1xmu76t5kh",
-          "roomId": "room_1789746200112_ejoq",
-          "title": "oads",
-          "totalAmount": 531,
-          "amount": 531,
-          "category": "General",
-          "paidByUserId": "stu_uu4eaxvmu6hm9mn",
-          "paidBy": "TEST3",
-          "createdByUserId": "stu_uu4eaxvmu6hm9mn",
-          "createdBy": "TEST3",
-          "splitType": "equal",
-          "participants": [
-            {
-              "userId": "stu_99qqoyqmu6ha1np",
-              "name": "TEST1",
-              "share": 177,
-              "hasPaid": false
-            },
-            {
-              "userId": "stu_5gr9kxgmu6hj1nu",
-              "name": "TEST2",
-              "share": 177,
-              "hasPaid": false
-            },
-            {
-              "userId": "stu_uu4eaxvmu6hm9mn",
-              "name": "TEST3",
-              "share": 177,
-              "hasPaid": true
-            }
-          ],
-          "date": "2026-09-18",
-          "notes": "milk oads",
-          "createdAt": "2026-09-18T16:43:24.016Z",
-          "status": "pending"
-        },
-        {
-          "id": "exp_daywgklmu75882r",
-          "roomId": "room_1789746200112_ejoq",
-          "title": "DHOODH",
-          "totalAmount": 260,
-          "amount": 260,
+          "id": "exp_chicken_150",
+          "roomId": "room_1789707154532_yhxk",
+          "title": "Chicken",
+          "totalAmount": 150,
+          "amount": 150,
           "category": "General",
           "paidByUserId": "stu_99qqoyqmu6ha1np",
           "paidBy": "TEST1",
@@ -150,108 +76,34 @@
             {
               "userId": "stu_99qqoyqmu6ha1np",
               "name": "TEST1",
-              "share": 86.67,
+              "share": 50,
               "hasPaid": true
             },
             {
               "userId": "stu_5gr9kxgmu6hj1nu",
               "name": "TEST2",
-              "share": 86.67,
+              "share": 50,
               "hasPaid": false
             },
             {
               "userId": "stu_uu4eaxvmu6hm9mn",
               "name": "TEST3",
-              "share": 86.66,
+              "share": 50,
               "hasPaid": false
             }
           ],
           "date": "2026-09-18",
-          "notes": "MILK",
-          "createdAt": "2026-09-18T15:58:45.426Z",
+          "notes": "Chicken for dinner - updated",
+          "createdAt": "2026-09-18T05:00:00.000Z",
           "status": "pending"
         },
         {
-          "id": "exp_sj2f6jnmu74xfm5",
-          "roomId": "room_1789746200112_ejoq",
-          "title": "vhrk",
-          "totalAmount": 30,
-          "amount": 30,
-          "category": "General",
-          "paidByUserId": "stu_uu4eaxvmu6hm9mn",
-          "paidBy": "TEST3",
-          "createdByUserId": "stu_uu4eaxvmu6hm9mn",
-          "createdBy": "TEST3",
-          "splitType": "equal",
-          "participants": [
-            {
-              "userId": "stu_99qqoyqmu6ha1np",
-              "name": "TEST1",
-              "share": 10,
-              "hasPaid": false
-            },
-            {
-              "userId": "stu_5gr9kxgmu6hj1nu",
-              "name": "TEST2",
-              "share": 10,
-              "hasPaid": false
-            },
-            {
-              "userId": "stu_uu4eaxvmu6hm9mn",
-              "name": "TEST3",
-              "share": 10,
-              "hasPaid": true
-            }
-          ],
-          "date": "2026-09-18",
-          "notes": "",
-          "createdAt": "2026-09-18T15:50:21.980Z",
-          "status": "pending"
-        },
-        {
-          "id": "exp_pw7kvuumu74x4kd",
-          "roomId": "room_1789746200112_ejoq",
-          "title": "three",
-          "totalAmount": 80,
-          "amount": 80,
-          "category": "General",
-          "paidByUserId": "stu_uu4eaxvmu6hm9mn",
-          "paidBy": "TEST3",
-          "createdByUserId": "stu_uu4eaxvmu6hm9mn",
-          "createdBy": "TEST3",
-          "splitType": "equal",
-          "participants": [
-            {
-              "userId": "stu_99qqoyqmu6ha1np",
-              "name": "TEST1",
-              "share": 26.67,
-              "hasPaid": false
-            },
-            {
-              "userId": "stu_5gr9kxgmu6hj1nu",
-              "name": "TEST2",
-              "share": 26.67,
-              "hasPaid": false
-            },
-            {
-              "userId": "stu_uu4eaxvmu6hm9mn",
-              "name": "TEST3",
-              "share": 26.66,
-              "hasPaid": true
-            }
-          ],
-          "date": "2026-09-18",
-          "notes": "",
-          "createdAt": "2026-09-18T15:50:07.662Z",
-          "status": "pending"
-        },
-        {
-          "id": "exp_gugaqulmu74wvda",
-          "roomId": "room_1789746200112_ejoq",
-          "title": "two",
-          "totalAmount": 80,
-          "amount": 80,
-          "category": "General",
+          "id": "exp_milk_90",
+          "roomId": "room_1789707154532_yhxk",
+          "title": "Milk",
+          "totalAmount": 90,
+          "amount": 90,
+          "category": "Food & Groceries",
           "paidByUserId": "stu_5gr9kxgmu6hj1nu",
           "paidBy": "TEST2",
           "createdByUserId": "stu_5gr9kxgmu6hj1nu",
@@ -261,192 +113,121 @@
             {
               "userId": "stu_99qqoyqmu6ha1np",
               "name": "TEST1",
-              "share": 26.67,
+              "share": 30,
               "hasPaid": false
             },
             {
               "userId": "stu_5gr9kxgmu6hj1nu",
               "name": "TEST2",
-              "share": 26.67,
+              "share": 30,
               "hasPaid": true
             },
             {
               "userId": "stu_uu4eaxvmu6hm9mn",
               "name": "TEST3",
-              "share": 26.66,
+              "share": 30,
               "hasPaid": false
             }
           ],
           "date": "2026-09-18",
-          "notes": "",
-          "createdAt": "2026-09-18T15:49:55.755Z",
+          "notes": "Daily milk packets",
+          "createdAt": "2026-09-18T05:05:00.000Z",
           "status": "pending"
         },
         {
-          "id": "exp_p6w8tp5mu74wo73",
-          "roomId": "room_1789746200112_ejoq",
-          "title": "one",
-          "totalAmount": 80,
-          "amount": 80,
-          "category": "General",
-          "paidByUserId": "stu_99qqoyqmu6ha1np",
-          "paidBy": "TEST1",
-          "createdByUserId": "stu_99qqoyqmu6ha1np",
-          "createdBy": "TEST1",
+          "id": "exp_electricity_300",
+          "roomId": "room_1789707154532_yhxk",
+          "title": "Electricity",
+          "totalAmount": 300,
+          "amount": 300,
+          "category": "Utilities",
+          "paidByUserId": "stu_uu4eaxvmu6hm9mn",
+          "paidBy": "TEST3",
+          "createdByUserId": "stu_uu4eaxvmu6hm9mn",
+          "createdBy": "TEST3",
           "splitType": "equal",
           "participants": [
             {
               "userId": "stu_99qqoyqmu6ha1np",
               "name": "TEST1",
-              "share": 26.67,
-              "hasPaid": true
+              "share": 100,
+              "hasPaid": false
             },
             {
               "userId": "stu_5gr9kxgmu6hj1nu",
               "name": "TEST2",
-              "share": 26.67,
+              "share": 100,
               "hasPaid": false
             },
             {
               "userId": "stu_uu4eaxvmu6hm9mn",
               "name": "TEST3",
-              "share": 26.66,
-              "hasPaid": false
+              "share": 100,
+              "hasPaid": true
             }
           ],
           "date": "2026-09-18",
-          "notes": "",
-          "createdAt": "2026-09-18T15:49:46.440Z",
+          "notes": "Monthly room electricity bill",
+          "createdAt": "2026-09-18T05:10:00.000Z",
           "status": "pending"
         }
       ],
-      "settlements": [
-        {
-          "id": "settle_1789747377495_ogl0",
-          "roomId": "room_1789746200112_ejoq",
-          "fromUserId": "stu_5gr9kxgmu6hj1nu",
-          "from": "TEST2",
-          "toUserId": "stu_99qqoyqmu6ha1np",
-          "to": "TEST1",
-          "amount": 97,
-          "date": "2026-09-18",
-          "mode": "UPI",
-          "status": "completed",
-          "note": "Settled debt of ₹97",
-          "createdAt": "2026-09-18T16:02:57.495Z"
-        }
-      ],
+      "settlements": [],
       "activities": [
         {
-          "id": "act_1789751536462",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST3 added ww ₹22",
-          "time": "2026-09-18T17:12:16.462Z",
+          "id": "act_1789708852086",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST1 updated \"Chicken\" (₹150)",
+          "time": "2026-09-18T05:20:52.086Z",
+          "type": "edit"
+        },
+        {
+          "id": "act_electricity_300",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST3 added \"Electricity\" for ₹300",
+          "time": "2026-09-18T05:10:00.000Z",
           "type": "expense"
         },
         {
-          "id": "act_1789749804016",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST3 added oads ₹531",
-          "time": "2026-09-18T16:43:24.016Z",
+          "id": "act_milk_90",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST2 added \"Milk\" for ₹90",
+          "time": "2026-09-18T05:05:00.000Z",
           "type": "expense"
         },
         {
-          "id": "act_1789747377495",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST2 settled ₹97 with TEST1",
-          "time": "2026-09-18T16:02:57.495Z",
-          "type": "settlement"
-        },
-        {
-          "id": "act_1789747219077",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST1 deleted expense \"DHOODH\" (₹260)",
-          "time": "2026-09-18T16:00:19.077Z",
+          "id": "act_chicken_150",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST1 added \"Chicken\" for ₹150",
+          "time": "2026-09-18T05:00:00.000Z",
           "type": "expense"
         },
         {
-          "id": "act_1789747125426",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST1 added \"DHOODH\" for ₹260",
-          "time": "2026-09-18T15:58:45.426Z",
-          "type": "expense"
-        },
-        {
-          "id": "act_1789747125368",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST1 added \"DHOODH\" for ₹260",
-          "time": "2026-09-18T15:58:45.368Z",
-          "type": "expense"
-        },
-        {
-          "id": "act_1789746621980",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST3 added \"vhrk\" for ₹30",
-          "time": "2026-09-18T15:50:21.980Z",
-          "type": "expense"
-        },
-        {
-          "id": "act_1789746607662",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST3 added \"three\" for ₹80",
-          "time": "2026-09-18T15:50:07.662Z",
-          "type": "expense"
-        },
-        {
-          "id": "act_1789746595755",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST2 added \"two\" for ₹80",
-          "time": "2026-09-18T15:49:55.755Z",
-          "type": "expense"
-        },
-        {
-          "id": "act_1789746586440",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST1 added \"one\" for ₹80",
-          "time": "2026-09-18T15:49:46.440Z",
-          "type": "expense"
-        },
-        {
-          "id": "act_1789746574168",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST1 deleted expense \"eer\" (₹50)",
-          "time": "2026-09-18T15:49:34.168Z",
-          "type": "expense"
-        },
-        {
-          "id": "act_1789746565766",
-          "roomId": "room_1789746200112_ejoq",
+          "id": "act_join_test3",
+          "roomId": "room_1789707154532_yhxk",
           "text": "TEST3 joined the room",
-          "time": "2026-09-18T15:49:25.766Z",
+          "time": "2026-09-18T04:55:00.000Z",
           "type": "join"
         },
         {
-          "id": "act_1789746554549",
-          "roomId": "room_1789746200112_ejoq",
+          "id": "act_join_test2",
+          "roomId": "room_1789707154532_yhxk",
           "text": "TEST2 joined the room",
-          "time": "2026-09-18T15:49:14.549Z",
+          "time": "2026-09-18T04:53:00.000Z",
           "type": "join"
         },
         {
-          "id": "act_1789746539221",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST1 added \"eer\" for ₹50",
-          "time": "2026-09-18T15:48:59.221Z",
-          "type": "expense"
-        },
-        {
-          "id": "act_1789746200112",
-          "roomId": "room_1789746200112_ejoq",
-          "text": "TEST1 created room \"ROOMATE\"",
-          "time": "2026-09-18T15:43:20.112Z",
+          "id": "act_create_test1",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST1 created room \"house\"",
+          "time": "2026-09-18T04:52:34.000Z",
           "type": "join"
         }
       ],
       "createdAt": "2026-09-18"
     }
   ],
-  "activeRoomId": "room_1789746200112_ejoq",
+  "activeRoomId": "room_1789707154532_yhxk",
   "meals": [],
   "messConfig": {
     "monthlyMessFee": 0,
@@ -457,5 +238,5 @@
   "udhaarRecords": [],
   "bills": [],
   "goals": [],
-  "hasCompletedTour": true
+  "hasCompletedTour": false
 }

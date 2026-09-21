@@ -84,7 +84,6 @@ import { FirstTimeSetupModal } from './components/FirstTimeSetupModal';
 import { SmartMoneyHub } from './components/SmartMoneyHub';
 import { QuickAiModal } from './components/QuickAiModal';
 import { BrandLogo } from './components/BrandLogo';
-import { LogoutButton } from './components/LogoutButton';
 import { RadialLoader } from './components/RadialLoader';
 import { safeFetchJson, getUserStoredData, saveUserStoredData, getUserNotes, saveUserNotes } from './utils/api';
 
@@ -731,74 +730,6 @@ export default function App() {
     }
   };
 
-  const handleUpdateTransaction = (updatedTx: Transaction): boolean => {
-    const oldTx = transactions.find((t) => t.id === updatedTx.id);
-    if (oldTx) {
-      const oldAmount = Number(oldTx.amount) || 0;
-      const newAmount = Number(updatedTx.amount) || 0;
-
-      // Strict balance check when updating an expense or lent transaction
-      if (updatedTx.type === 'expense' || updatedTx.type === 'lent') {
-        const mode = updatedTx.paymentMode || 'UPI';
-        const currentBal = mode === 'Cash' ? (wallets?.cash ?? 0) : (wallets?.upi ?? 0);
-        const refundFromOld =
-          (oldTx.type === 'expense' || oldTx.type === 'lent') && oldTx.paymentMode === mode
-            ? oldAmount
-            : 0;
-        const effectiveAvailable = currentBal + refundFromOld;
-
-        if (newAmount > effectiveAvailable) {
-          alert(
-            `Insufficient ${mode} Balance!\n\nAvailable in ${mode}: ₹${effectiveAvailable.toLocaleString('en-IN')}\nRequested Expense: ₹${newAmount.toLocaleString('en-IN')}\n\nYou cannot spend more than your available ${mode} balance. Please reduce the amount or add money to ${mode}.`
-          );
-          return false;
-        }
-      }
-
-      setWallets((prev) => {
-        let cash = prev.cash;
-        let upi = prev.upi;
-
-        // 1. Revert old transaction wallet effect
-        if (oldTx.type === 'expense' || oldTx.type === 'lent') {
-          if (oldTx.paymentMode === 'Cash') cash += oldAmount;
-          else if (oldTx.paymentMode === 'UPI') upi += oldAmount;
-        } else if (oldTx.type === 'income' || oldTx.type === 'borrowed') {
-          if (oldTx.paymentMode === 'Cash') cash = Math.max(0, cash - oldAmount);
-          else if (oldTx.paymentMode === 'UPI') upi = Math.max(0, upi - oldAmount);
-        }
-
-        // 2. Apply updated transaction wallet effect
-        if (updatedTx.type === 'expense' || updatedTx.type === 'lent') {
-          if (updatedTx.paymentMode === 'Cash') cash = Math.max(0, cash - newAmount);
-          else if (updatedTx.paymentMode === 'UPI') upi = Math.max(0, upi - newAmount);
-        } else if (updatedTx.type === 'income' || updatedTx.type === 'borrowed') {
-          if (updatedTx.paymentMode === 'Cash') cash += newAmount;
-          else if (updatedTx.paymentMode === 'UPI') upi += newAmount;
-        }
-
-        return { cash: Math.max(0, cash), upi: Math.max(0, upi) };
-      });
-
-      // 3. Keep monthly pocket money allowance synchronized if pocket money income was adjusted
-      const wasPocketMoney = oldTx.type === 'income' && oldTx.category === 'Pocket Money';
-      const isPocketMoney = updatedTx.type === 'income' && updatedTx.category === 'Pocket Money';
-
-      if (wasPocketMoney && isPocketMoney) {
-        setMonthlyPocketMoney((prev) => Math.max(0, prev - oldAmount + newAmount));
-      } else if (wasPocketMoney && !isPocketMoney) {
-        setMonthlyPocketMoney((prev) => Math.max(0, prev - oldAmount));
-      } else if (!wasPocketMoney && isPocketMoney) {
-        setMonthlyPocketMoney((prev) => prev + newAmount);
-      }
-    }
-
-    setTransactions((prev) => prev.map((t) => (t.id === updatedTx.id ? updatedTx : t)));
-    setIsManualOpen(false);
-    setEditingTransaction(null);
-    return true;
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('smm_auth_token');
     localStorage.removeItem('smm_current_user');
@@ -840,7 +771,15 @@ export default function App() {
     return y === currentYear && m === currentMonth;
   });
 
-  const totalSpentThisMonth = thisMonthExpenses.reduce((acc, t) => acc + (Number(t?.amount) || 0), 0);
+  const cashSpentThisMonth = thisMonthExpenses
+    .filter((t) => t.paymentMode === 'Cash')
+    .reduce((acc, t) => acc + (Number(t?.amount) || 0), 0);
+
+  const upiSpentThisMonth = thisMonthExpenses
+    .filter((t) => t.paymentMode === 'UPI' || t.paymentMode === 'Bank')
+    .reduce((acc, t) => acc + (Number(t?.amount) || 0), 0);
+
+  const totalSpentThisMonth = upiSpentThisMonth + cashSpentThisMonth;
 
   const todaySpent = expenseTransactions
     .filter((t) => t && t.date === todayStr)
@@ -858,9 +797,22 @@ export default function App() {
 
   const totalFixedCommitted = safeBills.reduce((acc, b) => acc + (Number(b?.amount) || 0), 0);
   
-  // Discretionary remaining: monthly pocket money minus total spent this month minus upcoming unpaid bills reserved!
-  // This guarantees paid bills (which create expense transactions) are NEVER deducted twice!
-  const discretionaryRemaining = Math.max(0, monthlyPocketMoney - totalSpentThisMonth - pendingBillsTotal);
+  // Fixed wallet original balances (Never reduced by expenses)
+  const fixedCash = wallets?.cash ?? 0;
+  const fixedUpi = wallets?.upi ?? 0;
+  const totalOriginalMoney = fixedCash + fixedUpi;
+
+  // Remaining available balances after expenses
+  const availableCash = Math.max(0, fixedCash - cashSpentThisMonth);
+  const availableUpi = Math.max(0, fixedUpi - upiSpentThisMonth);
+
+  // Available In-Hand Balance: original wallet balance - total spent - pending bills
+  const availableInHandBalance = Math.max(
+    0,
+    (totalOriginalMoney > 0 ? totalOriginalMoney : monthlyPocketMoney) - totalSpentThisMonth - pendingBillsTotal
+  );
+
+  const discretionaryRemaining = availableInHandBalance;
   const safeDailyCap = Math.max(0, Math.round(discretionaryRemaining / daysRemainingInMonth));
 
   // Active room selection
@@ -909,18 +861,13 @@ export default function App() {
     const amount = Number(newTxData.amount) || 0;
     const mode = newTxData.paymentMode || 'UPI';
 
-    // Strict balance check: Expense or Lent cannot exceed available wallet balance
+    // Strict balance check: Expense or Lent cannot exceed remaining available balance
     if (newTxData.type === 'expense' || newTxData.type === 'lent') {
-      const currentBal =
-        mode === 'Cash'
-          ? (wallets?.cash ?? 0)
-          : mode === 'UPI'
-          ? (wallets?.upi ?? 0)
-          : (wallets?.bank ?? 0);
+      const currentAvailable = mode === 'Cash' ? availableCash : availableUpi;
 
-      if (amount > currentBal) {
+      if (amount > currentAvailable) {
         alert(
-          `Insufficient ${mode} Balance!\n\nAvailable in ${mode}: ₹${currentBal.toLocaleString('en-IN')}\nAttempted Expense: ₹${amount.toLocaleString('en-IN')}\n\nYou cannot spend more than your available ${mode} balance. Please add money to your ${mode} balance or reduce the amount.`
+          `Insufficient ${mode} Balance!\n\nAvailable in ${mode}: ₹${currentAvailable.toLocaleString('en-IN')}\nAttempted Expense: ₹${amount.toLocaleString('en-IN')}\n\nYou cannot spend more than your available ${mode} balance. Please add money to your ${mode} balance or reduce the amount.`
         );
         return false;
       }
@@ -935,10 +882,10 @@ export default function App() {
     let nextAllowance = monthlyPocketMoney;
     const nextTransactions = [newTx, ...transactions];
 
-    // Update wallet balance automatically
+    // UPI Money and Fixed Cash are FIXED wallet balances.
+    // Money spent on expenses must NOT reduce these original wallet amounts!
     if (newTx.type === 'expense') {
-      if (mode === 'Cash') nextWallets.cash = Math.max(0, nextWallets.cash - amount);
-      if (mode === 'UPI') nextWallets.upi = Math.max(0, nextWallets.upi - amount);
+      // Expenses do NOT reduce fixed wallet amounts.
     } else if (newTx.type === 'income') {
       if (mode === 'Cash') nextWallets.cash = nextWallets.cash + amount;
       if (mode === 'UPI') nextWallets.upi = nextWallets.upi + amount;
@@ -948,9 +895,6 @@ export default function App() {
         setMonthlyPocketMoney(nextAllowance);
       }
     } else if (newTx.type === 'lent') {
-      if (mode === 'Cash') nextWallets.cash = Math.max(0, nextWallets.cash - amount);
-      if (mode === 'UPI') nextWallets.upi = Math.max(0, nextWallets.upi - amount);
-
       if (!skipUdhaarSync && newTx.person) {
         setUdhaarRecords((prev) => [
           {
@@ -996,6 +940,67 @@ export default function App() {
     return true;
   };
 
+  const handleUpdateTransaction = (updatedTx: Transaction): boolean => {
+    const oldTx = transactions.find((t) => t.id === updatedTx.id);
+    if (oldTx) {
+      const oldAmount = Number(oldTx.amount) || 0;
+      const newAmount = Number(updatedTx.amount) || 0;
+
+      // Strict balance check when updating an expense or lent transaction
+      if (updatedTx.type === 'expense' || updatedTx.type === 'lent') {
+        const mode = updatedTx.paymentMode || 'UPI';
+        const currentBal = mode === 'Cash' ? availableCash : availableUpi;
+        const refundFromOld =
+          (oldTx.type === 'expense' || oldTx.type === 'lent') && oldTx.paymentMode === mode
+            ? oldAmount
+            : 0;
+        const effectiveAvailable = currentBal + refundFromOld;
+
+        if (newAmount > effectiveAvailable) {
+          alert(
+            `Insufficient ${mode} Balance!\n\nAvailable in ${mode}: ₹${effectiveAvailable.toLocaleString('en-IN')}\nRequested Expense: ₹${newAmount.toLocaleString('en-IN')}\n\nYou cannot spend more than your available ${mode} balance. Please reduce the amount or add money to ${mode}.`
+          );
+          return false;
+        }
+      }
+
+      let nextWallets = { ...wallets };
+      // Only income or borrowed modifies the fixed wallets
+      if (oldTx.type === 'income' || oldTx.type === 'borrowed') {
+        if (oldTx.paymentMode === 'Cash') nextWallets.cash = Math.max(0, nextWallets.cash - oldAmount);
+        else if (oldTx.paymentMode === 'UPI') nextWallets.upi = Math.max(0, nextWallets.upi - oldAmount);
+      }
+      if (updatedTx.type === 'income' || updatedTx.type === 'borrowed') {
+        if (updatedTx.paymentMode === 'Cash') nextWallets.cash += newAmount;
+        else if (updatedTx.paymentMode === 'UPI') nextWallets.upi += newAmount;
+      }
+
+      setWallets(nextWallets);
+
+      // Keep monthly pocket money allowance synchronized if pocket money income was adjusted
+      const wasPocketMoney = oldTx.type === 'income' && oldTx.category === 'Pocket Money';
+      const isPocketMoney = updatedTx.type === 'income' && updatedTx.category === 'Pocket Money';
+
+      let nextAllowance = monthlyPocketMoney;
+      if (wasPocketMoney && isPocketMoney) {
+        nextAllowance = Math.max(0, monthlyPocketMoney - oldAmount + newAmount);
+      } else if (wasPocketMoney && !isPocketMoney) {
+        nextAllowance = Math.max(0, monthlyPocketMoney - oldAmount);
+      } else if (!wasPocketMoney && isPocketMoney) {
+        nextAllowance = monthlyPocketMoney + newAmount;
+      }
+      setMonthlyPocketMoney(nextAllowance);
+
+      const nextTransactions = transactions.map((t) => (t.id === updatedTx.id ? updatedTx : t));
+      setTransactions(nextTransactions);
+      persistMoneySnapshotImmediate(nextAllowance, nextWallets, nextTransactions);
+    }
+
+    setIsManualOpen(false);
+    setEditingTransaction(null);
+    return true;
+  };
+
   const handleDeleteTransaction = (id: string) => {
     const tx = transactions.find((t) => t.id === id);
     let nextWallets = { ...wallets };
@@ -1003,11 +1008,8 @@ export default function App() {
 
     if (tx) {
       const amount = Number(tx.amount) || 0;
-      if (tx.type === 'expense' || tx.type === 'lent') {
-        // Refund back to original wallet
-        if (tx.paymentMode === 'Cash') nextWallets.cash = nextWallets.cash + amount;
-        if (tx.paymentMode === 'UPI') nextWallets.upi = nextWallets.upi + amount;
-      } else if (tx.type === 'income' || tx.type === 'borrowed') {
+      // Because expenses do NOT reduce fixed wallet balances, deleting an expense does NOT add to fixed wallets!
+      if (tx.type === 'income' || tx.type === 'borrowed') {
         // Reverse income from wallet
         if (tx.paymentMode === 'Cash') nextWallets.cash = Math.max(0, nextWallets.cash - amount);
         if (tx.paymentMode === 'UPI') nextWallets.upi = Math.max(0, nextWallets.upi - amount);
@@ -1929,9 +1931,23 @@ export default function App() {
     }
   };
 
-  const handleUpdateUserProfile = (updated: StudentUser) => {
+  const handleUpdateUserProfile = async (updated: StudentUser) => {
     setCurrentUser(updated);
     localStorage.setItem('smm_current_user', JSON.stringify(updated));
+    try {
+      const token = localStorage.getItem('smm_auth_token');
+      await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'x-user-id': updated.id,
+        },
+        body: JSON.stringify(updated),
+      });
+    } catch (e) {
+      console.warn('Could not sync user profile to server:', e);
+    }
   };
 
   if (isInitialLoading) {
@@ -2010,22 +2026,26 @@ export default function App() {
               className="h-9 px-2 sm:px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition inline-flex items-center gap-2 cursor-pointer text-left"
               title="Student Profile & Settings"
             >
-              <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
-                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'S'}
-              </div>
+              {currentUser.photoUrl ? (
+                <img
+                  src={currentUser.photoUrl}
+                  alt={currentUser.name}
+                  className="w-6 h-6 rounded-lg object-cover shrink-0 border border-slate-200"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-lg bg-red-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'S'}
+                </div>
+              )}
               <div className="hidden md:block">
                 <div className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[130px]">
                   {currentUser.name}
                 </div>
                 <div className="text-[10px] text-slate-500 leading-none truncate max-w-[130px]">
-                  {currentUser.collegeName || 'Student Profile'}
+                  {currentUser.collegeName || 'Settings & Profile'}
                 </div>
               </div>
             </button>
-
-            {/* Direct 3D Circular Log Out Button (matching user reference design) */}
-            <LogoutButton onClick={handleLogout} size="sm" className="sm:hidden" />
-            <LogoutButton onClick={handleLogout} size="md" className="hidden sm:block" />
           </div>
         </div>
 
@@ -2227,6 +2247,7 @@ export default function App() {
         onAddTransaction={handleAddTransaction}
         existingTransactions={transactions}
         wallets={wallets}
+        availableUpi={availableUpi}
       />
 
       {isVoiceOpen && (
@@ -2235,6 +2256,7 @@ export default function App() {
           onClose={() => setIsVoiceOpen(false)}
           onAddTransaction={handleAddTransaction}
           wallets={wallets}
+          availableBalances={{ cash: availableCash, upi: availableUpi }}
         />
       )}
 
@@ -2248,6 +2270,7 @@ export default function App() {
         onAddTransaction={handleAddTransaction}
         onUpdateTransaction={handleUpdateTransaction}
         wallets={wallets}
+        availableBalances={{ cash: availableCash, upi: availableUpi }}
       />
 
       {/* First-Time Student Setup Wizard */}

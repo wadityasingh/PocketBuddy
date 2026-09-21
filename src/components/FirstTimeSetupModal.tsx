@@ -8,8 +8,7 @@ import {
   IndianRupee,
   Smartphone,
   Banknote,
-  Landmark,
-  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { formatINR } from '../utils/formatters';
 import { BrandLogo } from './BrandLogo';
@@ -43,10 +42,9 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
   // Step 2: Monthly Pocket Money / Allowance
   const [allowance, setAllowance] = useState('');
 
-  // Step 3: Current balances in hand
+  // Step 3: Current balances in hand (Cash & UPI only - Bank Savings Account removed)
   const [cash, setCash] = useState('');
   const [upi, setUpi] = useState('');
-  const [bank, setBank] = useState('');
 
   // Step 4: Living situation
   const [livingSituation, setLivingSituation] = useState<'alone' | 'roommates'>('roommates');
@@ -54,13 +52,12 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
   const [roomName, setRoomName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
 
-  // Step 5 removed per user request: Ready confirmation screen
+  // Review confirmation step
   const [isReady, setIsReady] = useState(false);
 
   if (!isOpen) return null;
 
-  const totalStartingBalance =
-    (parseFloat(cash) || 0) + (parseFloat(upi) || 0) + (parseFloat(bank) || 0);
+  const totalStartingBalance = (parseFloat(cash) || 0) + (parseFloat(upi) || 0);
 
   const handleNext = () => {
     if (step < 4) {
@@ -87,7 +84,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
         wallets: {
           cash: parseFloat(cash) || 0,
           upi: parseFloat(upi) || 0,
-          bank: parseFloat(bank) || 0,
+          bank: 0, // Bank savings account removed per request
         },
         livingSituation,
         roomAction: livingSituation === 'roommates' ? roomChoice : undefined,
@@ -100,42 +97,48 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
     }
   };
 
-  const allowanceSuggestions = [5000, 8000, 10000, 15000];
+  const allowanceSuggestions = [3000, 5000, 8000, 10000];
+
+  const stepTitles = [
+    { num: 1, title: 'Profile' },
+    { num: 2, title: 'Budget' },
+    { num: 3, title: 'Balances' },
+    { num: 4, title: 'Living Setup' },
+  ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-white rounded-[28px] sm:rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden my-6 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-6 transition-all">
         
-        {/* Top Header with PocketBuddy Branding */}
-        <div className="p-5 sm:p-6 bg-[#0d1627] text-white relative border-b border-slate-800">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <BrandLogo size="xs" showWordmark={true} tagline={false} variant="dark" />
-            <div className="text-[11px] font-semibold text-slate-400">
-              Personalized Setup
-            </div>
+        {/* Authentic Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
+          <div className="flex items-center justify-between gap-3">
+            <BrandLogo size="xs" showWordmark={true} tagline={false} />
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+              Quick Setup
+            </span>
           </div>
 
-          <p className="text-xs text-slate-300 mt-2 font-medium">
-            Configure your student wallet and room preferences to get started.
-          </p>
-
-          {/* 4-Step Progress Indicator */}
+          {/* Stepper Progress Bar */}
           {!isReady && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-1.5">
-                <span>Step {step} of 4</span>
-                <span>{step === 1 ? 'Profile' : step === 2 ? 'Budget' : step === 3 ? 'Wallets' : 'Room Setup'}</span>
+            <div className="mt-5">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500 mb-2">
+                <span className="text-slate-900 font-semibold">
+                  Step {step} of 4: <span className="text-indigo-600">{stepTitles[step - 1]?.title}</span>
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal">Takes ~1 min</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              
+              <div className="grid grid-cols-4 gap-1.5">
                 {[1, 2, 3, 4].map((s) => (
                   <div
                     key={s}
-                    className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
                       s === step
-                        ? 'bg-indigo-500 shadow-xs'
+                        ? 'bg-indigo-600'
                         : s < step
-                        ? 'bg-emerald-400'
-                        : 'bg-slate-700'
+                        ? 'bg-slate-800'
+                        : 'bg-slate-200'
                     }`}
                   />
                 ))}
@@ -144,39 +147,44 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
           )}
         </div>
 
-        {/* Modal Body */}
-        <div className="p-5 sm:p-6">
+        {/* Content Body */}
+        <div className="p-6">
           {!isReady ? (
-            <div className="space-y-5">
+            <div className="space-y-6">
+              
               {/* STEP 1: Student Name */}
               {step === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
-                      Step 1 of 4
-                    </span>
-                    <h3 className="text-lg font-black text-slate-900 mt-1">What should PocketBuddy call you?</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Used on your student financial card, expense logs, and shared room split records.
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                      Welcome! What should we call you?
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      Used on your student dashboard, wallet cards, and shared roommate split receipts.
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                      Your Full Name
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Your Name <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <User className="w-4 h-4" />
+                      </div>
                       <input
                         id="setup-step1-name"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter full name"
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                        placeholder="e.g. Rahul Sharma"
+                        className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         autoFocus
                       />
                     </div>
+                    <p className="text-[11px] text-slate-400 mt-1.5">
+                      You can change or add your college details anytime in Settings.
+                    </p>
                   </div>
                 </div>
               )}
@@ -185,152 +193,144 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
-                      Step 2 of 4
-                    </span>
-                    <h3 className="text-lg font-black text-slate-900 mt-1">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
                       Monthly Pocket Money / Budget
                     </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Enter the monthly budget you receive from family, stipend, or personal earnings.
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      How much budget or allowance do you receive per month to spend?
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                      Monthly Budget Limit (₹)
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Monthly Allowance (₹)
                     </label>
                     <div className="relative">
-                      <IndianRupee className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">
+                        ₹
+                      </div>
                       <input
                         id="setup-step2-allowance"
                         type="number"
                         min="0"
                         value={allowance}
                         onChange={(e) => setAllowance(e.target.value)}
-                        placeholder="Enter monthly budget (₹)"
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                        placeholder="Enter monthly budget (e.g. 5000)"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         autoFocus
                       />
                     </div>
-                    
-                    {/* Realistic Quick Suggestion Chips */}
-                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] font-medium text-slate-400 mr-1">Quick Select:</span>
-                      {allowanceSuggestions.map((amt) => (
+
+                    {/* Quick Select Pills */}
+                    <div className="mt-3">
+                      <div className="text-[11px] font-medium text-slate-500 mb-1.5">Common student budgets:</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {allowanceSuggestions.map((amt) => (
+                          <button
+                            key={amt}
+                            type="button"
+                            onClick={() => setAllowance(amt.toString())}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                              allowance === amt.toString()
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                            }`}
+                          >
+                            ₹{amt.toLocaleString('en-IN')}
+                          </button>
+                        ))}
                         <button
-                          key={amt}
                           type="button"
-                          onClick={() => setAllowance(amt.toString())}
-                          className={`px-2.5 py-1 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                            allowance === amt.toString()
-                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          onClick={() => setAllowance('0')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                            allowance === '0'
+                              ? 'bg-slate-800 text-white border-slate-800'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                           }`}
                         >
-                          ₹{amt.toLocaleString('en-IN')}
+                          No Fixed Limit
                         </button>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setAllowance('0')}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                          allowance === '0'
-                            ? 'bg-slate-800 text-white border-slate-800'
-                            : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        No Fixed Limit
-                      </button>
+                      </div>
                     </div>
-
-                    <p className="text-[11px] text-slate-400 mt-2">
-                      Set to 0 if you prefer open tracking without a fixed monthly spending limit.
-                    </p>
                   </div>
                 </div>
               )}
 
-              {/* STEP 3: Real Starting Balances */}
+              {/* STEP 3: Current Starting Balances (Cash & UPI Only, NO Bank Savings Account) */}
               {step === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
-                      Step 3 of 4
-                    </span>
-                    <h3 className="text-lg font-black text-slate-900 mt-1">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
                       Current Starting Balances
                     </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Enter what you currently have so your wallet balances reflect reality from Day 1.
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      Enter what you currently have in hand. We'll set these up as your Day 1 wallet balances.
                     </p>
                   </div>
 
-                  <div className="space-y-3">
-                    {/* Cash */}
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                      <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1.5">
-                        <div className="w-5 h-5 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
-                          <Banknote className="w-3.5 h-3.5" />
-                        </div>
-                        <span>Cash in Pocket / Physical Wallet (₹)</span>
+                  <div className="space-y-3.5">
+                    {/* Cash in Hand */}
+                    <div>
+                      <label className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5">
+                        <span className="flex items-center gap-1.5">
+                          <Banknote className="w-4 h-4 text-emerald-600" />
+                          <span>Cash in Pocket / Physical Wallet</span>
+                        </span>
+                        <span className="text-[11px] font-normal text-slate-400">Notes & Coins</span>
                       </label>
-                      <input
-                        id="setup-step3-cash"
-                        type="number"
-                        min="0"
-                        value={cash}
-                        onChange={(e) => setCash(e.target.value)}
-                        placeholder="Enter cash amount"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
-                      />
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">
+                          ₹
+                        </div>
+                        <input
+                          id="setup-step3-cash"
+                          type="number"
+                          min="0"
+                          value={cash}
+                          onChange={(e) => setCash(e.target.value)}
+                          placeholder="0"
+                          className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                          autoFocus
+                        />
+                      </div>
                     </div>
 
-                    {/* UPI */}
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                      <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1.5">
-                        <div className="w-5 h-5 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700">
-                          <Smartphone className="w-3.5 h-3.5" />
-                        </div>
-                        <span>UPI Balance (GPay, PhonePe, Paytm) (₹)</span>
+                    {/* UPI Balance */}
+                    <div>
+                      <label className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5">
+                        <span className="flex items-center gap-1.5">
+                          <Smartphone className="w-4 h-4 text-indigo-600" />
+                          <span>UPI Apps Balance</span>
+                        </span>
+                        <span className="text-[11px] font-normal text-slate-400">GPay, PhonePe, Paytm</span>
                       </label>
-                      <input
-                        id="setup-step3-upi"
-                        type="number"
-                        min="0"
-                        value={upi}
-                        onChange={(e) => setUpi(e.target.value)}
-                        placeholder="Enter UPI balance"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
-                      />
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">
+                          ₹
+                        </div>
+                        <input
+                          id="setup-step3-upi"
+                          type="number"
+                          min="0"
+                          value={upi}
+                          onChange={(e) => setUpi(e.target.value)}
+                          placeholder="0"
+                          className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        />
+                      </div>
                     </div>
 
-                    {/* Bank */}
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                      <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1.5">
-                        <div className="w-5 h-5 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
-                          <Landmark className="w-3.5 h-3.5" />
-                        </div>
-                        <span>Bank Savings Account (₹)</span>
-                      </label>
-                      <input
-                        id="setup-step3-bank"
-                        type="number"
-                        min="0"
-                        value={bank}
-                        onChange={(e) => setBank(e.target.value)}
-                        placeholder="Enter bank savings balance"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
-                      />
-                    </div>
-
-                    {/* Total Real-time Badge */}
-                    <div className="flex items-center justify-between px-3 py-2 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs font-bold text-indigo-900">
-                      <span>Total Starting Balance:</span>
-                      <span className="text-sm font-black text-indigo-700">
+                    {/* Total Real-time Starting Balance Bar */}
+                    <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                      <span className="font-medium text-slate-600">Total Starting Money:</span>
+                      <span className="font-bold text-sm text-slate-900">
                         {formatINR(totalStartingBalance)}
                       </span>
                     </div>
+
+                    <p className="text-[11px] text-slate-400">
+                      You can add or update your balances anytime from the Wallets section.
+                    </p>
                   </div>
                 </div>
               )}
@@ -339,14 +339,11 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
               {step === 4 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
-                      Step 4 of 4
-                    </span>
-                    <h3 className="text-lg font-black text-slate-900 mt-1">
-                      What is your living situation?
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                      Living Arrangement
                     </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      PocketBuddy supports both personal finance and shared roommate bill splitting.
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      Are you living independently or sharing expenses with roommates?
                     </p>
                   </div>
 
@@ -355,13 +352,13 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                       id="setup-living-alone"
                       type="button"
                       onClick={() => setLivingSituation('alone')}
-                      className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
+                      className={`p-3.5 rounded-xl border text-left transition cursor-pointer ${
                         livingSituation === 'alone'
-                          ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-500/20'
-                          : 'border-slate-200 bg-slate-50 hover:bg-white'
+                          ? 'border-indigo-600 bg-indigo-50/60 ring-1 ring-indigo-600'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
-                      <User className="w-6 h-6 text-indigo-600 mb-2" />
+                      <User className={`w-5 h-5 mb-2 ${livingSituation === 'alone' ? 'text-indigo-600' : 'text-slate-500'}`} />
                       <div className="text-xs font-bold text-slate-900">Living Alone</div>
                       <div className="text-[11px] text-slate-500 mt-0.5">Single room or hostel</div>
                     </button>
@@ -370,33 +367,29 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                       id="setup-living-roommates"
                       type="button"
                       onClick={() => setLivingSituation('roommates')}
-                      className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
+                      className={`p-3.5 rounded-xl border text-left transition cursor-pointer ${
                         livingSituation === 'roommates'
-                          ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-500/20'
-                          : 'border-slate-200 bg-slate-50 hover:bg-white'
+                          ? 'border-indigo-600 bg-indigo-50/60 ring-1 ring-indigo-600'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
-                      <Users className="w-6 h-6 text-indigo-600 mb-2" />
+                      <Users className={`w-5 h-5 mb-2 ${livingSituation === 'roommates' ? 'text-indigo-600' : 'text-slate-500'}`} />
                       <div className="text-xs font-bold text-slate-900">With Roommates</div>
                       <div className="text-[11px] text-slate-500 mt-0.5">Shared flat or PG</div>
                     </button>
                   </div>
 
-                  {/* Roommates sub-options */}
+                  {/* Roommates Sub-options */}
                   {livingSituation === 'roommates' && (
-                    <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-3">
-                      <p className="text-xs font-bold text-indigo-950">
-                        Select room option:
-                      </p>
-
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                       <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={() => setRoomChoice('create')}
-                          className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
                             roomChoice === 'create'
-                              ? 'bg-indigo-600 text-white shadow-xs'
-                              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                              ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
+                              : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           Create New Room
@@ -404,10 +397,10 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                         <button
                           type="button"
                           onClick={() => setRoomChoice('join')}
-                          className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
                             roomChoice === 'join'
-                              ? 'bg-indigo-600 text-white shadow-xs'
-                              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                              ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
+                              : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           Join with Code
@@ -416,7 +409,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
 
                       {roomChoice === 'create' ? (
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                             Room or Flat Name
                           </label>
                           <input
@@ -424,22 +417,22 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                             type="text"
                             value={roomName}
                             onChange={(e) => setRoomName(e.target.value)}
-                            placeholder="Enter room or PG name"
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                            placeholder="e.g. Flat 302 or Ganga Hostel"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
                           />
                         </div>
                       ) : (
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Room Invite Code
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            6-Digit Invite Code
                           </label>
                           <input
                             id="setup-join-room-code"
                             type="text"
                             value={inviteCode}
                             onChange={(e) => setInviteCode(e.target.value)}
-                            placeholder="Enter 6-digit room code"
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 uppercase tracking-wider transition-all"
+                            placeholder="e.g. ROOM42"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 uppercase tracking-wider transition-all"
                           />
                         </div>
                       )}
@@ -448,14 +441,14 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                 </div>
               )}
 
-              {/* Navigation controls */}
+              {/* Navigation Controls */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 {step > 1 ? (
                   <button
                     id="setup-back-btn"
                     type="button"
                     onClick={handleBack}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>
@@ -468,7 +461,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                   id="setup-next-btn"
                   type="button"
                   onClick={handleNext}
-                  className="flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white text-xs font-semibold transition cursor-pointer"
                 >
                   <span>{step === 4 ? 'Review & Finish' : 'Next'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -476,60 +469,70 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
               </div>
             </div>
           ) : (
-            /* READY SCREEN */
-            <div className="text-center py-4 space-y-4 animate-fade-in">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center mx-auto shadow-xs">
-                <CheckCircle2 className="w-7 h-7" />
-              </div>
-
-              <div>
-                <h3 className="text-xl font-black text-slate-900">Your PocketBuddy is ready.</h3>
+            /* READY CONFIRMATION SCREEN */
+            <div className="py-2 space-y-5">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Your PocketBuddy is ready</h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  Your personalized student workspace is configured. Track your expenses, manage balances, and split room bills seamlessly.
+                  Your personalized student workspace has been set up with the following preferences:
                 </p>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 text-left text-xs space-y-2.5 max-w-md mx-auto">
-                <div className="flex justify-between items-center">
+              <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-xs space-y-2.5">
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
                   <span className="text-slate-500 font-medium">Student Name:</span>
-                  <span className="font-bold text-slate-900">{name || initialName || 'You'}</span>
+                  <span className="font-semibold text-slate-900">{name || initialName || 'You'}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
                   <span className="text-slate-500 font-medium">Monthly Budget:</span>
-                  <span className="font-bold text-slate-900">{formatINR(parseFloat(allowance) || 0)}</span>
+                  <span className="font-semibold text-slate-900">{formatINR(parseFloat(allowance) || 0)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500 font-medium">Starting Total Balances:</span>
-                  <span className="font-bold text-emerald-600">
-                    {formatINR(totalStartingBalance)}
-                  </span>
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                  <span className="text-slate-500 font-medium">Cash in Pocket:</span>
+                  <span className="font-semibold text-slate-900">{formatINR(parseFloat(cash) || 0)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500 font-medium">Living Arrangement:</span>
-                  <span className="font-bold text-slate-900">
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                  <span className="text-slate-500 font-medium">UPI Balance:</span>
+                  <span className="font-semibold text-slate-900">{formatINR(parseFloat(upi) || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-slate-500 font-medium">Living Setup:</span>
+                  <span className="font-semibold text-slate-900">
                     {livingSituation === 'alone'
                       ? 'Living Alone'
-                      : `Roommates (${roomChoice === 'create' ? roomName || 'New Room' : 'Join with Code'})`}
+                      : `With Roommates (${roomChoice === 'create' ? roomName || 'New Room' : 'Join with Code'})`}
                   </span>
                 </div>
               </div>
 
-              <button
-                id="setup-open-dashboard-btn"
-                type="button"
-                onClick={handleFinish}
-                disabled={isSubmitting}
-                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm shadow-lg shadow-indigo-500/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <span>Opening Your Dashboard...</span>
-                ) : (
-                  <>
-                    <span>Open Main Dashboard</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsReady(false)}
+                  className="px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
+                >
+                  Edit
+                </button>
+                <button
+                  id="setup-open-dashboard-btn"
+                  type="button"
+                  onClick={handleFinish}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 shadow-xs"
+                >
+                  {isSubmitting ? (
+                    <span>Opening Dashboard...</span>
+                  ) : (
+                    <>
+                      <span>Open Main Dashboard</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
         </div>

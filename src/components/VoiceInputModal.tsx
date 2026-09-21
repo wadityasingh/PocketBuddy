@@ -19,6 +19,7 @@ interface VoiceInputModalProps {
   onClose: () => void;
   onAddTransaction: (transaction: Omit<Transaction, 'id'>) => boolean | void;
   wallets?: WalletBalances;
+  availableBalances?: { cash: number; upi: number };
 }
 
 // Convert common spoken number words into numbers
@@ -237,6 +238,7 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
   onClose,
   onAddTransaction,
   wallets,
+  availableBalances,
 }) => {
   const [permissionChoice, setPermissionChoice] = useState<'always' | 'once' | 'denied' | 'pending'>(() => {
     if (typeof window !== 'undefined') {
@@ -260,8 +262,8 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
     category: ExpenseCategory;
   } | null>(null);
 
-  const availableCash = wallets?.cash ?? 0;
-  const availableUpi = wallets?.upi ?? 0;
+  const availableCash = availableBalances ? availableBalances.cash : (wallets?.cash ?? 0);
+  const availableUpi = availableBalances ? availableBalances.upi : (wallets?.upi ?? 0);
   const currentAvailable = parsedItem?.paymentMode === 'Cash' ? availableCash : availableUpi;
   const isInsufficient = Boolean(parsedItem && parsedItem.amount > currentAvailable);
 

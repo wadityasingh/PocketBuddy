@@ -21,6 +21,7 @@ interface ManualExpenseModalProps {
   editingTransaction?: Transaction | null;
   onUpdateTransaction?: (transaction: Transaction) => boolean | void;
   wallets?: WalletBalances;
+  availableBalances?: { cash: number; upi: number };
 }
 
 export const ManualExpenseModal: React.FC<ManualExpenseModalProps> = ({
@@ -30,6 +31,7 @@ export const ManualExpenseModal: React.FC<ManualExpenseModalProps> = ({
   editingTransaction,
   onUpdateTransaction,
   wallets,
+  availableBalances,
 }) => {
   const getTodayString = () => new Date().toISOString().split('T')[0];
 
@@ -61,8 +63,11 @@ export const ManualExpenseModal: React.FC<ManualExpenseModalProps> = ({
 
   const numAmount = parseFloat(amount) || 0;
 
-  // Real-time Available Balances (Cash & UPI)
-  const availableCash = (wallets?.cash ?? 0) + (
+  // Real-time Available Balances (Cash & UPI remaining after expenses)
+  const baseCash = availableBalances ? availableBalances.cash : (wallets?.cash ?? 0);
+  const baseUpi = availableBalances ? availableBalances.upi : (wallets?.upi ?? 0);
+
+  const availableCash = baseCash + (
     editingTransaction &&
     (editingTransaction.type === 'expense' || editingTransaction.type === 'lent') &&
     editingTransaction.paymentMode === 'Cash'
@@ -70,7 +75,7 @@ export const ManualExpenseModal: React.FC<ManualExpenseModalProps> = ({
       : 0
   );
 
-  const availableUpi = (wallets?.upi ?? 0) + (
+  const availableUpi = baseUpi + (
     editingTransaction &&
     (editingTransaction.type === 'expense' || editingTransaction.type === 'lent') &&
     editingTransaction.paymentMode === 'UPI'

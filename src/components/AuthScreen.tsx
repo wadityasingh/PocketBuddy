@@ -242,21 +242,57 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
     const cleanName = fullName.trim();
     const cleanEmail = regEmail.trim().toLowerCase();
-    const cleanPhone = regPhone.trim();
-    const normPhone = normalizePhone(cleanPhone);
+    const rawPhone = regPhone;
+    const cleanPhone = rawPhone.trim();
 
     if (!cleanName || cleanName.length < 2) {
       errors.fullName = 'Please enter your full name.';
     }
 
-    if (!cleanEmail && !cleanPhone) {
-      errors.regEmail = 'Please provide an email or 10-digit mobile number.';
-    } else if (cleanEmail && !cleanEmail.includes('@')) {
-      errors.regEmail = 'Please enter a valid email address.';
+    // Email validation:
+    // Accept ONLY a valid real-format email address (e.g. student@gmail.com).
+    // Reject incomplete/invalid formats such as student@, student@gmail, @gmail.com.
+    // Trim unnecessary spaces and validate the email before account creation.
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+    if (!cleanEmail) {
+      errors.regEmail = 'Please enter your email address.';
+    } else if (/\s/.test(cleanEmail) || !emailRegex.test(cleanEmail)) {
+      errors.regEmail = 'Please enter a valid email address (e.g. student@gmail.com).';
+    } else {
+      const parts = cleanEmail.split('@');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        errors.regEmail = 'Please enter a valid email address (e.g. student@gmail.com).';
+      } else {
+        const [localPart, domainPart] = parts;
+        if (
+          localPart.startsWith('.') ||
+          localPart.endsWith('.') ||
+          localPart.includes('..') ||
+          domainPart.startsWith('.') ||
+          domainPart.endsWith('.') ||
+          domainPart.includes('..') ||
+          !domainPart.includes('.')
+        ) {
+          errors.regEmail = 'Please enter a valid email address (e.g. student@gmail.com).';
+        }
+      }
     }
 
-    if (cleanPhone && normPhone.length < 10) {
-      errors.regPhone = 'Please enter a valid 10-digit mobile number.';
+    // Mobile Number validation:
+    // Accept ONLY a valid Indian 10-digit mobile number.
+    // Allow exactly 10 digits, starting with 6, 7, 8, or 9.
+    // Do not allow letters, spaces, symbols, or fewer/more than 10 digits.
+    // Show a clear error message if the number is invalid.
+    if (!cleanPhone) {
+      errors.regPhone = 'Please enter your 10-digit mobile number.';
+    } else if (/[^0-9]/.test(rawPhone)) {
+      errors.regPhone = 'Mobile number cannot contain letters, spaces, or symbols.';
+    } else if (cleanPhone.length !== 10) {
+      errors.regPhone = 'Mobile number must be exactly 10 digits.';
+    } else if (!/^[6-9]/.test(cleanPhone)) {
+      errors.regPhone = 'Mobile number must start with 6, 7, 8, or 9.';
+    } else if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      errors.regPhone = 'Please enter a valid 10-digit Indian mobile number.';
     }
 
     if (!regPassword || regPassword.length < 6) {
@@ -278,8 +314,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     setFieldErrors({});
     setLoading(true);
 
-    const finalEmail = cleanEmail || `${normPhone || 'student'}@student.pocketbuddy`;
-    const finalPhone = cleanPhone || undefined;
+    const finalEmail = cleanEmail;
+    const finalPhone = cleanPhone;
 
     try {
       // 1. Register with backend server
@@ -731,7 +767,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     id="auth-reg-name"
                     type="text"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      if (fieldErrors.fullName) {
+                        setFieldErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.fullName;
+                          return next;
+                        });
+                      }
+                    }}
                     placeholder="Enter full name"
                     className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
                       fieldErrors.fullName ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
@@ -739,14 +784,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   />
                 </div>
                 {fieldErrors.fullName && (
-                  <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.fullName}</p>
+                  <p id="auth-reg-name-error" className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.fullName}</p>
                 )}
               </div>
 
               {/* Email Address */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Email Address
+                  Email Address <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -756,22 +801,31 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     id="auth-reg-email"
                     type="email"
                     value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="Enter email address"
+                    onChange={(e) => {
+                      setRegEmail(e.target.value);
+                      if (fieldErrors.regEmail) {
+                        setFieldErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.regEmail;
+                          return next;
+                        });
+                      }
+                    }}
+                    placeholder="student@gmail.com"
                     className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
                       fieldErrors.regEmail ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
                     }`}
                   />
                 </div>
                 {fieldErrors.regEmail && (
-                  <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.regEmail}</p>
+                  <p id="auth-reg-email-error" className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.regEmail}</p>
                 )}
               </div>
 
               {/* Mobile Number */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Mobile Number <span className="text-[10px] text-indigo-600 font-semibold">(For fast Phone Login)</span>
+                  Mobile Number <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -781,7 +835,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     id="auth-reg-phone"
                     type="tel"
                     value={regPhone}
-                    onChange={(e) => setRegPhone(e.target.value)}
+                    onChange={(e) => {
+                      setRegPhone(e.target.value);
+                      if (fieldErrors.regPhone) {
+                        setFieldErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.regPhone;
+                          return next;
+                        });
+                      }
+                    }}
                     placeholder="Enter 10-digit mobile number"
                     className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
                       fieldErrors.regPhone ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
@@ -789,7 +852,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   />
                 </div>
                 {fieldErrors.regPhone && (
-                  <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.regPhone}</p>
+                  <p id="auth-reg-phone-error" className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.regPhone}</p>
                 )}
               </div>
 
@@ -806,7 +869,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     id="auth-reg-password"
                     type={showRegPassword ? 'text' : 'password'}
                     value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
+                    onChange={(e) => {
+                      setRegPassword(e.target.value);
+                      if (fieldErrors.regPassword) {
+                        setFieldErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.regPassword;
+                          return next;
+                        });
+                      }
+                    }}
                     placeholder="Create password (min 6 characters)"
                     className={`w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
                       fieldErrors.regPassword ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
@@ -822,7 +894,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   </button>
                 </div>
                 {fieldErrors.regPassword && (
-                  <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.regPassword}</p>
+                  <p id="auth-reg-password-error" className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.regPassword}</p>
                 )}
               </div>
 
@@ -839,7 +911,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     id="auth-reg-confirm-password"
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (fieldErrors.confirmPassword) {
+                        setFieldErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.confirmPassword;
+                          return next;
+                        });
+                      }
+                    }}
                     placeholder="Re-enter password to confirm"
                     className={`w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
                       fieldErrors.confirmPassword ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
@@ -855,7 +936,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   </button>
                 </div>
                 {fieldErrors.confirmPassword && (
-                  <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.confirmPassword}</p>
+                  <p id="auth-reg-confirm-password-error" className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.confirmPassword}</p>
                 )}
               </div>
 
@@ -866,7 +947,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     id="auth-reg-terms-check"
                     type="checkbox"
                     checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
+                    onChange={(e) => {
+                      setAgreeTerms(e.target.checked);
+                      if (fieldErrors.terms) {
+                        setFieldErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.terms;
+                          return next;
+                        });
+                      }
+                    }}
                     className="sr-only"
                   />
                   <div
@@ -881,7 +971,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   </span>
                 </label>
                 {fieldErrors.terms && (
-                  <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.terms}</p>
+                  <p id="auth-reg-terms-error" className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.terms}</p>
                 )}
               </div>
 

@@ -10,6 +10,9 @@ import {
   ShoppingBag,
   Store,
   Wallet,
+  Eye,
+  EyeOff,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Transaction, PaymentMode, ExpenseCategory, WalletBalances } from '../types';
 
@@ -19,6 +22,7 @@ interface ScreenshotScannerModalProps {
   onAddTransaction: (transaction: Omit<Transaction, 'id'>) => boolean | void;
   existingTransactions?: Transaction[];
   wallets?: WalletBalances;
+  availableUpi?: number;
 }
 
 interface ParsedReceiptData {
@@ -114,21 +118,97 @@ const BankUpiLogo: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }
   </svg>
 );
 
+/**
+ * Normalizes and compresses images client-side before sending over network.
+ * Android cameras capture 12MP-48MP photos (4MB-15MB), which can timeout on mobile cellular networks,
+ * hit proxy payload limits, or exhaust server memory.
+ * This helper resizes to max 1600px dimension and outputs a sharp, lightweight JPEG (~200KB)
+ * preserving 100% of OCR legibility for UTR numbers and receipt text.
+ */
+function optimizeImageForMobile(file: File): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read image file from device.'));
+    reader.onload = () => {
+      const rawDataUrl = reader.result as string;
+      if (!rawDataUrl) {
+        return reject(new Error('Selected image file was empty.'));
+      }
+
+      // Check if browser Image loading is available
+      const img = new Image();
+      img.onerror = () => {
+        // Fallback safely to raw data URL if Image element cannot parse
+        const detectedMime =
+          file.type && file.type.startsWith('image/')
+            ? file.type === 'image/jpg' ? 'image/jpeg' : file.type
+            : 'image/jpeg';
+        resolve({ base64: rawDataUrl, mimeType: detectedMime });
+      };
+
+      img.onload = () => {
+        const MAX_DIM = 1600;
+        let width = img.width;
+        let height = img.height;
+
+        // Downscale proportionally if larger than MAX_DIM
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({ base64: rawDataUrl, mimeType: 'image/jpeg' });
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        // Fill white background before drawing, so transparent PNGs/screenshots don't turn into black boxes in JPEG
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to high-quality JPEG (0.90 quality provides razor-sharp text with minimal size ~150-250KB)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        resolve({ base64: compressedDataUrl, mimeType: 'image/jpeg' });
+      };
+
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
   isOpen,
   onClose,
   onAddTransaction,
   existingTransactions = [],
   wallets,
+  availableUpi: propAvailableUpi,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedUtr, setCopiedUtr] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
 
-  // Extracted data
+  // Extracted data or Fallback Manual Mode (Requirement 8)
   const [parsedData, setParsedData] = useState<ParsedReceiptData | null>(null);
+  const [isFallbackManual, setIsFallbackManual] = useState(false);
 
   // User-editable fields
   const [itemPurpose, setItemPurpose] = useState<string>('');
@@ -138,12 +218,12 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
   const [editableTime, setEditableTime] = useState<string>('');
   const [editableUtr, setEditableUtr] = useState<string>('');
 
-  const availableUpi = wallets?.upi ?? 0;
+  const availableUpi = propAvailableUpi !== undefined ? propAvailableUpi : (wallets?.upi ?? 0);
   const isInsufficientUpi = editableAmount > availableUpi;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Clipboard paste (Ctrl+V) support
+  // Clipboard paste (Ctrl+V) support for desktop
   useEffect(() => {
     if (!isOpen) return;
 
@@ -171,6 +251,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
     if (!isOpen) {
       setSelectedImage(null);
       setParsedData(null);
+      setIsFallbackManual(false);
       setError(null);
       setIsAnalyzing(false);
       setItemPurpose('');
@@ -179,25 +260,49 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
       setEditableUtr('');
       setEditableDate('');
       setEditableTime('');
+      setIsPreviewExpanded(false);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  // Process uploaded image file
-  const processFile = (file: File) => {
-    if (!file.type.startsWith('image/')) {
+  // Process uploaded image file with robust Android / mobile validation
+  const processFile = async (file: File) => {
+    if (!file) {
+      setError('No file selected. Please choose a receipt image.');
+      return;
+    }
+
+    // Android gallery/camera files may have empty or generic MIME types
+    const fileName = (file.name || '').toLowerCase();
+    const isImageMime = Boolean(file.type && file.type.startsWith('image/'));
+    const isImageExt = /\.(png|jpe?g|webp|bmp|heic|heif|jfif)$/i.test(fileName);
+    const isGenericMime = !file.type || file.type === 'application/octet-stream' || file.type === 'binary/octet-stream';
+
+    if (!isImageMime && !isImageExt && !isGenericMime) {
       setError('Please upload a valid image file (PNG, JPG, or WEBP).');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
+    // Safety guard against massive corrupt files
+    if (file.size > 25 * 1024 * 1024) {
+      setError('File is too large (>25MB). Please upload a standard receipt screenshot or photo.');
+      return;
+    }
+
+    setError(null);
+    setIsAnalyzing(true);
+
+    try {
+      // Optimize image client-side to ensure smooth mobile network upload
+      const { base64, mimeType } = await optimizeImageForMobile(file);
       setSelectedImage(base64);
-      analyzeScreenshot(base64, file.type || 'image/jpeg');
-    };
-    reader.readAsDataURL(file);
+      await analyzeScreenshot(base64, mimeType);
+    } catch (err: any) {
+      console.error('Mobile image processing error:', err);
+      setError(err?.message || 'Could not process the selected image. Please try again.');
+      setIsAnalyzing(false);
+    }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,6 +310,8 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
     if (file) {
       processFile(file);
     }
+    // Crucial for Android Chrome: Reset input value so selecting the same file triggers onChange
+    e.target.value = '';
   };
 
   // Drag & drop handlers
@@ -231,7 +338,10 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
   const analyzeScreenshot = async (base64Image: string, mime: string) => {
     setIsAnalyzing(true);
     setError(null);
-    setParsedData(null);
+
+    const controller = new AbortController();
+    // 45s timeout to gracefully absorb Render cold-start delays & mobile network upload
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     try {
       const response = await fetch('/api/ai/parse-screenshot', {
@@ -241,21 +351,41 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
           imageBase64: base64Image,
           mimeType: mime,
         }),
+        signal: controller.signal,
       });
 
-      const resData = await response.json();
+      clearTimeout(timeoutId);
+
+      let resData: any = null;
+      try {
+        resData = await response.json();
+      } catch {
+        resData = {
+          success: false,
+          error: `Server responded with status ${response.status}. You can enter details manually below.`,
+          fallbackAllowed: true,
+        };
+      }
 
       if (!response.ok || !resData.success || !resData.isRealPaymentReceipt) {
-        setError(
+        const errorMsg =
           resData.error ||
-            'Invalid or unreadable payment receipt. Please upload an authentic UPI confirmation screenshot.'
+          'AI Vision could not verify this receipt automatically. You can enter details manually below.';
+        setError(errorMsg);
+
+        // MOBILE FALLBACK (Requirement 8):
+        // Keep the uploaded receipt image available, populate default manual fields, and let user proceed!
+        setIsFallbackManual(true);
+        setEditableDate(new Date().toISOString().split('T')[0]);
+        setEditableTime(
+          new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         );
-        setIsAnalyzing(false);
         return;
       }
 
       const data: ParsedReceiptData = resData.data;
       setParsedData(data);
+      setIsFallbackManual(false);
       setEditableAmount(data.amount || 0);
       setEditablePayee(data.payee || 'Merchant');
       setEditableUtr(data.utr || data.transactionId || '');
@@ -266,8 +396,25 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
           new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       );
     } catch (err: any) {
-      console.error(err);
-      setError('Unable to parse receipt. Please verify image and try again.');
+      clearTimeout(timeoutId);
+      console.error('Receipt verification error:', err);
+
+      let friendlyError =
+        'AI verification service encountered a network issue. Your receipt is attached — please enter amount & payee manually below.';
+      if (err.name === 'AbortError') {
+        friendlyError =
+          'Request timed out while waiting for server. Your receipt is saved — please enter amount & payee manually below.';
+      }
+
+      setError(friendlyError);
+
+      // MOBILE FALLBACK (Requirement 8):
+      // Keep receipt image and show manual entry fields so user is never blocked
+      setIsFallbackManual(true);
+      setEditableDate(new Date().toISOString().split('T')[0]);
+      setEditableTime(
+        new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -275,11 +422,11 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
 
   // Duplicate check
   const duplicateTx =
-    parsedData && (editableUtr || parsedData.utr)
+    (parsedData || isFallbackManual) && (editableUtr || parsedData?.utr)
       ? existingTransactions.find(
           (t) =>
             (editableUtr && t.refId === editableUtr) ||
-            (parsedData.utr && t.refId === parsedData.utr)
+            (parsedData?.utr && t.refId === parsedData.utr)
         )
       : undefined;
 
@@ -341,6 +488,8 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
     onClose();
   };
 
+  const showDetailForm = Boolean(parsedData || isFallbackManual);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-fade-in">
       <div
@@ -371,20 +520,20 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-5 overflow-y-auto space-y-4">
-          {/* Small, Compact Error Notification */}
+          {/* Notification / Error Banner */}
           {error && (
             <div
               id="scanner-compact-error"
-              className="px-3.5 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-2 animate-fade-in"
+              className="px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-2 animate-fade-in"
             >
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span className="font-medium leading-tight">{error}</span>
               </div>
               <button
                 type="button"
                 onClick={() => setError(null)}
-                className="text-rose-500 hover:text-rose-800 shrink-0 cursor-pointer"
+                className="text-amber-500 hover:text-amber-800 shrink-0 cursor-pointer"
                 title="Dismiss"
               >
                 <X className="w-3.5 h-3.5" />
@@ -392,26 +541,28 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
             </div>
           )}
 
-          {/* Upload Dropzone (When not yet parsed or to re-upload) */}
-          {!parsedData && (
+          {/* Upload Dropzone (When not yet uploaded) */}
+          {!showDetailForm && (
             <div className="space-y-3">
-              <div
+              <label
+                htmlFor="upi-screenshot-input"
                 id="upi-screenshot-dropzone"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-7 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3 ${
+                className={`border-2 border-dashed rounded-2xl p-7 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3 block ${
                   isDragOver
                     ? 'border-indigo-500 bg-indigo-50/50'
-                    : 'border-slate-300 hover:border-slate-400 bg-slate-50/70 hover:bg-slate-50'
+                    : 'border-slate-300 hover:border-slate-400 bg-slate-50/70 hover:bg-slate-50 active:bg-slate-100'
                 }`}
               >
                 <input
+                  id="upi-screenshot-input"
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
-                  className="hidden"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/*"
+                  className="sr-only"
                   onChange={handleFileInputChange}
                 />
                 <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center text-slate-700">
@@ -419,13 +570,13 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-slate-800">
-                    Click to upload receipt, or drag & drop image
+                    Tap to upload receipt from Gallery or Camera
                   </p>
                   <p className="text-xs text-slate-400">
-                    PNG, JPG, or WEBP • You can also press <kbd className="font-mono text-[11px] bg-white border border-slate-200 px-1 py-0.5 rounded text-slate-600">Ctrl+V</kbd> to paste
+                    PNG, JPG, or WEBP • Auto-compressed for mobile
                   </p>
                 </div>
-              </div>
+              </label>
 
               {/* Supported UPI Providers with Authentic Logos */}
               <div className="pt-1">
@@ -476,17 +627,75 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
             >
               <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
               <div className="text-xs font-semibold text-slate-200">
-                Extracting receipt details...
+                Verifying and extracting receipt details...
               </div>
             </div>
           )}
 
-          {/* Extracted Details & User Edit Section */}
-          {parsedData && (
+          {/* Extracted Details & User Edit Section (Also acts as Mobile Fallback) */}
+          {showDetailForm && (
             <div
               id="verified-receipt-details-card"
               className="space-y-4 animate-fade-in"
             >
+              {/* Receipt Preview Thumbnail (Requirement 8: Keep image available) */}
+              {selectedImage && (
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-indigo-600" />
+                      <span className="text-xs font-bold text-slate-800">
+                        {isFallbackManual ? 'Attached Receipt (Manual Verification)' : 'Verified UPI Receipt'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsPreviewExpanded(!isPreviewExpanded)}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded-md shadow-2xs cursor-pointer"
+                      >
+                        {isPreviewExpanded ? (
+                          <>
+                            <EyeOff className="w-3 h-3 text-slate-500" />
+                            <span>Collapse</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3 h-3 text-indigo-600" />
+                            <span>View Image</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setParsedData(null);
+                          setIsFallbackManual(false);
+                          setSelectedImage(null);
+                          setError(null);
+                        }}
+                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Expandable Image Preview */}
+                  {isPreviewExpanded && (
+                    <div className="mt-1 rounded-lg overflow-hidden border border-slate-200 bg-slate-900/5 max-h-64 flex items-center justify-center">
+                      <img
+                        src={selectedImage}
+                        alt="Receipt preview"
+                        className="max-h-64 object-contain rounded-lg"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Duplicate Receipt Notice if applicable */}
               {duplicateTx && (
                 <div
@@ -520,24 +729,16 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                 />
               </div>
 
-              {/* Extracted Editable Details Grid */}
+              {/* Extracted / Editable Details Grid */}
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between text-xs pb-1 border-b border-slate-200">
                   <span className="font-bold text-slate-700 flex items-center gap-1.5">
                     <Store className="w-3.5 h-3.5 text-slate-500" />
                     <span>Transaction Details</span>
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setParsedData(null);
-                      setSelectedImage(null);
-                      setError(null);
-                    }}
-                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer"
-                  >
-                    Change Image
-                  </button>
+                  <span className="text-[11px] text-slate-400">
+                    {parsedData?.appDetected ? `${parsedData.appDetected} Verified` : 'UPI Payment'}
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5 text-xs">
@@ -551,6 +752,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                       type="text"
                       value={editablePayee}
                       onChange={(e) => setEditablePayee(e.target.value)}
+                      placeholder="e.g. Ramu Kirana, Zomato"
                       className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                     />
                   </div>
@@ -568,6 +770,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                         step="any"
                         value={editableAmount || ''}
                         onChange={(e) => setEditableAmount(parseFloat(e.target.value) || 0)}
+                        placeholder="0"
                         className="w-full bg-white border border-slate-300 rounded-lg pl-6 pr-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                       />
                     </div>
@@ -586,12 +789,27 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                       className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                     />
                   </div>
+
+                  {/* Time (Optional) */}
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                      Time
+                    </label>
+                    <input
+                      id="receipt-time-input"
+                      type="text"
+                      value={editableTime}
+                      onChange={(e) => setEditableTime(e.target.value)}
+                      placeholder="e.g. 10:30 PM"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                  </div>
                 </div>
 
                 {/* UTR / Ref ID */}
                 <div>
                   <label className="text-[11px] font-medium text-slate-500 block mb-1">
-                    UPI Reference / UTR
+                    UPI Reference / UTR (Optional)
                   </label>
                   <div className="relative flex items-center">
                     <input
@@ -599,7 +817,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                       type="text"
                       value={editableUtr}
                       onChange={(e) => setEditableUtr(e.target.value)}
-                      placeholder="UTR or Transaction Ref"
+                      placeholder="12-digit UTR or Transaction Ref"
                       className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-mono font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900"
                     />
                     {editableUtr && (
@@ -665,7 +883,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
           )}
 
           {/* Footer cancel when not parsed */}
-          {!parsedData && (
+          {!showDetailForm && (
             <div className="pt-1 flex items-center justify-end">
               <button
                 type="button"
@@ -682,3 +900,4 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
     </div>
   );
 };
+

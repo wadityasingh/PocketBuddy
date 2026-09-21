@@ -11,7 +11,8 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.use(express.json({ limit: "15mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Robust CORS Middleware for Iframe, Localhost, and Cross-Origin Previews
 app.use((req, res, next) => {
@@ -764,6 +765,45 @@ const handleSaveUserData = (req: any, res: any) => {
 
 app.post("/api/user/data", handleSaveUserData);
 app.put("/api/user/data", handleSaveUserData);
+
+// Update user profile details
+const handleUpdateUserProfile = (req: any, res: any) => {
+  const user = getAuthUser(req);
+  if (!user) {
+    return res.status(401).json({ success: false, error: "Not logged in" });
+  }
+
+  const { name, collegeName, course, branch, upiId, roomSplit, photoUrl } = req.body || {};
+  const users = loadUsers();
+  const idx = users.findIndex((u) => u.id === user.id);
+
+  if (idx !== -1) {
+    if (name) users[idx].name = String(name).trim();
+    if (collegeName !== undefined) users[idx].collegeName = String(collegeName).trim();
+    if (course !== undefined) users[idx].course = String(course).trim();
+    if (branch !== undefined) (users[idx] as any).branch = String(branch).trim();
+    if (upiId !== undefined) users[idx].upiId = String(upiId).trim();
+    if (roomSplit !== undefined) (users[idx] as any).roomSplit = String(roomSplit).trim();
+    if (photoUrl !== undefined) users[idx].photoUrl = String(photoUrl).trim();
+
+    saveUsers(users);
+
+    // Sync with user's stored data
+    const currentData = loadUserData(user.id);
+    if (currentData) {
+      if (name) currentData.userName = String(name).trim();
+      saveUserData(user.id, currentData);
+    }
+
+    const { passwordHash, ...safeUser } = users[idx];
+    return res.json({ success: true, user: safeUser });
+  }
+
+  return res.status(404).json({ success: false, error: "User not found" });
+};
+
+app.put("/api/user/profile", handleUpdateUserProfile);
+app.post("/api/user/profile", handleUpdateUserProfile);
 
 // Mark tour completed
 app.post("/api/user/complete-tour", (req, res) => {
@@ -2228,9 +2268,18 @@ app.post("/api/rooms/:roomId/leave", (req, res) => {
 
 // Lazy get Gemini client
 function getGeminiClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const rawKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY ||
+    process.env.VITE_GEMINI_API_KEY;
+
+  if (!rawKey) {
     console.warn("GEMINI_API_KEY is not set in environment");
+    return null;
+  }
+  const apiKey = rawKey.trim().replace(/^["']|["']$/g, "");
+  if (!apiKey) {
     return null;
   }
   return new GoogleGenAI({
@@ -2243,12 +2292,15 @@ function getGeminiClient(): GoogleGenAI | null {
   });
 }
 
-// Resilient Gemini runner: tries gemini-3.1-flash-lite first for ultra-fast latency (~1s), falls back to gemini-3.8-flash
+// Resilient Gemini runner: defaults to gemini-3.8-flash for multimodal vision and general reasoning, falls back to gemini-flash-latest
 async function callGeminiWithFallback<T>(
   ai: GoogleGenAI,
-  callFn: (modelName: string) => Promise<T>
+  callFn: (modelName: string) => Promise<T>,
+  preferredModels?: string[]
 ): Promise<T> {
-  const models = ["gemini-3.1-flash-lite", "gemini-3.8-flash"];
+  const models = preferredModels && preferredModels.length > 0
+    ? preferredModels
+    : ["gemini-3.8-flash", "gemini-flash-latest"];
   let lastError: any = null;
 
   for (let i = 0; i < models.length; i++) {
@@ -2369,29 +2421,65 @@ function generateFallbackCoachingData(studentState: any, userQuestion?: string) 
 
 // Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", geminiAvailable: Boolean(process.env.GEMINI_API_KEY) });
+  const hasKey = Boolean(
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY ||
+    process.env.VITE_GEMINI_API_KEY
+  );
+  res.json({ status: "ok", geminiAvailable: hasKey });
 });
 
 // Endpoint: Parse and Security-Verify UPI Payment Screenshot
 app.post("/api/ai/parse-screenshot", async (req, res) => {
   try {
-    const { imageBase64, mimeType } = req.body;
-    if (!imageBase64) {
-      return res.status(400).json({ error: "No image provided" });
+    const { imageBase64, mimeType } = req.body || {};
+    if (!imageBase64 || typeof imageBase64 !== "string") {
+      return res.status(400).json({
+        success: false,
+        isRealPaymentReceipt: false,
+        error: "No image received. Please upload or select a receipt photo.",
+        errorCode: "EMPTY_IMAGE",
+        fallbackAllowed: true,
+      });
     }
 
     const ai = getGeminiClient();
     if (!ai) {
-      // If AI client not available, inform client that verification requires Gemini API
+      console.warn("AI parse-screenshot: GEMINI_API_KEY is not configured on this server.");
       return res.status(503).json({
         success: false,
         isRealPaymentReceipt: false,
-        error: "AI Vision service is unavailable to verify this receipt. Please enter expense manually.",
+        error: "AI Vision is unconfigured on the server (GEMINI_API_KEY missing in environment). You can enter expense details manually below.",
+        errorCode: "API_KEY_NOT_CONFIGURED",
+        fallbackAllowed: true,
       });
     }
 
-    // Clean base64
-    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    // Clean base64 data prefix cleanly (handles any data: URI prefix including application/octet-stream, webp, etc.)
+    let cleanBase64 = String(imageBase64 || "");
+    if (cleanBase64.includes(",")) {
+      cleanBase64 = cleanBase64.split(",")[1];
+    }
+    cleanBase64 = cleanBase64.replace(/\s+/g, "").trim();
+
+    if (!cleanBase64) {
+      return res.status(400).json({
+        success: false,
+        isRealPaymentReceipt: false,
+        error: "Image data is empty or corrupted. Please try selecting the receipt again.",
+        errorCode: "INVALID_IMAGE",
+        fallbackAllowed: true,
+      });
+    }
+
+    // Determine normalized MIME type
+    let safeMime = (mimeType || "image/jpeg").toLowerCase().trim();
+    if (safeMime === "image/jpg") safeMime = "image/jpeg";
+    const allowedMimes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+    if (!allowedMimes.includes(safeMime)) {
+      safeMime = "image/jpeg";
+    }
 
     const prompt = `You are a high-security automated Indian UPI & Banking Payment Receipt Verification System.
 Examine this uploaded image carefully to verify if it is a GENUINE, AUTHENTIC digital UPI/banking payment receipt or screenshot, or if it is a fake, meme, random photo, or non-payment image.
@@ -2435,7 +2523,7 @@ Return strictly JSON matching this structure.`;
         contents: [
           {
             inlineData: {
-              mimeType: mimeType || "image/png",
+              mimeType: safeMime,
               data: cleanBase64,
             },
           },
@@ -2486,6 +2574,7 @@ Return strictly JSON matching this structure.`;
         securityCheckPassed: false,
         error: parsed.securityReason || "Invalid or unreadable payment receipt. Please upload an authentic UPI confirmation screenshot.",
         data: parsed,
+        fallbackAllowed: true,
       });
     }
 
@@ -2496,11 +2585,28 @@ Return strictly JSON matching this structure.`;
       data: parsed,
     });
   } catch (error: any) {
-    console.error("Error in parse-screenshot:", error);
+    const errMsg = error?.message || String(error);
+    console.error("Error in parse-screenshot:", errMsg);
+
+    const isQuota = errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED");
+    const isTransient = errMsg.includes("503") || errMsg.includes("UNAVAILABLE") || errMsg.includes("high demand");
+    const isAuth = errMsg.includes("API_KEY") || errMsg.includes("403") || errMsg.includes("unregistered") || errMsg.includes("invalid key");
+
+    let clientMsg = "AI Vision could not verify this receipt automatically. You can enter details manually below.";
+    if (isAuth) {
+      clientMsg = "AI authentication error. You can enter expense details manually below.";
+    } else if (isQuota) {
+      clientMsg = "AI Vision rate limit reached. You can enter expense details manually below.";
+    } else if (isTransient) {
+      clientMsg = "AI Vision is temporarily busy. You can enter expense details manually below.";
+    }
+
     return res.status(500).json({
       success: false,
       isRealPaymentReceipt: false,
-      error: "Unable to process payment screenshot. Please ensure it is a clear image of a UPI confirmation.",
+      error: clientMsg,
+      errorCode: isAuth ? "AUTH_ERROR" : isQuota ? "QUOTA_EXHAUSTED" : isTransient ? "SERVICE_BUSY" : "PROCESSING_ERROR",
+      fallbackAllowed: true,
     });
   }
 });
