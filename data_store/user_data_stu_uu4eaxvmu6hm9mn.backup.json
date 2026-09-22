@@ -1,0 +1,242 @@
+{
+  "monthlyPocketMoney": 989,
+  "wallets": {
+    "cash": 0,
+    "upi": 989,
+    "bank": 0
+  },
+  "transactions": [
+    {
+      "title": "Pocket Money added to UPI",
+      "amount": 989,
+      "type": "income",
+      "category": "Pocket Money",
+      "paymentMode": "UPI",
+      "date": "2026-09-18",
+      "notes": "Added ₹989 to UPI & increased this month's budget allowance",
+      "id": "id_8sn0nh1mu74vcbt"
+    }
+  ],
+  "roomGroups": [
+    {
+      "id": "room_1789707154532_yhxk",
+      "name": "house",
+      "type": "Flat",
+      "inviteCode": "JK4K7G",
+      "ownerId": "stu_99qqoyqmu6ha1np",
+      "members": [
+        {
+          "id": "rm_stu_99qqoyqmu6ha1np",
+          "userId": "stu_99qqoyqmu6ha1np",
+          "name": "TEST1",
+          "email": "test1@gmail.com",
+          "upiId": "test1@upi",
+          "phone": "8957190543",
+          "role": "owner",
+          "joinedAt": "2026-09-18",
+          "isSelf": false
+        },
+        {
+          "id": "rm_stu_5gr9kxgmu6hj1nu",
+          "userId": "stu_5gr9kxgmu6hj1nu",
+          "name": "TEST2",
+          "email": "test2@gmail.com",
+          "upiId": "test2@upi",
+          "phone": "8957190541",
+          "role": "member",
+          "joinedAt": "2026-09-18",
+          "isSelf": false
+        },
+        {
+          "id": "rm_stu_uu4eaxvmu6hm9mn",
+          "userId": "stu_uu4eaxvmu6hm9mn",
+          "name": "TEST3",
+          "email": "test3@gmail.com",
+          "upiId": "test3@upi",
+          "phone": "8957190544",
+          "role": "member",
+          "joinedAt": "2026-09-18",
+          "isSelf": true
+        }
+      ],
+      "expenses": [
+        {
+          "id": "exp_chicken_150",
+          "roomId": "room_1789707154532_yhxk",
+          "title": "Chicken",
+          "totalAmount": 150,
+          "amount": 150,
+          "category": "General",
+          "paidByUserId": "stu_99qqoyqmu6ha1np",
+          "paidBy": "TEST1",
+          "createdByUserId": "stu_99qqoyqmu6ha1np",
+          "createdBy": "TEST1",
+          "splitType": "equal",
+          "participants": [
+            {
+              "userId": "stu_99qqoyqmu6ha1np",
+              "name": "TEST1",
+              "share": 50,
+              "hasPaid": true
+            },
+            {
+              "userId": "stu_5gr9kxgmu6hj1nu",
+              "name": "TEST2",
+              "share": 50,
+              "hasPaid": false
+            },
+            {
+              "userId": "stu_uu4eaxvmu6hm9mn",
+              "name": "TEST3",
+              "share": 50,
+              "hasPaid": false
+            }
+          ],
+          "date": "2026-09-18",
+          "notes": "Chicken for dinner - updated",
+          "createdAt": "2026-09-18T05:00:00.000Z",
+          "status": "pending"
+        },
+        {
+          "id": "exp_milk_90",
+          "roomId": "room_1789707154532_yhxk",
+          "title": "Milk",
+          "totalAmount": 90,
+          "amount": 90,
+          "category": "Food & Groceries",
+          "paidByUserId": "stu_5gr9kxgmu6hj1nu",
+          "paidBy": "TEST2",
+          "createdByUserId": "stu_5gr9kxgmu6hj1nu",
+          "createdBy": "TEST2",
+          "splitType": "equal",
+          "participants": [
+            {
+              "userId": "stu_99qqoyqmu6ha1np",
+              "name": "TEST1",
+              "share": 30,
+              "hasPaid": false
+            },
+            {
+              "userId": "stu_5gr9kxgmu6hj1nu",
+              "name": "TEST2",
+              "share": 30,
+              "hasPaid": true
+            },
+            {
+              "userId": "stu_uu4eaxvmu6hm9mn",
+              "name": "TEST3",
+              "share": 30,
+              "hasPaid": false
+            }
+          ],
+          "date": "2026-09-18",
+          "notes": "Daily milk packets",
+          "createdAt": "2026-09-18T05:05:00.000Z",
+          "status": "pending"
+        },
+        {
+          "id": "exp_electricity_300",
+          "roomId": "room_1789707154532_yhxk",
+          "title": "Electricity",
+          "totalAmount": 300,
+          "amount": 300,
+          "category": "Utilities",
+          "paidByUserId": "stu_uu4eaxvmu6hm9mn",
+          "paidBy": "TEST3",
+          "createdByUserId": "stu_uu4eaxvmu6hm9mn",
+          "createdBy": "TEST3",
+          "splitType": "equal",
+          "participants": [
+            {
+              "userId": "stu_99qqoyqmu6ha1np",
+              "name": "TEST1",
+              "share": 100,
+              "hasPaid": false
+            },
+            {
+              "userId": "stu_5gr9kxgmu6hj1nu",
+              "name": "TEST2",
+              "share": 100,
+              "hasPaid": false
+            },
+            {
+              "userId": "stu_uu4eaxvmu6hm9mn",
+              "name": "TEST3",
+              "share": 100,
+              "hasPaid": true
+            }
+          ],
+          "date": "2026-09-18",
+          "notes": "Monthly room electricity bill",
+          "createdAt": "2026-09-18T05:10:00.000Z",
+          "status": "pending"
+        }
+      ],
+      "settlements": [],
+      "activities": [
+        {
+          "id": "act_1789708852086",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST1 updated \"Chicken\" (₹150)",
+          "time": "2026-09-18T05:20:52.086Z",
+          "type": "edit"
+        },
+        {
+          "id": "act_electricity_300",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST3 added \"Electricity\" for ₹300",
+          "time": "2026-09-18T05:10:00.000Z",
+          "type": "expense"
+        },
+        {
+          "id": "act_milk_90",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST2 added \"Milk\" for ₹90",
+          "time": "2026-09-18T05:05:00.000Z",
+          "type": "expense"
+        },
+        {
+          "id": "act_chicken_150",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST1 added \"Chicken\" for ₹150",
+          "time": "2026-09-18T05:00:00.000Z",
+          "type": "expense"
+        },
+        {
+          "id": "act_join_test3",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST3 joined the room",
+          "time": "2026-09-18T04:55:00.000Z",
+          "type": "join"
+        },
+        {
+          "id": "act_join_test2",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST2 joined the room",
+          "time": "2026-09-18T04:53:00.000Z",
+          "type": "join"
+        },
+        {
+          "id": "act_create_test1",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST1 created room \"house\"",
+          "time": "2026-09-18T04:52:34.000Z",
+          "type": "join"
+        }
+      ],
+      "createdAt": "2026-09-18"
+    }
+  ],
+  "activeRoomId": "room_1789707154532_yhxk",
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "udhaarRecords": [],
+  "bills": [],
+  "goals": [],
+  "hasCompletedTour": false
+}

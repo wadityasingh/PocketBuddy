@@ -295,19 +295,13 @@ export default function App() {
             );
             const serverData = dataRes.ok && dataRes.data?.success && dataRes.data.data ? dataRes.data.data : null;
 
-            // 3. Smart reconciliation (Union transactions, preserve positive wallet balances)
-            const txMap = new Map<string, Transaction>();
-            (serverData?.transactions || []).forEach((t: Transaction) => {
-              if (t && t.id) txMap.set(t.id, t);
-            });
-            (localData?.transactions || []).forEach((t: Transaction) => {
-              if (t && t.id) txMap.set(t.id, t);
-            });
-            const mergedTransactions = Array.from(txMap.values()).sort((a, b) => {
-              const dateA = new Date(a.date || 0).getTime();
-              const dateB = new Date(b.date || 0).getTime();
-              return dateB - dateA;
-            });
+            // 3. Smart reconciliation (Authoritative server data, local fallback)
+            let mergedTransactions: Transaction[] = [];
+            if (serverData && Array.isArray(serverData.transactions)) {
+              mergedTransactions = serverData.transactions;
+            } else if (Array.isArray(localData?.transactions)) {
+              mergedTransactions = localData.transactions;
+            }
 
             const serverLiquidity = serverData?.wallets
               ? (serverData.wallets.cash || 0) + (serverData.wallets.upi || 0)
@@ -607,15 +601,13 @@ export default function App() {
     // Prioritize populated stored records if available
     const localStored = getUserStoredData(user.id);
 
-    // Combine transactions
-    const txMap = new Map<string, Transaction>();
-    (data?.transactions || []).forEach((t) => { if (t && t.id) txMap.set(t.id, t); });
-    (localStored?.transactions || []).forEach((t) => { if (t && t.id) txMap.set(t.id, t); });
-    const mergedTransactions = Array.from(txMap.values()).sort((a, b) => {
-      const dateA = new Date(a.date || 0).getTime();
-      const dateB = new Date(b.date || 0).getTime();
-      return dateB - dateA;
-    });
+    // Resolve transactions (prefer authoritative data from server)
+    let mergedTransactions: Transaction[] = [];
+    if (data && Array.isArray(data.transactions)) {
+      mergedTransactions = data.transactions;
+    } else if (Array.isArray(localStored?.transactions)) {
+      mergedTransactions = localStored.transactions;
+    }
 
     const serverLiquidity = data?.wallets ? (data.wallets.cash || 0) + (data.wallets.upi || 0) : 0;
     const localLiquidity = (localStored.wallets?.cash || 0) + (localStored.wallets?.upi || 0);
@@ -704,6 +696,7 @@ export default function App() {
     // Set financial numbers
     setMonthlyPocketMoney(setupData.monthlyPocketMoney);
     setWallets(setupData.wallets);
+    persistMoneySnapshotImmediate(setupData.monthlyPocketMoney, setupData.wallets, transactions);
 
     // Setup room if living with roommates
     if (setupData.livingSituation === 'roommates') {
@@ -929,6 +922,13 @@ export default function App() {
           ...prev,
         ]);
       }
+    } else if (newTx.type === 'transfer') {
+      const from = mode;
+      const to = mode === 'Cash' ? 'UPI' : 'Cash';
+      const fromKey = from.toLowerCase() as keyof WalletBalances;
+      const toKey = to.toLowerCase() as keyof WalletBalances;
+      nextWallets[fromKey] = Math.max(0, (nextWallets[fromKey] || 0) - amount);
+      nextWallets[toKey] = (nextWallets[toKey] || 0) + amount;
     }
 
     setWallets(nextWallets);
@@ -965,14 +965,25 @@ export default function App() {
       }
 
       let nextWallets = { ...wallets };
-      // Only income or borrowed modifies the fixed wallets
+      // Only income, borrowed, or transfer modifies the fixed wallets
       if (oldTx.type === 'income' || oldTx.type === 'borrowed') {
         if (oldTx.paymentMode === 'Cash') nextWallets.cash = Math.max(0, nextWallets.cash - oldAmount);
         else if (oldTx.paymentMode === 'UPI') nextWallets.upi = Math.max(0, nextWallets.upi - oldAmount);
+      } else if (oldTx.type === 'transfer') {
+        const oldFromKey = (oldTx.paymentMode || 'Cash').toLowerCase() as keyof WalletBalances;
+        const oldToKey = oldFromKey === 'cash' ? 'upi' : 'cash';
+        nextWallets[oldFromKey] = (nextWallets[oldFromKey] || 0) + oldAmount;
+        nextWallets[oldToKey] = Math.max(0, (nextWallets[oldToKey] || 0) - oldAmount);
       }
+
       if (updatedTx.type === 'income' || updatedTx.type === 'borrowed') {
         if (updatedTx.paymentMode === 'Cash') nextWallets.cash += newAmount;
         else if (updatedTx.paymentMode === 'UPI') nextWallets.upi += newAmount;
+      } else if (updatedTx.type === 'transfer') {
+        const newFromKey = (updatedTx.paymentMode || 'Cash').toLowerCase() as keyof WalletBalances;
+        const newToKey = newFromKey === 'cash' ? 'upi' : 'cash';
+        nextWallets[newFromKey] = Math.max(0, (nextWallets[newFromKey] || 0) - newAmount);
+        nextWallets[newToKey] = (nextWallets[newToKey] || 0) + newAmount;
       }
 
       setWallets(nextWallets);
@@ -1038,18 +1049,25 @@ export default function App() {
   // 2. Wallet Management Handlers
   const handleTransferWallets = (from: PaymentMode, to: PaymentMode, amount: number) => {
     if (from === to || amount <= 0) return;
-    const fromKey = from.toLowerCase() as keyof WalletBalances;
-    const toKey = to.toLowerCase() as keyof WalletBalances;
-    if (wallets[fromKey] < amount) {
-      alert(`Insufficient balance in ${from}! Available: ₹${wallets[fromKey]}`);
+    const currentAvailable = from === 'Cash' ? availableCash : availableUpi;
+    if (currentAvailable < amount) {
+      alert(
+        `Insufficient available balance in ${from}!\n\nAvailable in ${from}: ₹${currentAvailable.toLocaleString('en-IN')}\nRequested Transfer: ₹${amount.toLocaleString('en-IN')}\n\nYou cannot transfer more than your available ${from} balance.`
+      );
       return;
     }
-    setWallets((prev) => ({
-      ...prev,
-      [fromKey]: prev[fromKey] - amount,
-      [toKey]: prev[toKey] + amount,
-    }));
-    handleAddTransaction({
+
+    const fromKey = from.toLowerCase() as keyof WalletBalances;
+    const toKey = to.toLowerCase() as keyof WalletBalances;
+
+    const nextWallets: WalletBalances = {
+      ...wallets,
+      [fromKey]: Math.max(0, (wallets[fromKey] || 0) - amount),
+      [toKey]: (wallets[toKey] || 0) + amount,
+    };
+
+    const newTx: Transaction = {
+      id: generateId(),
       title: `Transfer from ${from} to ${to}`,
       amount,
       type: 'transfer',
@@ -1057,7 +1075,20 @@ export default function App() {
       paymentMode: from,
       date: todayStr,
       notes: `Transferred ₹${amount} from ${from} to ${to}`,
-    });
+    };
+
+    const nextTransactions = [newTx, ...transactions];
+
+    setWallets(nextWallets);
+    setTransactions(nextTransactions);
+    persistMoneySnapshotImmediate(monthlyPocketMoney, nextWallets, nextTransactions);
+  };
+
+  const handleUpdateWalletsAndAllowance = (newWallets: WalletBalances, newAllowance?: number) => {
+    const allowanceToUse = newAllowance !== undefined ? newAllowance : ((newWallets.cash || 0) + (newWallets.upi || 0));
+    setWallets(newWallets);
+    setMonthlyPocketMoney(allowanceToUse);
+    persistMoneySnapshotImmediate(allowanceToUse, newWallets, transactions);
   };
 
   const handleUpdateWalletBalance = (mode: PaymentMode, newBalance: number) => {
@@ -2137,12 +2168,10 @@ export default function App() {
               bills={safeBills}
               transactions={safeTransactions}
               onUpdateAllowance={(newAllowance) => {
-                setMonthlyPocketMoney(newAllowance);
-                persistMoneySnapshotImmediate(newAllowance, wallets, transactions);
+                handleUpdateWalletsAndAllowance(wallets, newAllowance);
               }}
-              onUpdateWallets={(newWallets) => {
-                setWallets(newWallets);
-                persistMoneySnapshotImmediate(monthlyPocketMoney, newWallets, transactions);
+              onUpdateWallets={(newWallets, newAllowance) => {
+                handleUpdateWalletsAndAllowance(newWallets, newAllowance);
               }}
               onTransferWallets={handleTransferWallets}
               onUpdateWalletBalance={handleUpdateWalletBalance}

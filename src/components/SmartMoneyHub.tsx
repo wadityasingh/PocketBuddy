@@ -22,7 +22,7 @@ interface SmartMoneyHubProps {
   bills?: BillReminder[];
   transactions?: Transaction[];
   onUpdateAllowance: (newAllowance: number) => void;
-  onUpdateWallets?: (wallets: WalletBalances) => void;
+  onUpdateWallets?: (wallets: WalletBalances, newAllowance?: number) => void;
   onTransferWallets?: (from: PaymentMode, to: PaymentMode, amount: number) => void;
   onUpdateWalletBalance?: (mode: PaymentMode, newBalance: number) => void;
   onAddMoneyToWallet?: (mode: PaymentMode, amount: number, addToAllowance?: boolean) => void;
@@ -202,9 +202,10 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
       onUpdateWallets({
         upi: upiNum,
         cash: cashNum,
-      });
+      }, totalBudget);
+    } else {
+      onUpdateAllowance(totalBudget);
     }
-    onUpdateAllowance(totalBudget);
     setIsEditingAllowance(false);
   };
 
@@ -212,13 +213,15 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
     e.preventDefault();
     const c = Math.max(0, parseFloat(tempCash) || 0);
     const u = Math.max(0, parseFloat(tempUpi) || 0);
+    const totalBudget = c + u;
     if (onUpdateWallets) {
       onUpdateWallets({
         cash: c,
         upi: u,
-      });
+      }, totalBudget);
+    } else {
+      onUpdateAllowance(totalBudget);
     }
-    onUpdateAllowance(c + u);
     setActiveWalletModal('none');
   };
 

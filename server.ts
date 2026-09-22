@@ -716,21 +716,13 @@ const handleSaveUserData = (req: any, res: any) => {
       return res.json({ success: true, data: existingData, preserved: true });
     }
 
-    // Merge transactions (union deduplicated by id, sorted by date descending)
-    if (existingHasTransactions && incomingHasTransactions) {
-      const txMap = new Map<string, any>();
-      existingData.transactions.forEach((tx: any) => {
-        if (tx && tx.id) txMap.set(tx.id, tx);
-      });
-      payload.transactions.forEach((tx: any) => {
-        if (tx && tx.id) txMap.set(tx.id, tx);
-      });
-      payload.transactions = Array.from(txMap.values()).sort((a, b) => {
-        const dateA = new Date(a.date || a.createdAt || 0).getTime();
-        const dateB = new Date(b.date || b.createdAt || 0).getTime();
-        return dateB - dateA;
-      });
-    } else if (existingHasTransactions && !incomingHasTransactions && !req.body.forceReset) {
+    // Handle transactions safely:
+    // If incoming payload explicitly includes transactions array, accept it directly as authoritative
+    // (This allows user to edit or delete transactions without the server resurrecting them).
+    // Only fallback to existing transactions if payload omitted transactions completely.
+    if (Array.isArray(payload.transactions)) {
+      payload.transactions = payload.transactions;
+    } else if (existingHasTransactions && !req.body.forceReset) {
       payload.transactions = existingData.transactions;
     }
 
@@ -2266,7 +2258,32 @@ app.post("/api/rooms/:roomId/leave", (req, res) => {
 });
 
 
-// Lazy get Gemini client
+// Extract and sanitize Gemini API Key safely from environment variable or raw string
+function extractCleanGeminiKey(raw: string | undefined): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  let key = raw.trim();
+  // Strip outer quotes (single, double, backticks)
+  key = key.replace(/^["'`]+|["'`]+$/g, "").trim();
+  // If user accidentally pasted "GEMINI_API_KEY=AIzaSy..." or similar into Render value box
+  if (key.includes("=")) {
+    const parts = key.split("=");
+    const candidate = parts[parts.length - 1].trim();
+    if (candidate.startsWith("AIzaSy") || candidate.length >= 30) {
+      key = candidate;
+    }
+  }
+  // Strip "Bearer " if user accidentally prefixed it
+  if (key.toLowerCase().startsWith("bearer ")) {
+    key = key.slice(7).trim();
+  }
+  // Strip any trailing semicolons or commas
+  key = key.replace(/[;,]+$/, "").trim();
+  // Strip outer quotes again if any remained
+  key = key.replace(/^["'`]+|["'`]+$/g, "").trim();
+  return key || null;
+}
+
+// Lazy get Gemini client with clean key and standard SDK options
 function getGeminiClient(): GoogleGenAI | null {
   const rawKey =
     process.env.GEMINI_API_KEY ||
@@ -2274,25 +2291,17 @@ function getGeminiClient(): GoogleGenAI | null {
     process.env.GOOGLE_GENAI_API_KEY ||
     process.env.VITE_GEMINI_API_KEY;
 
-  if (!rawKey) {
-    console.warn("GEMINI_API_KEY is not set in environment");
-    return null;
-  }
-  const apiKey = rawKey.trim().replace(/^["']|["']$/g, "");
+  const apiKey = extractCleanGeminiKey(rawKey);
   if (!apiKey) {
+    console.warn("GEMINI_API_KEY is not set or empty in environment");
     return null;
   }
   return new GoogleGenAI({
     apiKey,
-    httpOptions: {
-      headers: {
-        "User-Agent": "aistudio-build",
-      },
-    },
   });
 }
 
-// Resilient Gemini runner: defaults to gemini-3.8-flash for multimodal vision and general reasoning, falls back to gemini-flash-latest
+// Resilient Gemini runner: tries gemini-3.8-flash, gemini-3.6-flash, and gemini-flash-latest
 async function callGeminiWithFallback<T>(
   ai: GoogleGenAI,
   callFn: (modelName: string) => Promise<T>,
@@ -2300,7 +2309,7 @@ async function callGeminiWithFallback<T>(
 ): Promise<T> {
   const models = preferredModels && preferredModels.length > 0
     ? preferredModels
-    : ["gemini-3.8-flash", "gemini-flash-latest"];
+    : ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest"];
   let lastError: any = null;
 
   for (let i = 0; i < models.length; i++) {
@@ -2421,13 +2430,75 @@ function generateFallbackCoachingData(studentState: any, userQuestion?: string) 
 
 // Health check
 app.get("/api/health", (req, res) => {
-  const hasKey = Boolean(
+  const rawKey =
     process.env.GEMINI_API_KEY ||
     process.env.GOOGLE_API_KEY ||
     process.env.GOOGLE_GENAI_API_KEY ||
-    process.env.VITE_GEMINI_API_KEY
-  );
-  res.json({ status: "ok", geminiAvailable: hasKey });
+    process.env.VITE_GEMINI_API_KEY;
+  const cleanKey = extractCleanGeminiKey(rawKey);
+  res.json({
+    status: "ok",
+    geminiAvailable: Boolean(cleanKey),
+    keyConfigured: Boolean(rawKey),
+    keyLength: cleanKey ? cleanKey.length : 0,
+    hasStandardPrefix: cleanKey ? cleanKey.startsWith("AIzaSy") : false,
+  });
+});
+
+// Diagnostic check endpoint for user & admin troubleshooting (e.g. on Render)
+app.get("/api/ai/status", async (req, res) => {
+  const rawKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY ||
+    process.env.VITE_GEMINI_API_KEY;
+
+  if (!rawKey) {
+    return res.json({
+      configured: false,
+      message: "GEMINI_API_KEY is not set in environment variables.",
+      help: "Add GEMINI_API_KEY in your hosting dashboard (e.g. Render -> Environment).",
+    });
+  }
+
+  const cleanKey = extractCleanGeminiKey(rawKey);
+  const keyLength = cleanKey ? cleanKey.length : 0;
+  const startsWithAIza = cleanKey ? cleanKey.startsWith("AIzaSy") : false;
+  const maskedKey = cleanKey
+    ? `${cleanKey.slice(0, 6)}...${cleanKey.slice(-4)}`
+    : "empty";
+
+  let testResult = "pending";
+  let testError: string | null = null;
+  let testModelUsed: string | null = null;
+  try {
+    const ai = new GoogleGenAI({ apiKey: cleanKey! });
+    const testRes = await callGeminiWithFallback(ai, async (modelName) => {
+      testModelUsed = modelName;
+      return await ai.models.generateContent({
+        model: modelName,
+        contents: "ping",
+      });
+    });
+    if (testRes.text) {
+      testResult = "success";
+    }
+  } catch (err: any) {
+    testResult = "failed";
+    testError = err?.message || String(err);
+  }
+
+  return res.json({
+    configured: true,
+    maskedKey,
+    keyLength,
+    startsWithAIza,
+    expectedFormat: "Starts with 'AIzaSy' and is 39 characters",
+    isLengthStandard: keyLength === 39,
+    testResult,
+    testModelUsed,
+    testError,
+  });
 });
 
 // Endpoint: Parse and Security-Verify UPI Payment Screenshot
@@ -2531,7 +2602,6 @@ Return strictly JSON matching this structure.`;
         ],
         config: {
           responseMimeType: "application/json",
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           responseSchema: {
             type: Type.OBJECT,
             properties: {
@@ -2590,22 +2660,43 @@ Return strictly JSON matching this structure.`;
 
     const isQuota = errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED");
     const isTransient = errMsg.includes("503") || errMsg.includes("UNAVAILABLE") || errMsg.includes("high demand");
-    const isAuth = errMsg.includes("API_KEY") || errMsg.includes("403") || errMsg.includes("unregistered") || errMsg.includes("invalid key");
+    const isAuth =
+      errMsg.includes("API_KEY") ||
+      errMsg.includes("403") ||
+      errMsg.includes("400") ||
+      errMsg.includes("unregistered") ||
+      errMsg.includes("invalid key") ||
+      errMsg.includes("PERMISSION_DENIED");
 
     let clientMsg = "AI Vision could not verify this receipt automatically. You can enter details manually below.";
+    let authHint = "";
+
     if (isAuth) {
-      clientMsg = "AI authentication error. You can enter expense details manually below.";
+      if (errMsg.includes("API_KEY_INVALID") || errMsg.includes("not valid") || errMsg.includes("invalid key")) {
+        clientMsg = "Invalid Gemini API Key on server. Check GEMINI_API_KEY in Render Environment Variables.";
+        authHint = "Your API key should start with 'AIzaSy' and be 39 characters long. Create a free key at aistudio.google.com/apikey and paste it into Render -> Environment.";
+      } else if (errMsg.includes("referrer") || errMsg.includes("Referer")) {
+        clientMsg = "API key has HTTP Referrer restrictions. In Google Cloud Console, set Application Restrictions to 'None'.";
+        authHint = "Server-side apps deployed on Render cannot use HTTP Referrer restrictions. Edit your API key in Google Cloud Console to remove referrer restrictions.";
+      } else if (errMsg.includes("disabled") || errMsg.includes("Generative Language API")) {
+        clientMsg = "Generative Language API is disabled in your Google Cloud Project.";
+        authHint = "Enable Generative Language API in Google Cloud Console, or generate a fresh key directly at aistudio.google.com/apikey.";
+      } else {
+        clientMsg = "AI Authentication Error: Gemini API key rejected by Google.";
+        authHint = "Verify your GEMINI_API_KEY in Render Environment Variables (starts with AIzaSy..., 39 characters, no quotes or spaces).";
+      }
     } else if (isQuota) {
       clientMsg = "AI Vision rate limit reached. You can enter expense details manually below.";
     } else if (isTransient) {
       clientMsg = "AI Vision is temporarily busy. You can enter expense details manually below.";
     }
 
-    return res.status(500).json({
+    return res.status(isAuth ? 401 : 500).json({
       success: false,
       isRealPaymentReceipt: false,
       error: clientMsg,
       errorCode: isAuth ? "AUTH_ERROR" : isQuota ? "QUOTA_EXHAUSTED" : isTransient ? "SERVICE_BUSY" : "PROCESSING_ERROR",
+      authHint,
       fallbackAllowed: true,
     });
   }
@@ -2655,7 +2746,6 @@ Return strictly valid JSON only.`;
         contents: prompt,
         config: {
           responseMimeType: "application/json",
-          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
           responseSchema: {
             type: Type.OBJECT,
             properties: {
@@ -2743,9 +2833,6 @@ Instructions:
       return await ai.models.generateContent({
         model: modelName,
         contents: userPrompt,
-        config: {
-          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
-        },
       });
     });
 

@@ -202,6 +202,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authHint, setAuthHint] = useState<string | null>(null);
   const [copiedUtr, setCopiedUtr] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
@@ -253,6 +254,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
       setParsedData(null);
       setIsFallbackManual(false);
       setError(null);
+      setAuthHint(null);
       setIsAnalyzing(false);
       setItemPurpose('');
       setEditableAmount(0);
@@ -372,6 +374,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
           resData.error ||
           'AI Vision could not verify this receipt automatically. You can enter details manually below.';
         setError(errorMsg);
+        setAuthHint(resData.authHint || null);
 
         // MOBILE FALLBACK (Requirement 8):
         // Keep the uploaded receipt image available, populate default manual fields, and let user proceed!
@@ -524,20 +527,32 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
           {error && (
             <div
               id="scanner-compact-error"
-              className="px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-2 animate-fade-in"
+              className="px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs animate-fade-in space-y-1.5"
             >
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="font-medium leading-tight">{error}</span>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold leading-tight">{error}</span>
+                    {authHint && (
+                      <p className="mt-1 text-[11px] text-amber-800 leading-relaxed font-normal bg-amber-100/70 p-2 rounded-lg border border-amber-200/60">
+                        💡 {authHint}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setAuthHint(null);
+                  }}
+                  className="text-amber-500 hover:text-amber-800 shrink-0 cursor-pointer"
+                  title="Dismiss"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setError(null)}
-                className="text-amber-500 hover:text-amber-800 shrink-0 cursor-pointer"
-                title="Dismiss"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
             </div>
           )}
 
