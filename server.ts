@@ -2258,28 +2258,37 @@ app.post("/api/rooms/:roomId/leave", (req, res) => {
 });
 
 
-// Extract and sanitize Gemini API Key safely from environment variable or raw string
+// Extract and sanitize Gemini API key safely.
+// Supports current Google AI Studio authorization-key formats
+// and does NOT assume an "AIzaSy" prefix or fixed length.
 function extractCleanGeminiKey(raw: string | undefined): string | null {
   if (!raw || typeof raw !== "string") return null;
+
   let key = raw.trim();
-  // Strip outer quotes (single, double, backticks)
+
+  // Remove accidental outer quotes
   key = key.replace(/^["'`]+|["'`]+$/g, "").trim();
-  // If user accidentally pasted "GEMINI_API_KEY=AIzaSy..." or similar into Render value box
+
+  // Support accidental "GEMINI_API_KEY=..." paste
   if (key.includes("=")) {
-    const parts = key.split("=");
-    const candidate = parts[parts.length - 1].trim();
-    if (candidate.startsWith("AIzaSy") || candidate.length >= 30) {
+    const equalIndex = key.indexOf("=");
+    const candidate = key.slice(equalIndex + 1).trim();
+    if (candidate) {
       key = candidate;
     }
   }
-  // Strip "Bearer " if user accidentally prefixed it
+
+  // Remove accidental Bearer prefix
   if (key.toLowerCase().startsWith("bearer ")) {
     key = key.slice(7).trim();
   }
-  // Strip any trailing semicolons or commas
+
+  // Remove trailing separators
   key = key.replace(/[;,]+$/, "").trim();
-  // Strip outer quotes again if any remained
+
+  // Remove quotes again if needed
   key = key.replace(/^["'`]+|["'`]+$/g, "").trim();
+
   return key || null;
 }
 
@@ -2493,8 +2502,8 @@ app.get("/api/ai/status", async (req, res) => {
     maskedKey,
     keyLength,
     startsWithAIza,
-    expectedFormat: "Starts with 'AIzaSy' and is 39 characters",
-    isLengthStandard: keyLength === 39,
+    expectedFormat: "Current Gemini API key format",
+    isLengthStandard: true,
     testResult,
     testModelUsed,
     testError,
@@ -2672,18 +2681,28 @@ Return strictly JSON matching this structure.`;
     let authHint = "";
 
     if (isAuth) {
-      if (errMsg.includes("API_KEY_INVALID") || errMsg.includes("not valid") || errMsg.includes("invalid key")) {
-        clientMsg = "Invalid Gemini API Key on server. Check GEMINI_API_KEY in Render Environment Variables.";
-        authHint = "Your API key should start with 'AIzaSy' and be 39 characters long. Create a free key at aistudio.google.com/apikey and paste it into Render -> Environment.";
-      } else if (errMsg.includes("referrer") || errMsg.includes("Referer")) {
-        clientMsg = "API key has HTTP Referrer restrictions. In Google Cloud Console, set Application Restrictions to 'None'.";
-        authHint = "Server-side apps deployed on Render cannot use HTTP Referrer restrictions. Edit your API key in Google Cloud Console to remove referrer restrictions.";
-      } else if (errMsg.includes("disabled") || errMsg.includes("Generative Language API")) {
-        clientMsg = "Generative Language API is disabled in your Google Cloud Project.";
-        authHint = "Enable Generative Language API in Google Cloud Console, or generate a fresh key directly at aistudio.google.com/apikey.";
+      if (
+        errMsg.includes("API_KEY_INVALID") ||
+        errMsg.includes("not valid") ||
+        errMsg.includes("invalid key")
+      ) {
+        clientMsg = "Gemini API authentication failed. Check GEMINI_API_KEY in Render Environment Variables.";
+        authHint = "Make sure the current Gemini API key is correctly configured in Render and has access to the Gemini API.";
+      } else if (
+        errMsg.includes("referrer") ||
+        errMsg.includes("Referer")
+      ) {
+        clientMsg = "API key has HTTP Referrer restrictions.";
+        authHint = "For a server-side Render deployment, remove HTTP Referrer restrictions from the API key configuration.";
+      } else if (
+        errMsg.includes("disabled") ||
+        errMsg.includes("Generative Language API")
+      ) {
+        clientMsg = "Generative Language API is disabled.";
+        authHint = "Enable the Gemini API for the Google Cloud project connected to this key.";
       } else {
-        clientMsg = "AI Authentication Error: Gemini API key rejected by Google.";
-        authHint = "Verify your GEMINI_API_KEY in Render Environment Variables (starts with AIzaSy..., 39 characters, no quotes or spaces).";
+        clientMsg = "Gemini API authentication failed.";
+        authHint = "Check GEMINI_API_KEY in Render Environment Variables and make sure the key has access to the Gemini API.";
       }
     } else if (isQuota) {
       clientMsg = "AI Vision rate limit reached. You can enter expense details manually below.";
