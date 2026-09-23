@@ -54,5 +54,47 @@
     "monthlyPocketMoney": 0,
     "hasCompletedTour": false,
     "createdAt": "2026-09-18T04:57:49.631Z"
+  },
+  {
+    "id": "stu_72lyn57mudomsmm",
+    "name": "TEST1",
+    "email": "test1@pocketbuddy.app",
+    "phone": "9876543210",
+    "passwordHash": "a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea",
+    "collegeName": "College",
+    "course": "Student",
+    "yearOfStudy": "",
+    "upiId": "test1@upi",
+    "monthlyPocketMoney": 0,
+    "hasCompletedTour": false,
+    "createdAt": "2026-09-23T05:48:34.798Z"
+  },
+  {
+    "id": "stu_43jl1d9mudomsn6",
+    "name": "TEST2",
+    "email": "test2@pocketbuddy.app",
+    "phone": "9876543211",
+    "passwordHash": "a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea",
+    "collegeName": "College",
+    "course": "Student",
+    "yearOfStudy": "",
+    "upiId": "test2@upi",
+    "monthlyPocketMoney": 0,
+    "hasCompletedTour": false,
+    "createdAt": "2026-09-23T05:48:34.818Z"
+  },
+  {
+    "id": "stu_0st39s8mudomsnb",
+    "name": "TEST3",
+    "email": "test3@pocketbuddy.app",
+    "phone": "9876543212",
+    "passwordHash": "a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea",
+    "collegeName": "College",
+    "course": "Student",
+    "yearOfStudy": "",
+    "upiId": "test3@upi",
+    "monthlyPocketMoney": 0,
+    "hasCompletedTour": false,
+    "createdAt": "2026-09-23T05:48:34.823Z"
   }
 ]

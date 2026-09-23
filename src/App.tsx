@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Wallet,
   Camera,
@@ -276,8 +276,6 @@ export default function App() {
           let targetUser: StudentUser | null = parsedUser;
           if (authRes.ok && authRes.data?.success && authRes.data.user) {
             targetUser = authRes.data.user;
-          } else if (authRes.status === 401 || authRes.status === 404) {
-            targetUser = null;
           }
 
           if (targetUser && isMounted) {
@@ -751,7 +749,20 @@ export default function App() {
   const totalDaysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const daysRemainingInMonth = Math.max(1, totalDaysInCurrentMonth - now.getDate() + 1);
 
-  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+  // Deduplicated transactions list to guarantee no duplicate IDs or entries exist in My Money
+  const safeTransactions = useMemo(() => {
+    const list = Array.isArray(transactions) ? transactions : [];
+    const seenIds = new Set<string>();
+    const deduplicated: Transaction[] = [];
+    for (const t of list) {
+      if (!t || !t.id) continue;
+      if (seenIds.has(t.id)) continue;
+      seenIds.add(t.id);
+      deduplicated.push(t);
+    }
+    return deduplicated;
+  }, [transactions]);
+
   const expenseTransactions = safeTransactions.filter((t) => t && t.type === 'expense');
 
   // Filter expenses belonging to the current calendar month
@@ -850,9 +861,23 @@ export default function App() {
   };
 
   // 1. Transaction Handlers
+  const lastTxSubmissionRef = useRef<{ signature: string; timestamp: number }>({ signature: '', timestamp: 0 });
+
   const handleAddTransaction = (newTxData: Omit<Transaction, 'id'>, skipUdhaarSync = false): boolean => {
     const amount = Number(newTxData.amount) || 0;
     const mode = newTxData.paymentMode || 'UPI';
+
+    // Anti-duplicate protection: prevent duplicate submissions created in the same 1.5 second window
+    const signature = `${newTxData.type}_${amount}_${(newTxData.title || '').trim().toLowerCase()}_${mode}_${newTxData.date}`;
+    const nowMs = Date.now();
+    if (
+      lastTxSubmissionRef.current.signature === signature &&
+      nowMs - lastTxSubmissionRef.current.timestamp < 1500
+    ) {
+      console.warn('[Anti-Duplicate] Blocked duplicate transaction submission:', signature);
+      return false;
+    }
+    lastTxSubmissionRef.current = { signature, timestamp: nowMs };
 
     // Strict balance check: Expense or Lent cannot exceed remaining available balance
     if (newTxData.type === 'expense' || newTxData.type === 'lent') {
@@ -1128,127 +1153,109 @@ export default function App() {
 
   // 3. Room Group & Expense Handlers (Backend Integrated + Netlify Resilient)
   const handleCreateRoom = async (name: string, type?: string) => {
-    if (!currentUser) return;
-    try {
-      const result = await safeFetchJson('/api/rooms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': currentUser.id,
-        },
-        body: JSON.stringify({
-          name,
-          type: type || 'Flat',
-          creatorName: currentUser.name || 'You',
-          upiId: currentUser.upiId,
-          creatorPhone: currentUser.phone,
-        }),
-      });
-      if (result.ok && result.data) {
-        const createdRoom = result.data.room || result.data.data;
-        if (createdRoom && createdRoom.id) {
-          setRoomGroups((prev) => [...(prev || []), createdRoom]);
-          setActiveRoomId(createdRoom.id);
-          localStorage.setItem('smm_active_room_id', createdRoom.id);
-          return;
-        }
+    if (!currentUser) {
+      throw new Error('You must be logged in to create a room.');
+    }
+    const token = localStorage.getItem('smm_auth_token') || '';
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-user-id': currentUser.id,
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const livingType = type || 'Flat / Apartment';
+
+    const result = await safeFetchJson('/api/rooms', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        name: name.trim(),
+        type: livingType,
+        creatorName: currentUser.name || 'You',
+        upiId: currentUser.upiId,
+        creatorPhone: currentUser.phone,
+      }),
+    });
+
+    if (result.ok && result.data) {
+      const createdRoom = result.data.room || result.data.data;
+      if (createdRoom && createdRoom.id) {
+        setRoomGroups((prev) => {
+          const list = prev || [];
+          const idx = list.findIndex((r) => r && r.id === createdRoom.id);
+          const next = idx >= 0 ? list.map((r, i) => (i === idx ? createdRoom : r)) : [createdRoom, ...list];
+          localStorage.setItem('smm_room_groups', JSON.stringify(next));
+          return next;
+        });
+        setActiveRoomId(createdRoom.id);
+        localStorage.setItem('smm_active_room_id', createdRoom.id);
+        return;
       }
-    } catch (err) {
-      console.warn('Backend create room notice:', err);
     }
 
-    // Local room creation fallback (e.g. Netlify)
-    const localInviteCode = 'ROOM' + Math.floor(1000 + Math.random() * 9000);
-    const newLocalRoom: RoomGroup = {
-      id: 'room_' + Date.now(),
-      name: name.trim(),
-      type: (type as any) || 'Flat',
-      inviteCode: localInviteCode,
-      ownerId: currentUser.id,
-      createdAt: new Date().toISOString(),
-      members: [
-        {
-          id: 'rm_' + Date.now(),
-          userId: currentUser.id,
-          name: currentUser.name || 'You',
-          role: 'owner',
-          upiId: currentUser.upiId,
-          phone: currentUser.phone,
-          joinedAt: new Date().toISOString(),
-          isSelf: true,
-        },
-      ],
-      expenses: [],
-      settlements: [],
-      activities: [
-        {
-          id: 'act_' + Date.now(),
-          type: 'join',
-          text: `${currentUser.name || 'You'} created room "${name}"`,
-          time: new Date().toISOString(),
-        },
-      ],
-    };
-    setRoomGroups((prev) => {
-      const next = [...(prev || []), newLocalRoom];
-      localStorage.setItem('smm_room_groups', JSON.stringify(next));
-      return next;
-    });
-    setActiveRoomId(newLocalRoom.id);
-    localStorage.setItem('smm_active_room_id', newLocalRoom.id);
+    if (result.data && result.data.error && !result.isStaticHtml) {
+      throw new Error(result.data.error);
+    }
+    throw new Error('Failed to create room (HTTP ' + (result.status || 'network error') + ')');
   };
 
   const handleJoinRoom = async (code: string) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      throw new Error('You must be logged in to join a room.');
+    }
     const cleanCode = code.trim().toUpperCase();
-    try {
-      const result = await safeFetchJson('/api/rooms/join', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': currentUser.id,
-        },
-        body: JSON.stringify({
-          inviteCode: cleanCode,
-          memberName: currentUser.name || 'You',
-          upiId: currentUser.upiId,
-        }),
-      });
-      if (result.ok && result.data) {
-        const joinedRoom = result.data.room || result.data.data;
-        if (joinedRoom && joinedRoom.id) {
-          setRoomGroups((prev) => {
-            const list = prev || [];
-            const idx = list.findIndex((r) => r && r.id === joinedRoom.id);
-            if (idx >= 0) {
-              const clone = [...list];
-              clone[idx] = joinedRoom;
-              return clone;
-            }
-            return [...list, joinedRoom];
-          });
-          setActiveRoomId(joinedRoom.id);
-          localStorage.setItem('smm_active_room_id', joinedRoom.id);
-          return;
-        }
-      }
-      if (result.data && result.data.error && !result.isStaticHtml) {
-        alert(result.data.error);
+    const token = localStorage.getItem('smm_auth_token') || '';
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-user-id': currentUser.id,
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const result = await safeFetchJson('/api/rooms/join', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        inviteCode: cleanCode,
+        memberName: currentUser.name || 'You',
+        upiId: currentUser.upiId,
+        phone: currentUser.phone,
+      }),
+    });
+
+    if (result.ok && result.data) {
+      const joinedRoom = result.data.room || result.data.data;
+      if (joinedRoom && joinedRoom.id) {
+        setRoomGroups((prev) => {
+          const list = prev || [];
+          const idx = list.findIndex((r) => r && r.id === joinedRoom.id);
+          let next: RoomGroup[];
+          if (idx >= 0) {
+            next = [...list];
+            next[idx] = joinedRoom;
+          } else {
+            next = [joinedRoom, ...list];
+          }
+          localStorage.setItem('smm_room_groups', JSON.stringify(next));
+          return next;
+        });
+        setActiveRoomId(joinedRoom.id);
+        localStorage.setItem('smm_active_room_id', joinedRoom.id);
         return;
       }
-    } catch (err) {
-      console.warn('Backend join room notice:', err);
     }
 
-    // Local room join fallback
+    if (result.data && result.data.error && !result.isStaticHtml) {
+      throw new Error(result.data.error);
+    }
+
+    // Fallback: check local match if offline
     const localMatch = (roomGroups || []).find((r) => r && r.inviteCode?.toUpperCase() === cleanCode);
     if (localMatch) {
       const isAlreadyMember = (localMatch.members || []).some(
         (m) => m && (m.userId === currentUser.id || m.id === currentUser.id || m.id === 'rm_' + currentUser.id)
       );
       if (!isAlreadyMember && (localMatch.members || []).length >= 12) {
-        alert('This room has reached its maximum capacity of 12 members.');
-        return;
+        throw new Error('This room has reached its maximum capacity of 12 members.');
       }
       if (!isAlreadyMember) {
         setRoomGroups((prev) => {
@@ -1281,7 +1288,7 @@ export default function App() {
       return;
     }
 
-    alert('Could not find a room with code ' + cleanCode + '. Please check the invite code.');
+    throw new Error('Could not find a room with code ' + cleanCode + '. Please check the invite code.');
   };
 
   const handleSelectRoom = (roomId: string) => {
@@ -1645,7 +1652,7 @@ export default function App() {
     }
   };
 
-  const handleDeleteRoomGroup = async (roomId: string): Promise<boolean> => {
+  const handleDeleteRoomGroup = async (roomId: string): Promise<{ success: boolean; error?: string }> => {
     const token = localStorage.getItem('smm_auth_token') || '';
     const headers: Record<string, string> = { 'x-user-id': currentUser?.id || 'guest' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -1658,10 +1665,10 @@ export default function App() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || 'Only the admin who created this room can delete it.');
-        return false;
+        const errMsg = data.error || 'Only the admin who created this room can delete it.';
+        return { success: false, error: errMsg };
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Network issue deleting room from server:', err);
     }
 
@@ -1677,10 +1684,10 @@ export default function App() {
       return remaining;
     });
 
-    return true;
+    return { success: true };
   };
 
-  const handleLeaveRoom = async (roomId: string): Promise<boolean> => {
+  const handleLeaveRoom = async (roomId: string): Promise<{ success: boolean; error?: string }> => {
     const token = localStorage.getItem('smm_auth_token') || '';
     const headers: Record<string, string> = { 'x-user-id': currentUser?.id || 'guest' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -1693,10 +1700,10 @@ export default function App() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || 'Failed to leave room.');
-        return false;
+        const errMsg = data.error || 'Failed to leave room.';
+        return { success: false, error: errMsg };
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Network issue leaving room on server:', err);
     }
 
@@ -1712,7 +1719,7 @@ export default function App() {
       return remaining;
     });
 
-    return true;
+    return { success: true };
   };
 
   // 4. Udhaar Handlers (Personal Loans / Khatabook)

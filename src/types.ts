@@ -107,7 +107,7 @@ export interface Roommate {
   upiId?: string;
   phone?: string;
   email?: string;
-  role?: 'owner' | 'member';
+  role?: 'owner' | 'admin' | 'member';
   joinedAt?: string;
   isSelf?: boolean;
 }
@@ -115,7 +115,7 @@ export interface Roommate {
 export interface RoomGroup {
   id: string;
   name: string;
-  type?: 'Hostel' | 'Flat' | 'PG' | 'Apartment' | 'Other';
+  type?: 'Flat / Apartment' | 'Flat' | 'Hostel' | 'PG' | 'Apartment' | 'Other' | string;
   inviteCode: string;
   ownerId?: string;
   members: Roommate[];

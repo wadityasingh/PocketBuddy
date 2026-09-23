@@ -41,9 +41,11 @@ export const ManualExpenseModal: React.FC<ManualExpenseModalProps> = ({
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('UPI');
   const [date, setDate] = useState(getTodayString());
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setError(null);
+    setIsSubmitting(false);
     if (editingTransaction) {
       setType(editingTransaction.type === 'income' ? 'income' : 'expense');
       setAmount(editingTransaction.amount ? editingTransaction.amount.toString() : '');
@@ -88,6 +90,7 @@ export const ManualExpenseModal: React.FC<ManualExpenseModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setError(null);
 
     const parsedAmount = parseFloat(amount);
@@ -113,36 +116,46 @@ export const ManualExpenseModal: React.FC<ManualExpenseModalProps> = ({
       return;
     }
 
-    if (editingTransaction && onUpdateTransaction) {
-      const success = onUpdateTransaction({
-        ...editingTransaction,
-        title: title.trim(),
-        amount: parsedAmount,
-        type,
-        category: type === 'income' ? 'Income' : 'Expense',
-        paymentMode,
-        date: date || getTodayString(),
-        notes: undefined,
-      });
-      if (success === false) return;
-    } else {
-      const success = onAddTransaction({
-        title: title.trim(),
-        amount: parsedAmount,
-        type,
-        category: type === 'income' ? 'Income' : 'Expense',
-        paymentMode,
-        date: date || getTodayString(),
-        notes: undefined,
-      });
-      if (success === false) return;
-    }
+    setIsSubmitting(true);
+    let success: boolean | void = true;
 
-    // Reset form state cleanly
-    setAmount('');
-    setTitle('');
-    setError(null);
-    onClose();
+    try {
+      if (editingTransaction && onUpdateTransaction) {
+        success = onUpdateTransaction({
+          ...editingTransaction,
+          title: title.trim(),
+          amount: parsedAmount,
+          type,
+          category: type === 'income' ? 'Income' : 'Expense',
+          paymentMode,
+          date: date || getTodayString(),
+          notes: undefined,
+        });
+      } else {
+        success = onAddTransaction({
+          title: title.trim(),
+          amount: parsedAmount,
+          type,
+          category: type === 'income' ? 'Income' : 'Expense',
+          paymentMode,
+          date: date || getTodayString(),
+          notes: undefined,
+        });
+      }
+
+      if (success === false) {
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Reset form state cleanly
+      setAmount('');
+      setTitle('');
+      setError(null);
+      onClose();
+    } finally {
+      setTimeout(() => setIsSubmitting(false), 500);
+    }
   };
 
   return (
@@ -446,10 +459,10 @@ export const ManualExpenseModal: React.FC<ManualExpenseModalProps> = ({
               <button
                 id="save-manual-transaction-btn"
                 type="submit"
-                disabled={isInsufficient}
+                disabled={isInsufficient || isSubmitting}
                 className={`flex-2 py-2.5 px-4 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs ${
-                  isInsufficient
-                    ? 'bg-rose-100 text-rose-700 border border-rose-300 cursor-not-allowed'
+                  isInsufficient || isSubmitting
+                    ? 'bg-rose-100 text-rose-700 border border-rose-300 cursor-not-allowed opacity-75'
                     : 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer active:scale-[0.99]'
                 }`}
               >

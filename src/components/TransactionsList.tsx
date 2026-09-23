@@ -41,10 +41,16 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
   const [search, setSearch] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const safeTransactions = useMemo(
-    () => (Array.isArray(transactions) ? transactions : []),
-    [transactions]
-  );
+  const safeTransactions = useMemo(() => {
+    const list = Array.isArray(transactions) ? transactions : [];
+    const seenIds = new Set<string>();
+    return list.filter((t) => {
+      if (!t || !t.id) return false;
+      if (seenIds.has(t.id)) return false;
+      seenIds.add(t.id);
+      return true;
+    });
+  }, [transactions]);
 
   // Search filter
   const filtered = useMemo(() => {

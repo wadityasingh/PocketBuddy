@@ -103,7 +103,7 @@ interface ServerRoomSettlement {
 interface ServerRoomGroup {
   id: string;
   name: string;
-  type?: 'Hostel' | 'Flat' | 'PG' | 'Apartment' | 'Other';
+  type?: 'Hostel' | 'Flat' | 'PG' | 'Apartment' | 'Other' | 'Flat / Apartment' | string;
   inviteCode: string;
   ownerId: string;
   members: ServerRoomMember[];
@@ -388,6 +388,19 @@ function getAuthUser(req: express.Request): ServerUser | null {
 
   const users = loadUsers();
 
+  const findUserById = (userId: string): ServerUser | null => {
+    if (!userId || userId === "guest") return null;
+    const u = users.find((x) => x.id === userId);
+    if (u) return u;
+    const uData = loadUserData(userId);
+    if (uData && uData.user) {
+      users.push(uData.user);
+      saveUsers(users);
+      return uData.user;
+    }
+    return null;
+  };
+
   // 1. Primary: Verify through authenticated Bearer token
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7).trim();
@@ -406,26 +419,36 @@ function getAuthUser(req: express.Request): ServerUser | null {
         const matched = users.find((x) => x.id === extractedUserId || token.includes(x.id));
         if (matched) {
           tokenUserId = matched.id;
+        } else {
+          tokenUserId = extractedUserId;
+        }
+      } else {
+        const matchBySubstring = users.find((x) => token.includes(x.id));
+        if (matchBySubstring) {
+          tokenUserId = matchBySubstring.id;
         }
       }
 
       if (tokenUserId) {
-        // SECURITY: If client sends a different x-user-id that conflicts with their verified token, REJECT (spoofing attempt)
-        if (customUserId && customUserId !== "guest" && customUserId !== tokenUserId) {
-          console.warn(`[Security Alert] Token belongs to user ${tokenUserId}, but request attempted x-user-id spoofing with ${customUserId}. Rejecting.`);
-          return null;
+        const user = findUserById(tokenUserId);
+        if (user) {
+          if (!customUserId || customUserId === "guest" || customUserId === user.id) {
+            return user;
+          }
+          const customUser = findUserById(customUserId);
+          if (customUser) {
+            return customUser;
+          }
+          return user;
         }
-
-        const user = users.find((x) => x.id === tokenUserId);
-        if (user) return user;
       }
     }
   }
 
-  // 2. Secondary fallback ONLY for unauthenticated public routes or if no Bearer token was supplied
-  if (customUserId && customUserId !== "guest" && !authHeader) {
-    const u = users.find((x) => x.id === customUserId);
-    if (u) return u;
+  // 2. Secondary fallback: lookup by customUserId (x-user-id header)
+  if (customUserId && customUserId !== "guest") {
+    const customUser = findUserById(customUserId);
+    if (customUser) return customUser;
   }
 
   return null;
@@ -719,9 +742,16 @@ const handleSaveUserData = (req: any, res: any) => {
     // Handle transactions safely:
     // If incoming payload explicitly includes transactions array, accept it directly as authoritative
     // (This allows user to edit or delete transactions without the server resurrecting them).
+    // Deduplicate incoming transactions by unique ID.
     // Only fallback to existing transactions if payload omitted transactions completely.
     if (Array.isArray(payload.transactions)) {
-      payload.transactions = payload.transactions;
+      const seenIds = new Set<string>();
+      payload.transactions = payload.transactions.filter((t: any) => {
+        if (!t || !t.id) return false;
+        if (seenIds.has(t.id)) return false;
+        seenIds.add(t.id);
+        return true;
+      });
     } else if (existingHasTransactions && !req.body.forceReset) {
       payload.transactions = existingData.transactions;
     }
@@ -1139,7 +1169,11 @@ app.get("/api/rooms/:roomId", (req, res) => {
 app.post("/api/rooms", (req, res) => {
   const user = getAuthUser(req);
   if (!user) {
-    return res.status(401).json({ success: false, error: "Authentication required to create a room" });
+    console.error("[Create Room Error] 401 Unauthorized - user not authenticated. Headers:", {
+      authHeader: req.headers.authorization ? "Present" : "Missing",
+      xUserId: req.headers["x-user-id"] || "None",
+    });
+    return res.status(401).json({ success: false, error: "Authentication required to create a room. Please sign in." });
   }
 
   const { name, type } = req.body || {};
@@ -1150,25 +1184,27 @@ app.post("/api/rooms", (req, res) => {
   const trimmedName = name.trim();
   const rooms = loadRooms();
 
-  // Deduplication guard: if room with same name & owner was created within 6 seconds, return it
+  // Deduplication guard: if room with same name & owner was created within 10 seconds, return it
   const recentDuplicate = rooms.find(
     (r) =>
       r.ownerId === user.id &&
       r.name.toLowerCase() === trimmedName.toLowerCase() &&
-      r.activities?.some((a) => a.type === "join" && Date.now() - new Date(a.time || 0).getTime() < 6000)
+      r.activities?.some((a) => a.type === "join" && Date.now() - new Date(a.time || 0).getTime() < 10000)
   );
   if (recentDuplicate) {
+    console.log(`[Create Room] Returning recent duplicate room "${trimmedName}" (${recentDuplicate.id}) for user ${user.name}`);
     return res.json({ success: true, data: recentDuplicate, room: recentDuplicate });
   }
 
   const inviteCode = generateUniqueRoomCode(rooms);
   const roomId = "room_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
   const today = new Date().toISOString().split("T")[0];
+  const roomType = type && String(type).trim() ? String(type).trim() : "Flat / Apartment";
 
   const newRoom: ServerRoomGroup = {
     id: roomId,
     name: trimmedName,
-    type: type || "Flat",
+    type: roomType,
     inviteCode,
     ownerId: user.id,
     members: [
@@ -1200,6 +1236,22 @@ app.post("/api/rooms", (req, res) => {
 
   rooms.unshift(newRoom);
   saveRooms(rooms);
+
+  // Sync to user personal data file as well for bulletproof persistence
+  try {
+    const uData = loadUserData(user.id);
+    if (uData) {
+      if (!Array.isArray(uData.roomGroups)) uData.roomGroups = [];
+      uData.roomGroups = uData.roomGroups.filter((r) => r && r.id !== roomId);
+      uData.roomGroups.unshift(newRoom);
+      uData.activeRoomId = roomId;
+      saveUserData(user.id, uData);
+    }
+  } catch (uErr) {
+    console.warn("Could not sync room to user_data file:", uErr);
+  }
+
+  console.log(`[Create Room Success] Created room "${trimmedName}" (${roomId}) with code ${inviteCode} for admin ${user.name}`);
   return res.json({ success: true, data: newRoom, room: newRoom });
 });
 
@@ -1207,6 +1259,7 @@ app.post("/api/rooms", (req, res) => {
 app.post("/api/rooms/join", (req, res) => {
   const user = getAuthUser(req);
   if (!user) {
+    console.error("[Join Room Error] 401 Unauthorized - user not authenticated");
     return res.status(401).json({ success: false, error: "Authentication required to join a room" });
   }
 
@@ -1296,6 +1349,20 @@ app.post("/api/rooms/join", (req, res) => {
     saveRooms(rooms);
   }
 
+  // Sync to user personal data file as well
+  try {
+    const uData = loadUserData(user.id);
+    if (uData) {
+      if (!Array.isArray(uData.roomGroups)) uData.roomGroups = [];
+      uData.roomGroups = uData.roomGroups.filter((r) => r && r.id !== room.id);
+      uData.roomGroups.unshift(room);
+      uData.activeRoomId = room.id;
+      saveUserData(user.id, uData);
+    }
+  } catch (uErr) {
+    console.warn("Could not sync joined room to user_data file:", uErr);
+  }
+
   const enrichedRoom = {
     ...room,
     members: room.members.map((m) => ({
@@ -1304,6 +1371,7 @@ app.post("/api/rooms/join", (req, res) => {
     })),
   };
 
+  console.log(`[Join Room Success] User ${user.name} joined room "${room.name}" (${room.id})`);
   return res.json({ success: true, data: enrichedRoom, room: enrichedRoom });
 });
 

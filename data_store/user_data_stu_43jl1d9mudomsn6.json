@@ -1,0 +1,76 @@
+{
+  "monthlyPocketMoney": 0,
+  "wallets": {
+    "cash": 0,
+    "upi": 0,
+    "bank": 0
+  },
+  "isSampleData": false,
+  "transactions": [],
+  "roomExpenses": [],
+  "roommates": [],
+  "roomGroups": [
+    {
+      "id": "room_1790142514809_u8ln",
+      "name": "Roomies",
+      "type": "Flat / Apartment",
+      "inviteCode": "EW6BHC",
+      "ownerId": "stu_72lyn57mudomsmm",
+      "members": [
+        {
+          "id": "rm_stu_72lyn57mudomsmm",
+          "userId": "stu_72lyn57mudomsmm",
+          "name": "TEST1",
+          "email": "test1@pocketbuddy.app",
+          "upiId": "test1@upi",
+          "phone": "9876543210",
+          "role": "owner",
+          "joinedAt": "2026-09-23",
+          "isSelf": true
+        },
+        {
+          "id": "rm_stu_43jl1d9mudomsn6",
+          "userId": "stu_43jl1d9mudomsn6",
+          "name": "TEST2",
+          "email": "test2@pocketbuddy.app",
+          "upiId": "test2@upi",
+          "phone": "9876543211",
+          "role": "member",
+          "joinedAt": "2026-09-23",
+          "isSelf": true
+        }
+      ],
+      "expenses": [],
+      "settlements": [],
+      "activities": [
+        {
+          "id": "act_1790142514821",
+          "roomId": "room_1790142514809_u8ln",
+          "text": "TEST2 joined the room",
+          "time": "2026-09-23T05:48:34.821Z",
+          "type": "join"
+        },
+        {
+          "id": "act_1790142514809",
+          "roomId": "room_1790142514809_u8ln",
+          "text": "TEST1 created room \"Roomies\"",
+          "time": "2026-09-23T05:48:34.809Z",
+          "type": "join"
+        }
+      ],
+      "createdAt": "2026-09-23"
+    }
+  ],
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "udhaarRecords": [],
+  "bills": [],
+  "goals": [],
+  "hasCompletedTour": true,
+  "activeRoomId": "room_1790142514809_u8ln"
+}

@@ -157,11 +157,14 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
 
   // Form states: Create Room
   const [newRoomName, setNewRoomName] = useState('');
-  const [newRoomType, setNewRoomType] = useState('Flat');
+  const [newRoomType, setNewRoomType] = useState('Flat / Apartment');
+  const [createRoomError, setCreateRoomError] = useState('');
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
 
   // Form states: Join Room
   const [joinCode, setJoinCode] = useState('');
   const [joinError, setJoinError] = useState('');
+  const [isJoiningRoom, setIsJoiningRoom] = useState(false);
 
   // Form states: Add Roommate
   const [newMemberName, setNewMemberName] = useState('');
@@ -475,7 +478,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
     return (currentRoom.members || []).some(
       (m) =>
         (m.userId === currentUser.id || m.id === currentUser.id || m.id === 'rm_' + currentUser.id) &&
-        m.role === 'owner'
+        (m.role === 'owner' || m.role === 'admin')
     );
   }, [currentUser, currentRoom]);
 
@@ -737,6 +740,208 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
     setIsAddRoommateOpen(false);
   };
 
+  const renderCreateRoomModal = () => {
+    if (!isCreateRoomOpen) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 text-left animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-lg font-bold text-slate-900">Create New Room</h3>
+            <button
+              onClick={() => {
+                setIsCreateRoomOpen(false);
+                setCreateRoomError('');
+              }}
+              className="text-slate-400 hover:text-slate-600 p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newRoomName.trim() || isCreatingRoom) return;
+              setCreateRoomError('');
+              setIsCreatingRoom(true);
+              try {
+                await onCreateRoom(newRoomName.trim(), newRoomType);
+                setIsCreateRoomOpen(false);
+                setNewRoomName('');
+              } catch (err: any) {
+                console.error('Create room error:', err);
+                setCreateRoomError(err?.message || 'Failed to create room. Please try again.');
+              } finally {
+                setIsCreatingRoom(false);
+              }
+            }}
+            className="mt-4 space-y-4"
+          >
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Room or Flat Name
+              </label>
+              <input
+                type="text"
+                required
+                autoFocus
+                placeholder="e.g., Roomies, Flat 304"
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Living Type
+              </label>
+              <select
+                value={newRoomType}
+                onChange={(e) => setNewRoomType(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                <option value="Flat / Apartment">Flat / Apartment</option>
+                <option value="Hostel">Hostel</option>
+                <option value="PG">Paying Guest (PG)</option>
+                <option value="Flat">Flat</option>
+                <option value="Apartment">Apartment</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            {createRoomError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{createRoomError}</span>
+              </div>
+            )}
+
+            <div className="pt-2 flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreateRoomOpen(false);
+                  setCreateRoomError('');
+                }}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isCreatingRoom || !newRoomName.trim()}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-sm flex items-center gap-2"
+              >
+                {isCreatingRoom ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Creating Room...</span>
+                  </>
+                ) : (
+                  <span>Create Room</span>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const renderJoinRoomModal = () => {
+    if (!isJoinRoomOpen) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 text-left animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-lg font-bold text-slate-900">Join a Room</h3>
+            <button
+              onClick={() => {
+                setIsJoinRoomOpen(false);
+                setJoinError('');
+              }}
+              className="text-slate-400 hover:text-slate-600 p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setJoinError('');
+              const clean = joinCode.trim().toUpperCase();
+              if (!clean || isJoiningRoom) return;
+              setIsJoiningRoom(true);
+              try {
+                await onJoinRoom(clean);
+                setIsJoinRoomOpen(false);
+                setJoinCode('');
+              } catch (err: any) {
+                console.error('Join room error:', err);
+                setJoinError(err?.message || 'Failed to join room. Please check the code.');
+              } finally {
+                setIsJoiningRoom(false);
+              }
+            }}
+            className="mt-4 space-y-4"
+          >
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                6-Character Room Invite Code
+              </label>
+              <input
+                type="text"
+                required
+                autoFocus
+                maxLength={10}
+                placeholder="e.g., AB3K9X"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                className="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-mono font-bold text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
+              />
+              <p className="text-xs text-slate-500 mt-1.5">
+                Ask any of your roommates for their 6-character room invite code.
+              </p>
+            </div>
+
+            {joinError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{joinError}</span>
+              </div>
+            )}
+
+            <div className="pt-2 flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsJoinRoomOpen(false);
+                  setJoinError('');
+                }}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isJoiningRoom || !joinCode.trim()}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-sm flex items-center gap-2"
+              >
+                {isJoiningRoom ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Joining...</span>
+                  </>
+                ) : (
+                  <span>Join Room</span>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   // 1. EMPTY STATE: No room exists
   if (!currentRoom) {
     return (
@@ -753,7 +958,10 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
 
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <button
-              onClick={() => setIsCreateRoomOpen(true)}
+              onClick={() => {
+                setCreateRoomError('');
+                setIsCreateRoomOpen(true);
+              }}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition shadow-sm min-h-[44px]"
             >
               <Plus className="w-4 h-4" />
@@ -773,151 +981,8 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
           </div>
         </div>
 
-        {/* Create Room Modal */}
-        {isCreateRoomOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 text-left animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="text-lg font-bold text-slate-900">Create New Room</h3>
-                <button
-                  onClick={() => setIsCreateRoomOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 p-1"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!newRoomName.trim()) return;
-                  await onCreateRoom(newRoomName.trim(), newRoomType);
-                  setIsCreateRoomOpen(false);
-                  setNewRoomName('');
-                }}
-                className="mt-4 space-y-4"
-              >
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Room or Flat Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    placeholder="e.g., Flat 304, Green Hostel B-Wing"
-                    value={newRoomName}
-                    onChange={(e) => setNewRoomName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Living Type
-                  </label>
-                  <select
-                    value={newRoomType}
-                    onChange={(e) => setNewRoomType(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    <option value="Flat">Flat / Apartment</option>
-                    <option value="Hostel">Hostel</option>
-                    <option value="PG">Paying Guest (PG)</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div className="pt-2 flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateRoomOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
-                  >
-                    Create Room
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Join Room Modal */}
-        {isJoinRoomOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 text-left animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="text-lg font-bold text-slate-900">Join a Room</h3>
-                <button
-                  onClick={() => setIsJoinRoomOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 p-1"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setJoinError('');
-                  if (!joinCode.trim()) return;
-                  try {
-                    await onJoinRoom(joinCode.trim().toUpperCase());
-                    setIsJoinRoomOpen(false);
-                    setJoinCode('');
-                  } catch (err: any) {
-                    setJoinError(err?.message || 'Failed to join room. Please check the code.');
-                  }
-                }}
-                className="mt-4 space-y-4"
-              >
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    6-Character Room Invite Code
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    maxLength={10}
-                    placeholder="e.g., AB3K9X"
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    className="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-mono font-bold text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
-                  />
-                  <p className="text-xs text-slate-500 mt-1.5">
-                    Ask any of your roommates for their 6-character room invite code.
-                  </p>
-                </div>
-
-                {joinError && (
-                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{joinError}</span>
-                  </div>
-                )}
-
-                <div className="pt-2 flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setIsJoinRoomOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
-                  >
-                    Join Room
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {renderCreateRoomModal()}
+        {renderJoinRoomModal()}
       </div>
     );
   }
@@ -940,6 +1005,12 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 {currentRoom.type && (
                   <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] sm:text-[11px] font-medium border border-slate-200">
                     {currentRoom.type}
+                  </span>
+                )}
+                {isRoomOwner && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[10px] sm:text-[11px] font-bold border border-amber-200 flex items-center gap-1">
+                    <Shield className="w-2.5 h-2.5" />
+                    Admin
                   </span>
                 )}
               </div>
@@ -2720,6 +2791,9 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
           </div>
         </div>
       )}
+      {/* Create and Join Room Modals for active room view */}
+      {renderCreateRoomModal()}
+      {renderJoinRoomModal()}
     </div>
   );
 };
