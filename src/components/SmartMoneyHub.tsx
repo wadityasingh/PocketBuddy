@@ -315,9 +315,9 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
             id="btn-wallet-add"
             type="button"
             onClick={() => setActiveWalletModal(activeWalletModal === 'add' ? 'none' : 'add')}
-            className="flex-1 sm:flex-initial h-9 px-3 rounded-xl text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition cursor-pointer shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+            className="flex-1 sm:flex-initial h-9 px-3.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition cursor-pointer shadow-xs shadow-red-600/30 inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
           >
-            <Plus className="w-3.5 h-3.5 shrink-0" />
+            <Plus className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
             <span>Add Money</span>
           </button>
 
@@ -325,10 +325,10 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
             id="btn-wallet-transfer"
             type="button"
             onClick={() => setActiveWalletModal(activeWalletModal === 'transfer' ? 'none' : 'transfer')}
-            className="flex-1 sm:flex-initial h-9 px-3 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+            className="flex-1 sm:flex-initial h-9 px-3 rounded-xl text-xs font-semibold text-zinc-900 bg-white hover:bg-zinc-100 border border-zinc-300 transition cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
             title="Transfer between Cash & UPI"
           >
-            <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <ArrowRightLeft className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
             <span>Transfer</span>
           </button>
 
@@ -340,7 +340,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               setTempUpi(fixedUpi.toString());
               setActiveWalletModal(activeWalletModal === 'edit' ? 'none' : 'edit');
             }}
-            className="h-9 w-9 rounded-xl text-slate-500 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 transition inline-flex items-center justify-center cursor-pointer shrink-0"
+            className="h-9 w-9 rounded-xl text-zinc-600 hover:text-zinc-950 bg-white hover:bg-zinc-100 border border-zinc-300 transition inline-flex items-center justify-center cursor-pointer shrink-0 shadow-2xs"
             title="Edit Fixed Wallet Balances"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -554,14 +554,14 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
             <button
               type="button"
               onClick={() => setActiveWalletModal('none')}
-              className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer"
+              className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-800 cursor-pointer"
             >
               Cancel
             </button>
             <button
               id="submit-edit-wallets"
               type="submit"
-              className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 cursor-pointer shadow-2xs"
+              className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 cursor-pointer shadow-xs shadow-red-600/30"
             >
               Save Balances
             </button>
@@ -573,42 +573,42 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
       {activeWalletModal === 'transfer' && (
         <form
           onSubmit={handleTransferSubmit}
-          className="p-3.5 bg-slate-50 rounded-xl border border-indigo-200/80 space-y-2.5 animate-in fade-in duration-150"
+          className="p-3.5 bg-zinc-50/80 rounded-xl border border-zinc-300 space-y-2.5 animate-in fade-in duration-150"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Transfer Money (ATM Withdrawal / Bank Deposit)</span>
+            <span className="text-xs font-bold text-zinc-900">Transfer Money (ATM Withdrawal / Bank Deposit)</span>
             <button
               type="button"
               onClick={() => setActiveWalletModal('none')}
-              className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+              className="text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">From</label>
+              <label className="text-[10px] font-bold text-zinc-600 block mb-1">From</label>
               <select
                 id="select-transfer-from"
                 value={transferFrom}
                 onChange={(e) => setTransferFrom(e.target.value as PaymentMode)}
-                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-zinc-300 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
               >
                 <option value="UPI">UPI (Bank / ATM)</option>
                 <option value="Cash">Cash in Hand</option>
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">To</label>
+              <label className="text-[10px] font-bold text-zinc-600 block mb-1">To</label>
               <input
                 type="text"
                 disabled
                 value={transferFrom === 'UPI' ? 'Cash in Hand' : 'UPI (Bank)'}
-                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-100 text-slate-600 cursor-not-allowed"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-zinc-100 text-zinc-600 cursor-not-allowed"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">Amount (₹)</label>
+              <label className="text-[10px] font-bold text-zinc-600 block mb-1">Amount (₹)</label>
               <input
                 id="input-transfer-amount"
                 type="number"
@@ -616,7 +616,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                 value={transferAmount}
                 onChange={(e) => setTransferAmount(e.target.value)}
                 placeholder="500"
-                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-indigo-500 focus:outline-none bg-white"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-zinc-300 focus:border-red-600 focus:outline-none bg-white"
                 autoFocus
               />
             </div>
@@ -625,7 +625,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
             <button
               type="button"
               onClick={() => setActiveWalletModal('none')}
-              className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer"
+              className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer"
             >
               Cancel
             </button>
@@ -633,7 +633,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               id="submit-transfer-wallets"
               type="submit"
               disabled={!transferAmount || parseFloat(transferAmount) <= 0 || isSubmittingWallet}
-              className="px-3 py-1 bg-indigo-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 cursor-pointer shadow-2xs"
+              className="px-3.5 py-1.5 bg-zinc-950 disabled:opacity-50 text-white rounded-lg text-xs font-bold hover:bg-black cursor-pointer shadow-xs"
             >
               {isSubmittingWallet ? 'Transferring...' : 'Complete Transfer'}
             </button>
@@ -645,33 +645,33 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
       {activeWalletModal === 'add' && (
         <form
           onSubmit={handleAddSubmit}
-          className="p-3.5 bg-slate-50 rounded-xl border border-indigo-200/80 space-y-2.5 animate-in fade-in duration-150"
+          className="p-3.5 bg-zinc-50/80 rounded-xl border border-red-200 space-y-2.5 animate-in fade-in duration-150"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Add Money (Allowance / Freelance / Gift)</span>
+            <span className="text-xs font-bold text-zinc-900">Add Money (Allowance / Freelance / Gift)</span>
             <button
               type="button"
               onClick={() => setActiveWalletModal('none')}
-              className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+              className="text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">Deposit To</label>
+              <label className="text-[10px] font-bold text-zinc-600 block mb-1">Deposit To</label>
               <select
                 id="select-add-target"
                 value={addTarget}
                 onChange={(e) => setAddTarget(e.target.value as PaymentMode)}
-                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-zinc-300 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
               >
                 <option value="UPI">UPI (Google Pay / PhonePe / Bank)</option>
                 <option value="Cash">Physical Cash</option>
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">Amount (₹)</label>
+              <label className="text-[10px] font-bold text-zinc-600 block mb-1">Amount (₹)</label>
               <input
                 id="input-add-amount"
                 type="number"
@@ -679,17 +679,17 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                 value={addAmount}
                 onChange={(e) => setAddAmount(e.target.value)}
                 placeholder="2000"
-                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-indigo-500 focus:outline-none bg-white"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-zinc-300 focus:border-red-600 focus:outline-none bg-white"
                 autoFocus
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">Type</label>
+              <label className="text-[10px] font-bold text-zinc-600 block mb-1">Type</label>
               <select
                 id="select-add-type"
                 value={addType}
                 onChange={(e) => setAddType(e.target.value as 'allowance' | 'topup')}
-                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-zinc-300 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
               >
                 <option value="allowance">Add to Monthly Budget (+Allowance)</option>
                 <option value="topup">Wallet Top-up Only</option>
@@ -700,7 +700,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
             <button
               type="button"
               onClick={() => setActiveWalletModal('none')}
-              className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer"
+              className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer"
             >
               Cancel
             </button>
@@ -708,7 +708,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               id="submit-add-money"
               type="submit"
               disabled={!addAmount || parseFloat(addAmount) <= 0 || isSubmittingWallet}
-              className="px-3 py-1 bg-indigo-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 cursor-pointer shadow-2xs"
+              className="px-3.5 py-1.5 bg-red-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold hover:bg-red-700 cursor-pointer shadow-xs shadow-red-600/30"
             >
               {isSubmittingWallet ? 'Adding...' : 'Add to Wallet'}
             </button>

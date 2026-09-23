@@ -829,7 +829,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               <button
                 type="submit"
                 disabled={isCreatingRoom || !newRoomName.trim()}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-sm flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-xs shadow-red-600/30 flex items-center gap-2 cursor-pointer"
               >
                 {isCreatingRoom ? (
                   <>
@@ -924,7 +924,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               <button
                 type="submit"
                 disabled={isJoiningRoom || !joinCode.trim()}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-sm flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-zinc-950 hover:bg-black disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-xs flex items-center gap-2 cursor-pointer"
               >
                 {isJoiningRoom ? (
                   <>
@@ -946,12 +946,12 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   if (!currentRoom) {
     return (
       <div className="w-full max-w-xl mx-auto py-8 px-4 text-center">
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+        <div className="bg-white rounded-2xl border border-zinc-200 p-6 sm:p-8 shadow-sm">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-zinc-950 text-red-500 flex items-center justify-center mb-4 shadow-sm">
             <Home className="w-7 h-7" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Room &amp; Flatmate Expenses</h2>
-          <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto leading-relaxed">
+          <h2 className="text-xl sm:text-2xl font-black text-zinc-950">Room &amp; Flatmate Expenses</h2>
+          <p className="text-sm text-zinc-600 mt-2 max-w-md mx-auto leading-relaxed">
             Split rent, utilities, milk, groceries, and daily flat kharcha with your roommates. PocketBuddy calculates
             who owes whom automatically.
           </p>
@@ -962,9 +962,9 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 setCreateRoomError('');
                 setIsCreateRoomOpen(true);
               }}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition shadow-sm min-h-[44px]"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition shadow-xs shadow-red-600/30 min-h-[44px] cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
               Create a Room
             </button>
             <button
@@ -973,7 +973,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 setJoinCode('');
                 setIsJoinRoomOpen(true);
               }}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-medium text-sm transition min-h-[44px]"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 font-semibold text-sm transition min-h-[44px] cursor-pointer shadow-2xs"
             >
               <Users className="w-4 h-4" />
               Join with Room Code

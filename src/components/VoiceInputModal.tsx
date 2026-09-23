@@ -149,9 +149,19 @@ export const parseAndTranslateLocally = (
     descLower.includes('thali') ||
     descLower.includes('roti') ||
     descLower.includes('swiggy') ||
-    descLower.includes('zomato')
+    descLower.includes('zomato') ||
+    descLower.includes('chicken') ||
+    descLower.includes('mutton') ||
+    descLower.includes('fish') ||
+    descLower.includes('egg') ||
+    descLower.includes('anda') ||
+    descLower.includes('paneer') ||
+    descLower.includes('maggie') ||
+    descLower.includes('maggi') ||
+    descLower.includes('biryani') ||
+    descLower.includes('biscuit')
   ) {
-    translatedDesc = 'Food & Meals';
+    translatedDesc = descLower.includes('chicken') ? 'Chicken & Food' : descLower.includes('biryani') ? 'Biryani' : 'Food & Meals';
     category = 'Mess & Food';
   } else if (
     descLower.includes('auto') ||
@@ -162,7 +172,8 @@ export const parseAndTranslateLocally = (
     descLower.includes('ola') ||
     descLower.includes('travel') ||
     descLower.includes('bus') ||
-    descLower.includes('metro')
+    descLower.includes('metro') ||
+    descLower.includes('rickshaw')
   ) {
     translatedDesc = 'Travel & Auto';
     category = 'Travel & Auto';
@@ -178,9 +189,16 @@ export const parseAndTranslateLocally = (
     descLower.includes('grocery') ||
     descLower.includes('groceries') ||
     descLower.includes('ration') ||
-    descLower.includes('kirana')
+    descLower.includes('kirana') ||
+    descLower.includes('kitchen') ||
+    descLower.includes('kichen') ||
+    descLower.includes('bartan') ||
+    descLower.includes('gas') ||
+    descLower.includes('cylinder') ||
+    descLower.includes('surf') ||
+    descLower.includes('soap')
   ) {
-    translatedDesc = 'Groceries';
+    translatedDesc = 'Groceries & Kitchen';
     category = 'Groceries';
   } else if (
     descLower.includes('room') ||
@@ -251,6 +269,7 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [audioLevel, setAudioLevel] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -505,9 +524,9 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
 
   // 8. Confirm and add expense (deducts from balance)
   const handleConfirmAndAdd = () => {
-    if (!parsedItem || parsedItem.amount <= 0) return;
+    if (!parsedItem || parsedItem.amount <= 0 || isAddingExpense) return;
 
-    const availableVoice = (parsedItem.paymentMode === 'Cash' ? wallets?.cash : wallets?.upi) ?? 0;
+    const availableVoice = parsedItem.paymentMode === 'Cash' ? availableCash : availableUpi;
     if (parsedItem.amount > availableVoice) {
       setError(
         `Insufficient ${parsedItem.paymentMode} Balance! You only have ₹${availableVoice.toLocaleString('en-IN')} in ${parsedItem.paymentMode}, but this expense is ₹${parsedItem.amount.toLocaleString('en-IN')}. Please reduce the amount or add funds to ${parsedItem.paymentMode}.`
@@ -515,19 +534,27 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
       return;
     }
 
-    const success = onAddTransaction({
-      title: parsedItem.description || 'Voice Expense',
-      amount: parsedItem.amount,
-      type: 'expense',
-      category: parsedItem.category,
-      paymentMode: parsedItem.paymentMode,
-      date: new Date().toISOString().split('T')[0],
-      notes: transcript ? `Voice note: "${transcript}"` : undefined,
-    });
+    setIsAddingExpense(true);
+    try {
+      const success = onAddTransaction({
+        title: parsedItem.description || 'Voice Expense',
+        amount: parsedItem.amount,
+        type: 'expense',
+        category: parsedItem.category,
+        paymentMode: parsedItem.paymentMode,
+        date: new Date().toISOString().split('T')[0],
+        notes: transcript ? `Voice note: "${transcript}"` : undefined,
+      });
 
-    if (success === false) return;
+      if (success === false) {
+        setIsAddingExpense(false);
+        return;
+      }
 
-    onClose();
+      onClose();
+    } finally {
+      setTimeout(() => setIsAddingExpense(false), 500);
+    }
   };
 
   // 9. Permission grant handlers
@@ -569,16 +596,16 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
         className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] transition-all"
       >
         {/* Header - 100% English Only */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
+        <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-white">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-zinc-950 text-red-500 flex items-center justify-center shadow-xs">
               <Mic className="w-4.5 h-4.5" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900 text-sm tracking-tight leading-snug">
+              <h3 className="font-bold text-zinc-950 text-sm tracking-tight leading-snug">
                 Voice Expense
               </h3>
-              <p className="text-[11px] text-slate-500 font-normal">
+              <p className="text-[11px] text-zinc-500 font-normal">
                 Speak or type expense • Deducts from balance
               </p>
             </div>
@@ -588,7 +615,7 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
             type="button"
             id="close-voice-modal-btn"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="w-4 h-4" />
@@ -599,15 +626,15 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
         <div className="p-6 overflow-y-auto space-y-4">
           {/* Permission Prompt */}
           {permissionChoice === 'pending' ? (
-            <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/80 space-y-4 animate-fade-in text-center">
-              <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-800 shadow-xs">
-                <ShieldCheck className="w-6 h-6 text-slate-900" />
+            <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50/80 space-y-4 animate-fade-in text-center">
+              <div className="w-12 h-12 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center mx-auto text-zinc-800 shadow-xs">
+                <ShieldCheck className="w-6 h-6 text-zinc-950" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-slate-900">
+                <h4 className="text-sm font-bold text-zinc-950">
                   Allow Microphone Access
                 </h4>
-                <p className="text-xs text-slate-500 leading-relaxed px-2">
+                <p className="text-xs text-zinc-500 leading-relaxed px-2">
                   PocketBuddy needs microphone access to listen clearly to your expense.
                 </p>
               </div>
@@ -617,7 +644,7 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                   type="button"
                   id="mic-perm-while-using"
                   onClick={() => handleGrantPermission('always')}
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition cursor-pointer shadow-xs"
+                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-950 hover:bg-black text-white transition cursor-pointer shadow-xs"
                 >
                   While using this website
                 </button>
@@ -625,7 +652,7 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                   type="button"
                   id="mic-perm-only-once"
                   onClick={() => handleGrantPermission('once')}
-                  className="w-full py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100 transition cursor-pointer"
                 >
                   Only this time
                 </button>
@@ -633,7 +660,7 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                   type="button"
                   id="mic-perm-deny"
                   onClick={handleDenyPermission}
-                  className="w-full py-2 px-4 text-slate-400 hover:text-slate-600 text-[11px] transition cursor-pointer"
+                  className="w-full py-2 px-4 text-zinc-400 hover:text-zinc-600 text-[11px] transition cursor-pointer"
                 >
                   Do not allow (type instead)
                 </button>
@@ -642,7 +669,7 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
           ) : (
             <>
               {/* Mic & Waveform Section */}
-              <div className="flex flex-col items-center justify-center py-5 px-4 bg-slate-50/80 rounded-2xl border border-slate-200/90 relative">
+              <div className="flex flex-col items-center justify-center py-5 px-4 bg-zinc-50/80 rounded-2xl border border-zinc-200 relative">
                 {/* Sound wave bars */}
                 {isListening && (
                   <div className="flex items-center gap-1 mb-3 h-6">
@@ -654,7 +681,7 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                       return (
                         <div
                           key={idx}
-                          className="w-1 bg-rose-500 rounded-full transition-all duration-75"
+                          className="w-1 bg-red-600 rounded-full transition-all duration-75"
                           style={{ height: `${dynamicHeight}px` }}
                         />
                       );
@@ -669,8 +696,8 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                   onClick={isListening ? stopListening : beginListening}
                   className={`w-18 h-18 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm ${
                     isListening
-                      ? 'bg-rose-600 text-white ring-4 ring-rose-200 animate-pulse scale-105'
-                      : 'bg-slate-900 text-white hover:bg-slate-800 hover:scale-102'
+                      ? 'bg-red-600 text-white ring-4 ring-red-200 animate-pulse scale-105'
+                      : 'bg-zinc-950 text-white hover:bg-black hover:scale-102'
                   }`}
                   aria-label={isListening ? 'Stop listening' : 'Start listening'}
                 >
@@ -682,15 +709,15 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                 </button>
 
                 <div className="text-center mt-2.5 space-y-0.5">
-                  <p className="text-xs font-semibold text-slate-900">
+                  <p className="text-xs font-bold text-zinc-950">
                     {isListening
                       ? 'Listening clearly... Tap when finished'
                       : 'Tap mic to speak your expense'}
                   </p>
-                  <p className="text-[11px] text-slate-400 font-normal">
+                  <p className="text-[11px] text-zinc-400 font-normal">
                     {isListening
                       ? 'Capturing audio live...'
-                      : 'e.g. "20 rupee sabji" or "50 auto"'}
+                      : 'e.g. "20 rupee chai" or "100 chicken"'}
                   </p>
                 </div>
               </div>
@@ -699,9 +726,9 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
               {error && (
                 <div
                   id="voice-error-alert"
-                  className="px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2"
+                  className="px-3.5 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2"
                 >
-                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
@@ -709,17 +736,17 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
               {/* Live Spoken & Editable Text Input */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                    <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                  <label className="text-xs font-bold text-zinc-700 flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
                     <span>Spoken or Typed Text:</span>
                   </label>
                   {isListening ? (
-                    <span className="text-[10px] text-rose-600 font-bold uppercase tracking-wider flex items-center gap-1 animate-pulse">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                    <span className="text-[10px] text-red-600 font-bold uppercase tracking-wider flex items-center gap-1 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
                       Listening...
                     </span>
                   ) : (
-                    <span className="text-[10px] text-slate-400 font-medium">
+                    <span className="text-[10px] text-zinc-400 font-medium">
                       Editable text field
                     </span>
                   )}
@@ -744,14 +771,14 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                         ? 'Listening live... (or type here)'
                         : 'Speak with mic or type here (e.g. 20 rupee sabji)'
                     }
-                    className="w-full py-2.5 px-3.5 pr-18 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent placeholder:text-slate-400 shadow-xs"
+                    className="w-full py-2.5 px-3.5 pr-18 bg-white border border-zinc-300 rounded-xl text-xs font-semibold text-zinc-950 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 placeholder:text-zinc-400 shadow-xs"
                   />
                   {transcript.trim() && (
                     <button
                       type="button"
                       id="live-transcript-process-btn"
                       onClick={() => handleParseVoice(transcript.trim())}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-semibold transition cursor-pointer shadow-2xs"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-zinc-950 hover:bg-black text-white rounded-lg text-[10px] font-bold transition cursor-pointer shadow-2xs"
                     >
                       Process
                     </button>
@@ -843,14 +870,14 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                         }
                         className={`py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-semibold text-xs transition cursor-pointer ${
                           parsedItem.paymentMode === 'UPI'
-                            ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-xs ring-1 ring-indigo-500'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            ? 'bg-zinc-950 border-zinc-950 text-white shadow-xs ring-1 ring-zinc-950'
+                            : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                         }`}
                       >
-                        <Smartphone className="w-4 h-4 text-indigo-600" />
+                        <Smartphone className={`w-4 h-4 ${parsedItem.paymentMode === 'UPI' ? 'text-red-400' : 'text-zinc-500'}`} />
                         <span>Online / UPI</span>
                         {parsedItem.paymentMode === 'UPI' && (
-                          <Check className="w-3.5 h-3.5 text-indigo-600 ml-auto" />
+                          <Check className="w-3.5 h-3.5 text-red-400 ml-auto" />
                         )}
                       </button>
 
@@ -863,14 +890,14 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                         }
                         className={`py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-semibold text-xs transition cursor-pointer ${
                           parsedItem.paymentMode === 'Cash'
-                            ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-xs ring-1 ring-emerald-500'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            ? 'bg-zinc-950 border-zinc-950 text-white shadow-xs ring-1 ring-zinc-950'
+                            : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                         }`}
                       >
-                        <Banknote className="w-4 h-4 text-emerald-600" />
+                        <Banknote className={`w-4 h-4 ${parsedItem.paymentMode === 'Cash' ? 'text-red-400' : 'text-zinc-500'}`} />
                         <span>Cash</span>
                         {parsedItem.paymentMode === 'Cash' && (
-                          <Check className="w-3.5 h-3.5 text-emerald-600 ml-auto" />
+                          <Check className="w-3.5 h-3.5 text-red-400 ml-auto" />
                         )}
                       </button>
                     </div>
@@ -878,27 +905,27 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
 
                   {/* 3. Wallet deduction info & balance check */}
                   {(() => {
-                    const availableVoice = (parsedItem.paymentMode === 'Cash' ? wallets?.cash : wallets?.upi) ?? 0;
+                    const availableVoice = parsedItem.paymentMode === 'Cash' ? availableCash : availableUpi;
                     const isInsufficientVoice = parsedItem.amount > availableVoice;
                     return (
                       <div className="space-y-2">
                         <div className={`text-[11px] p-2.5 rounded-xl border flex items-center justify-between ${
                           isInsufficientVoice
-                            ? 'bg-rose-50/70 border-rose-200 text-rose-800'
-                            : 'bg-white border-slate-200/80 text-slate-600'
+                            ? 'bg-red-50/70 border-red-200 text-red-800'
+                            : 'bg-white border-zinc-200 text-zinc-700'
                         }`}>
                           <div className="flex items-center gap-1.5">
                             <span className="font-medium">Available in {parsedItem.paymentMode}:</span>
-                            <span className="font-bold text-slate-900">₹{availableVoice.toLocaleString('en-IN')}</span>
+                            <span className="font-bold text-zinc-950">₹{availableVoice.toLocaleString('en-IN')}</span>
                           </div>
-                          <span className={`font-bold ${isInsufficientVoice ? 'text-rose-600' : 'text-slate-700'}`}>
+                          <span className={`font-bold ${isInsufficientVoice ? 'text-red-600' : 'text-zinc-950'}`}>
                             -₹{(parsedItem.amount || 0).toFixed(2)}
                           </span>
                         </div>
 
                         {isInsufficientVoice && (
-                          <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
-                            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                          <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                             <span>
                               Insufficient {parsedItem.paymentMode} Balance! Max: ₹{availableVoice.toLocaleString('en-IN')}
                             </span>
@@ -909,20 +936,22 @@ export const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                         <button
                           id="confirm-voice-expense-btn"
                           type="button"
-                          disabled={!parsedItem.amount || parsedItem.amount <= 0 || isInsufficientVoice}
+                          disabled={!parsedItem.amount || parsedItem.amount <= 0 || isInsufficientVoice || isAddingExpense}
                           onClick={handleConfirmAndAdd}
-                          className={`w-full py-3 px-4 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-xs ${
+                          className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer ${
                             isInsufficientVoice
-                              ? 'bg-rose-100 text-rose-700 border border-rose-300 cursor-not-allowed'
-                              : 'bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white cursor-pointer active:scale-[0.99]'
+                              ? 'bg-red-100 text-red-700 border border-red-300 cursor-not-allowed'
+                              : 'bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white active:scale-[0.99] shadow-sm shadow-red-600/30'
                           }`}
                         >
                           <span>
-                            {isInsufficientVoice
+                            {isAddingExpense
+                              ? 'Adding...'
+                              : isInsufficientVoice
                               ? `Insufficient ${parsedItem.paymentMode} (Max: ₹${availableVoice.toLocaleString('en-IN')})`
                               : `Add Expense • ₹${(parsedItem.amount || 0).toFixed(2)}`}
                           </span>
-                          {!isInsufficientVoice && <ArrowRight className="w-3.5 h-3.5" />}
+                          {!isInsufficientVoice && !isAddingExpense && <ArrowRight className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     );

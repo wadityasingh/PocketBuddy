@@ -40,11 +40,13 @@ import {
 interface AuthScreenProps {
   initialMode?: 'login' | 'register';
   onAuthSuccess: (user: StudentUser, data: UserAppData, token: string, isNewUser?: boolean) => void;
+  onClose?: () => void;
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({
   initialMode = 'login',
   onAuthSuccess,
+  onClose,
 }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(initialMode);
   const [loading, setLoading] = useState(false);
@@ -547,6 +549,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 title="Back to Sign In"
               >
                 <ArrowLeft className="w-4 h-4" />
+              </button>
+            ) : onClose ? (
+              <button
+                id="auth-home-button"
+                type="button"
+                onClick={onClose}
+                className="h-9 px-3 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md flex items-center gap-1.5 text-white text-xs font-semibold transition-all cursor-pointer border border-white/20"
+                title="Back to Landing Page"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Home</span>
               </button>
             ) : (
               <div className="w-9" />
