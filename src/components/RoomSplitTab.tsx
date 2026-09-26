@@ -269,7 +269,7 @@ export const RoomSplitTab: React.FC<RoomSplitTabProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-900 text-xs truncate">{r.name}</span>
                   {r.name === 'You' && (
-                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-semibold">You</span>
+                    <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-semibold">You</span>
                   )}
                 </div>
                 <div className="mt-1.5">

@@ -149,8 +149,8 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({
           title="Open PocketBuddy AI Assistant"
         >
           <div className="relative">
-            <Bot className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-ping" />
+            <Bot className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
           </div>
           <span className="text-xs font-bold tracking-tight text-white pr-0.5">
             PocketBuddy AI
@@ -167,13 +167,13 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white border-b border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600/90 flex items-center justify-center text-white shadow-xs">
+              <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-xs">
                 <Bot className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-xs font-bold leading-tight flex items-center gap-1.5">
                   <span>PocketBuddy AI</span>
-                  <span className="text-[10px] font-normal text-indigo-300">· Assistant</span>
+                  <span className="text-[10px] font-normal text-red-300">· Assistant</span>
                 </div>
                 <div className="text-[10px] text-slate-400 leading-tight">
                   Budget &amp; Roommate Expense Advisor
@@ -218,7 +218,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({
             </span>
             <span>·</span>
             <span>
-              Safe/Day: <strong className="text-indigo-600">{formatINR(studentState.safeDailyCap)}</strong>
+              Safe/Day: <strong className="text-red-600">{formatINR(studentState.safeDailyCap)}</strong>
             </span>
             <span>·</span>
             <span>{studentState.daysLeft}d left</span>
@@ -234,7 +234,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({
                   className={`flex gap-2 ${isAi ? 'justify-start' : 'justify-end'}`}
                 >
                   {isAi && (
-                    <div className="w-6 h-6 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-6 h-6 rounded-md bg-red-100 text-red-700 flex items-center justify-center shrink-0 mt-0.5">
                       <Sparkles className="w-3 h-3" />
                     </div>
                   )}
@@ -243,7 +243,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({
                     className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed whitespace-pre-wrap ${
                       isAi
                         ? 'bg-white border border-slate-200/90 text-slate-800 shadow-2xs'
-                        : 'bg-indigo-600 text-white shadow-2xs font-medium'
+                        : 'bg-red-600 text-white shadow-2xs font-medium'
                     }`}
                   >
                     {m.text}
@@ -254,11 +254,11 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({
 
             {loading && (
               <div className="flex gap-2 justify-start items-center">
-                <div className="w-6 h-6 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-md bg-red-100 text-red-700 flex items-center justify-center shrink-0">
                   <Sparkles className="w-3 h-3 animate-spin" />
                 </div>
                 <div className="bg-white border border-slate-200 px-3 py-2 rounded-2xl text-xs text-slate-500 flex items-center gap-1.5">
-                  <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                  <Loader2 className="w-3 h-3 animate-spin text-red-600" />
                   <span>Calculating with your financial data...</span>
                 </div>
               </div>
@@ -274,7 +274,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({
                 key={idx}
                 type="button"
                 onClick={() => handleSendMessage(q)}
-                className="shrink-0 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200/70 text-[10px] font-semibold text-slate-700 transition cursor-pointer"
+                className="shrink-0 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 border border-slate-200/70 text-[10px] font-semibold text-slate-700 transition cursor-pointer"
               >
                 {q}
               </button>
@@ -291,14 +291,14 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({
               onKeyDown={handleKeyDown}
               placeholder="Ask anything about your money or room..."
               disabled={loading}
-              className="flex-1 text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition text-slate-900 placeholder:text-slate-400"
+              className="flex-1 text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600 transition text-slate-900 placeholder:text-slate-400"
             />
             <button
               id="btn-send-pocketbuddy-ai"
               type="button"
               onClick={() => handleSendMessage()}
               disabled={!inputValue.trim() || loading}
-              className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white transition cursor-pointer shrink-0"
+              className="p-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white transition cursor-pointer shrink-0 shadow-xs shadow-red-600/20"
               title="Send message"
             >
               <Send className="w-3.5 h-3.5" />

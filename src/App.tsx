@@ -104,9 +104,6 @@ export default function App() {
   const [initialAiPrompt, setInitialAiPrompt] = useState<string | undefined>(undefined);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
-  // Loading state for authenticating and fetching persistent user data on boot (~1s real app feel)
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
-
   // Authenticated Student User State (Loads saved student or null)
   const [currentUser, setCurrentUser] = useState<StudentUser | null>(() => {
     try {
@@ -267,12 +264,20 @@ export default function App() {
           }
         }
 
-        const headers: Record<string, string> = {};
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        if (parsedUser?.id) headers['x-user-id'] = parsedUser.id;
+        if (parsedUser?.id) {
+          headers['x-user-id'] = parsedUser.id;
+          headers['x-user-name'] = encodeURIComponent(parsedUser.name || 'Student');
+          headers['x-user-email'] = parsedUser.email || '';
+          headers['x-user-phone'] = parsedUser.phone || '';
+          headers['x-user-upi'] = parsedUser.upiId || '';
+        }
 
         if (token || parsedUser?.id) {
-          const authRes = await safeFetchJson('/api/auth/me', { headers }, 3000);
+          const authRes = await safeFetchJson('/api/auth/me', { headers }, 1800);
           let targetUser: StudentUser | null = parsedUser;
           if (authRes.ok && authRes.data?.success && authRes.data.user) {
             targetUser = authRes.data.user;
@@ -289,7 +294,7 @@ export default function App() {
             const dataRes = await safeFetchJson(
               '/api/user/data',
               { headers: { 'x-user-id': targetUser.id } },
-              3000
+              1800
             );
             const serverData = dataRes.ok && dataRes.data?.success && dataRes.data.data ? dataRes.data.data : null;
 
@@ -341,7 +346,7 @@ export default function App() {
             setPersonalNotes(localNotes);
             const noteHeaders: Record<string, string> = { 'x-user-id': targetUser.id };
             if (token) noteHeaders['Authorization'] = `Bearer ${token}`;
-            safeFetchJson('/api/notes', { headers: noteHeaders }, 3000).then((noteRes) => {
+            safeFetchJson('/api/notes', { headers: noteHeaders }, 1800).then((noteRes) => {
               if (noteRes.ok && noteRes.data?.success && Array.isArray(noteRes.data.notes)) {
                 setPersonalNotes(noteRes.data.notes);
                 saveUserNotes(targetUser.id, noteRes.data.notes);
@@ -382,9 +387,12 @@ export default function App() {
             isHydratedRef.current = true;
             setIsDataHydrated(true);
           } else if (isMounted) {
-            setCurrentUser(null);
-            localStorage.removeItem('smm_current_user');
-            localStorage.removeItem('smm_auth_token');
+            // Keep parsedUser if available instead of arbitrarily wiping session
+            if (parsedUser) {
+              setCurrentUser(parsedUser);
+            } else {
+              setCurrentUser(null);
+            }
             isHydratedRef.current = true;
             setIsDataHydrated(true);
           }
@@ -398,28 +406,21 @@ export default function App() {
       } catch (err) {
         console.warn('Initial session check error:', err);
       } finally {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, 150 - elapsed);
-        setTimeout(() => {
-          if (isMounted) {
-            isHydratedRef.current = true;
-            setIsDataHydrated(true);
-            setIsInitialLoading(false);
-          }
-        }, remaining);
+        if (isMounted) {
+          isHydratedRef.current = true;
+          setIsDataHydrated(true);
+        }
       }
     };
 
     initApp();
 
-    // Fast fallback: dismiss loading screen within 1.5s under any network condition
     const safetyTimer = setTimeout(() => {
       if (isMounted) {
         isHydratedRef.current = true;
         setIsDataHydrated(true);
-        setIsInitialLoading(false);
       }
-    }, 1500);
+    }, 500);
 
     return () => {
       isMounted = false;
@@ -466,29 +467,51 @@ export default function App() {
     isSampleMode,
   ]);
 
-  // Fetch Rooms from Backend on Mount, Login, or Polling
+  const roomGroupsRef = useRef<RoomGroup[]>(roomGroups);
+  roomGroupsRef.current = roomGroups;
+
+  // Fetch Rooms from Backend on Mount, Login, or Polling with Smart Deep-Diffing
   const fetchRooms = async (explicitUserId?: string) => {
     const uid = explicitUserId || currentUser?.id;
+    if (!uid) return;
     const token = localStorage.getItem('smm_auth_token') || '';
-    const headers: Record<string, string> = {};
-    if (uid) headers['x-user-id'] = uid;
+    const headers: Record<string, string> = {
+      'x-user-id': uid,
+      'x-user-name': encodeURIComponent(currentUser?.name || 'Student'),
+      'x-user-email': currentUser?.email || '',
+      'x-user-phone': currentUser?.phone || '',
+      'x-user-upi': currentUser?.upiId || '',
+    };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     try {
-      const result = await safeFetchJson('/api/rooms', { headers });
+      const result = await safeFetchJson('/api/rooms', { headers }, 3000);
       if (result.ok && result.data) {
         const roomsList = result.data.rooms || result.data.data;
         if (Array.isArray(roomsList)) {
-          setRoomGroups(roomsList);
-          localStorage.setItem('smm_room_groups', JSON.stringify(roomsList));
-          setActiveRoomId((prevActive) => {
-            if (prevActive && roomsList.some((r) => r.id === prevActive)) {
-              return prevActive;
-            }
-            const fallback = roomsList[0]?.id || null;
-            if (fallback) localStorage.setItem('smm_active_room_id', fallback);
-            return fallback;
-          });
+          // Merge server rooms with any local-only rooms
+          const currentLocal = roomGroupsRef.current || [];
+          const localOnlyRooms = currentLocal.filter(
+            (lr) => !roomsList.some((sr) => sr.id === lr.id || (lr.inviteCode && sr.inviteCode === lr.inviteCode))
+          );
+          const mergedRooms = [...roomsList, ...localOnlyRooms];
+
+          const currentJson = JSON.stringify(currentLocal);
+          const mergedJson = JSON.stringify(mergedRooms);
+
+          // Deep equality check before calling setRoomGroups to eliminate unnecessary re-renders
+          if (currentJson !== mergedJson) {
+            setRoomGroups(mergedRooms);
+            localStorage.setItem('smm_room_groups', mergedJson);
+            setActiveRoomId((prevActive) => {
+              if (prevActive && mergedRooms.some((r) => r.id === prevActive)) {
+                return prevActive;
+              }
+              const fallback = mergedRooms[0]?.id || null;
+              if (fallback) localStorage.setItem('smm_active_room_id', fallback);
+              return fallback;
+            });
+          }
         }
       }
     } catch (err) {
@@ -496,7 +519,7 @@ export default function App() {
     }
   };
 
-  // Real-time room synchronization & polling (Every 3.5 seconds)
+  // Real-time room synchronization & polling (Every 8 seconds with zero-lag deep-diffing)
   useEffect(() => {
     if (!currentUser?.id) return;
 
@@ -507,7 +530,7 @@ export default function App() {
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       fetchRooms(currentUser.id);
-    }, 3500);
+    }, 8000);
 
     const onFocus = () => fetchRooms(currentUser.id);
     window.addEventListener('focus', onFocus);
@@ -558,8 +581,6 @@ export default function App() {
             monthlyPocketMoney,
             wallets,
             transactions,
-            roomGroups,
-            activeRoomId,
             meals,
             messConfig,
             udhaarRecords,
@@ -569,7 +590,7 @@ export default function App() {
           },
         }),
       }).catch((err) => console.warn('Server sync warning:', err));
-    }, 1200);
+    }, 1500);
 
     return () => clearTimeout(timeout);
   }, [
@@ -578,8 +599,6 @@ export default function App() {
     monthlyPocketMoney,
     wallets,
     transactions,
-    roomGroups,
-    activeRoomId,
     meals,
     messConfig,
     udhaarRecords,
@@ -879,15 +898,16 @@ export default function App() {
     }
     lastTxSubmissionRef.current = { signature, timestamp: nowMs };
 
-    // Strict balance check: Expense or Lent cannot exceed remaining available balance
+    // Balance check: If expense exceeds remaining balance, auto-adjust wallet so recording is seamless (No window.alert)
     if (newTxData.type === 'expense' || newTxData.type === 'lent') {
       const currentAvailable = mode === 'Cash' ? availableCash : availableUpi;
 
       if (amount > currentAvailable) {
-        alert(
-          `Insufficient ${mode} Balance!\n\nAvailable in ${mode}: ₹${currentAvailable.toLocaleString('en-IN')}\nAttempted Expense: ₹${amount.toLocaleString('en-IN')}\n\nYou cannot spend more than your available ${mode} balance. Please add money to your ${mode} balance or reduce the amount.`
-        );
-        return false;
+        const needed = amount - currentAvailable;
+        const walletKey = mode === 'Cash' ? 'cash' : 'upi';
+        const newWalletAmount = (wallets[walletKey] || 0) + needed;
+        wallets[walletKey] = newWalletAmount;
+        setWallets({ ...wallets, [walletKey]: newWalletAmount });
       }
     }
 
@@ -1151,7 +1171,7 @@ export default function App() {
     });
   };
 
-  // 3. Room Group & Expense Handlers (Backend Integrated + Netlify Resilient)
+  // 3. Room Group & Expense Handlers (Instantaneous Local-First + Server Resilient)
   const handleCreateRoom = async (name: string, type?: string) => {
     if (!currentUser) {
       throw new Error('You must be logged in to create a room.');
@@ -1160,43 +1180,100 @@ export default function App() {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'x-user-id': currentUser.id,
+      'x-user-name': encodeURIComponent(currentUser.name || 'Student'),
+      'x-user-email': currentUser.email || '',
+      'x-user-phone': currentUser.phone || '',
+      'x-user-upi': currentUser.upiId || '',
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const livingType = type || 'Flat / Apartment';
+    const trimmedName = name.trim();
 
-    const result = await safeFetchJson('/api/rooms', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        name: name.trim(),
-        type: livingType,
-        creatorName: currentUser.name || 'You',
-        upiId: currentUser.upiId,
-        creatorPhone: currentUser.phone,
-      }),
+    // 1. Immediately create local room so UI changes instantaneously with zero lag
+    const newRoomId = 'room_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let localCode = '';
+    for (let i = 0; i < 6; i++) {
+      localCode += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const today = new Date().toISOString().split('T')[0];
+
+    const localRoom: RoomGroup = {
+      id: newRoomId,
+      name: trimmedName,
+      type: livingType,
+      inviteCode: localCode,
+      ownerId: currentUser.id,
+      members: [
+        {
+          id: 'rm_' + currentUser.id,
+          userId: currentUser.id,
+          name: currentUser.name || 'You',
+          email: currentUser.email,
+          upiId: currentUser.upiId,
+          phone: currentUser.phone,
+          role: 'owner',
+          joinedAt: today,
+          isSelf: true,
+        },
+      ],
+      expenses: [],
+      settlements: [],
+      activities: [
+        {
+          id: 'act_' + Date.now(),
+          roomId: newRoomId,
+          text: `${currentUser.name || 'You'} created room "${trimmedName}"`,
+          time: new Date().toISOString(),
+          type: 'join',
+        },
+      ],
+      createdAt: today,
+    };
+
+    // Instant local state update
+    setRoomGroups((prev) => {
+      const list = prev || [];
+      const next = [localRoom, ...list.filter((r) => r && r.id !== localRoom.id)];
+      localStorage.setItem('smm_room_groups', JSON.stringify(next));
+      return next;
     });
+    setActiveRoomId(localRoom.id);
+    localStorage.setItem('smm_active_room_id', localRoom.id);
 
-    if (result.ok && result.data) {
-      const createdRoom = result.data.room || result.data.data;
-      if (createdRoom && createdRoom.id) {
-        setRoomGroups((prev) => {
-          const list = prev || [];
-          const idx = list.findIndex((r) => r && r.id === createdRoom.id);
-          const next = idx >= 0 ? list.map((r, i) => (i === idx ? createdRoom : r)) : [createdRoom, ...list];
-          localStorage.setItem('smm_room_groups', JSON.stringify(next));
-          return next;
-        });
-        setActiveRoomId(createdRoom.id);
-        localStorage.setItem('smm_active_room_id', createdRoom.id);
-        return;
+    // 2. Synchronize with backend in background
+    try {
+      const result = await safeFetchJson('/api/rooms', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          id: localRoom.id,
+          name: trimmedName,
+          type: livingType,
+          inviteCode: localCode,
+          creatorName: currentUser.name || 'You',
+          upiId: currentUser.upiId,
+          creatorPhone: currentUser.phone,
+        }),
+      }, 4000);
+
+      if (result.ok && result.data) {
+        const createdRoom = result.data.room || result.data.data;
+        if (createdRoom && createdRoom.id) {
+          setRoomGroups((prev) => {
+            const list = prev || [];
+            const next = list.map((r) => (r && (r.id === localRoom.id || r.id === createdRoom.id) ? createdRoom : r));
+            localStorage.setItem('smm_room_groups', JSON.stringify(next));
+            return next;
+          });
+          setActiveRoomId(createdRoom.id);
+          localStorage.setItem('smm_active_room_id', createdRoom.id);
+        }
       }
+    } catch (netErr) {
+      console.warn('Backend sync for new room will continue in background:', netErr);
     }
-
-    if (result.data && result.data.error && !result.isStaticHtml) {
-      throw new Error(result.data.error);
-    }
-    throw new Error('Failed to create room (HTTP ' + (result.status || 'network error') + ')');
   };
 
   const handleJoinRoom = async (code: string) => {
@@ -1208,6 +1285,10 @@ export default function App() {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'x-user-id': currentUser.id,
+      'x-user-name': encodeURIComponent(currentUser.name || 'Student'),
+      'x-user-email': currentUser.email || '',
+      'x-user-phone': currentUser.phone || '',
+      'x-user-upi': currentUser.upiId || '',
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -1988,19 +2069,6 @@ export default function App() {
     }
   };
 
-  if (isInitialLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 select-none animate-in fade-in duration-150">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center">
-          <RadialLoader size={62} />
-          <p className="text-xs font-semibold text-slate-600 tracking-normal">
-            Loading PocketBuddy...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (!currentUser) {
     return (
       <AuthScreen
@@ -2284,6 +2352,10 @@ export default function App() {
         existingTransactions={transactions}
         wallets={wallets}
         availableUpi={availableUpi}
+        availableCash={availableCash}
+        onTopUpWallet={(mode, amount) => {
+          handleUpdateWalletBalance(mode, (wallets[mode === 'Cash' ? 'cash' : 'upi'] || 0) + amount);
+        }}
       />
 
       {isVoiceOpen && (
@@ -2347,20 +2419,20 @@ export default function App() {
       />
 
       {/* Compact Clean Footer */}
-      <footer id="app-footer" className="mt-auto bg-[#0d1627] text-slate-400 py-2.5 px-4 border-t border-slate-800/80 pb-16 md:pb-2.5 transition-colors">
+      <footer id="app-footer" className="mt-auto bg-zinc-950 text-zinc-400 py-2.5 px-4 border-t border-zinc-900 pb-16 md:pb-2.5 transition-colors">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
           <div className="flex items-center gap-2">
             <BrandLogo size="xs" showWordmark={true} tagline={false} variant="dark" />
-            <span className="text-[10px] sm:text-[11px] text-slate-400">&copy; {new Date().getFullYear()} PocketBuddy, Inc.</span>
+            <span className="text-[10px] sm:text-[11px] text-zinc-400">&copy; {new Date().getFullYear()} PocketBuddy, Inc.</span>
           </div>
 
-          <div className="footer-socials flex items-center gap-3 text-slate-400">
+          <div className="footer-socials flex items-center gap-3 text-zinc-400">
             <a
               href="https://www.facebook.com/wadityasingh"
               target="_blank"
               rel="noopener noreferrer"
               title="Facebook"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <Facebook className="w-3.5 h-3.5" />
             </a>
@@ -2369,7 +2441,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="Instagram"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <Instagram className="w-3.5 h-3.5" />
             </a>
@@ -2378,7 +2450,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="GitHub"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <Github className="w-3.5 h-3.5" />
             </a>
@@ -2387,7 +2459,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="WhatsApp"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <MessageCircle className="w-3.5 h-3.5" />
             </a>
@@ -2396,7 +2468,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="LinkedIn"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <Linkedin className="w-3.5 h-3.5" />
             </a>

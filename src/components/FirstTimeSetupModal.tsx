@@ -124,7 +124,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
             <div className="mt-5">
               <div className="flex items-center justify-between text-xs font-medium text-slate-500 mb-2">
                 <span className="text-slate-900 font-semibold">
-                  Step {step} of 4: <span className="text-indigo-600">{stepTitles[step - 1]?.title}</span>
+                  Step {step} of 4: <span className="text-red-600">{stepTitles[step - 1]?.title}</span>
                 </span>
                 <span className="text-[11px] text-slate-400 font-normal">Takes ~1 min</span>
               </div>
@@ -135,7 +135,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                     key={s}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
                       s === step
-                        ? 'bg-indigo-600'
+                        ? 'bg-red-600'
                         : s < step
                         ? 'bg-slate-800'
                         : 'bg-slate-200'
@@ -178,7 +178,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="e.g. Rahul Sharma"
-                        className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-red-600 focus:ring-2 focus:ring-red-600/20 transition-all"
                         autoFocus
                       />
                     </div>
@@ -216,7 +216,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                         value={allowance}
                         onChange={(e) => setAllowance(e.target.value)}
                         placeholder="Enter monthly budget (e.g. 5000)"
-                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-red-600 focus:ring-2 focus:ring-red-600/20 transition-all"
                         autoFocus
                       />
                     </div>
@@ -232,7 +232,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                             onClick={() => setAllowance(amt.toString())}
                             className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
                               allowance === amt.toString()
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                ? 'bg-red-600 text-white border-red-600 shadow-xs shadow-red-600/20'
                                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                             }`}
                           >
@@ -289,7 +289,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                           value={cash}
                           onChange={(e) => setCash(e.target.value)}
                           placeholder="0"
-                          className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                          className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-red-600 focus:ring-2 focus:ring-red-600/20 transition-all"
                           autoFocus
                         />
                       </div>
@@ -299,7 +299,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                     <div>
                       <label className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5">
                         <span className="flex items-center gap-1.5">
-                          <Smartphone className="w-4 h-4 text-indigo-600" />
+                          <Smartphone className="w-4 h-4 text-red-600" />
                           <span>UPI Apps Balance</span>
                         </span>
                         <span className="text-[11px] font-normal text-slate-400">GPay, PhonePe, Paytm</span>
@@ -315,7 +315,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                           value={upi}
                           onChange={(e) => setUpi(e.target.value)}
                           placeholder="0"
-                          className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                          className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-red-600 focus:ring-2 focus:ring-red-600/20 transition-all"
                         />
                       </div>
                     </div>
@@ -354,11 +354,11 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                       onClick={() => setLivingSituation('alone')}
                       className={`p-3.5 rounded-xl border text-left transition cursor-pointer ${
                         livingSituation === 'alone'
-                          ? 'border-indigo-600 bg-indigo-50/60 ring-1 ring-indigo-600'
+                          ? 'border-red-600 bg-red-50/60 ring-1 ring-red-600'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
-                      <User className={`w-5 h-5 mb-2 ${livingSituation === 'alone' ? 'text-indigo-600' : 'text-slate-500'}`} />
+                      <User className={`w-5 h-5 mb-2 ${livingSituation === 'alone' ? 'text-red-600' : 'text-slate-500'}`} />
                       <div className="text-xs font-bold text-slate-900">Living Alone</div>
                       <div className="text-[11px] text-slate-500 mt-0.5">Single room or hostel</div>
                     </button>
@@ -369,11 +369,11 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                       onClick={() => setLivingSituation('roommates')}
                       className={`p-3.5 rounded-xl border text-left transition cursor-pointer ${
                         livingSituation === 'roommates'
-                          ? 'border-indigo-600 bg-indigo-50/60 ring-1 ring-indigo-600'
+                          ? 'border-red-600 bg-red-50/60 ring-1 ring-red-600'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
-                      <Users className={`w-5 h-5 mb-2 ${livingSituation === 'roommates' ? 'text-indigo-600' : 'text-slate-500'}`} />
+                      <Users className={`w-5 h-5 mb-2 ${livingSituation === 'roommates' ? 'text-red-600' : 'text-slate-500'}`} />
                       <div className="text-xs font-bold text-slate-900">With Roommates</div>
                       <div className="text-[11px] text-slate-500 mt-0.5">Shared flat or PG</div>
                     </button>
@@ -418,7 +418,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                             value={roomName}
                             onChange={(e) => setRoomName(e.target.value)}
                             placeholder="e.g. Flat 302 or Ganga Hostel"
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all"
                           />
                         </div>
                       ) : (
@@ -432,7 +432,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                             value={inviteCode}
                             onChange={(e) => setInviteCode(e.target.value)}
                             placeholder="e.g. ROOM42"
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-600 uppercase tracking-wider transition-all"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-red-600 uppercase tracking-wider transition-all"
                           />
                         </div>
                       )}
@@ -521,7 +521,7 @@ export const FirstTimeSetupModal: React.FC<FirstTimeSetupModalProps> = ({
                   type="button"
                   onClick={handleFinish}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 shadow-xs"
+                  className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 shadow-xs shadow-red-600/20"
                 >
                   {isSubmitting ? (
                     <span>Opening Dashboard...</span>

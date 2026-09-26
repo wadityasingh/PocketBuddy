@@ -65,10 +65,10 @@ export const MonthlyReportTab: React.FC<MonthlyReportTabProps> = ({
       <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-sm border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-400">
+            <span className="w-8 h-8 rounded-xl bg-red-500/20 border border-red-400/30 flex items-center justify-center text-red-400">
               <PieChart className="w-4 h-4" />
             </span>
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-300">Monthly Spending Audit</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-red-300">Monthly Spending Audit</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">&quot;Where Did My Money Go?&quot; Report</h2>
           <p className="text-xs text-slate-400 mt-1 max-w-lg">
@@ -97,7 +97,7 @@ export const MonthlyReportTab: React.FC<MonthlyReportTabProps> = ({
 
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            <TrendingDown className="w-4 h-4 text-indigo-600" />
+            <TrendingDown className="w-4 h-4 text-red-600" />
             <span>Daily Spending Average</span>
           </div>
           <div className="text-xl font-extrabold text-slate-900 mt-1">
@@ -140,7 +140,7 @@ export const MonthlyReportTab: React.FC<MonthlyReportTabProps> = ({
                 </div>
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-indigo-600 h-full rounded-full transition-all duration-500"
+                    className="bg-red-600 h-full rounded-full transition-all duration-500"
                     style={{ width: `${cat.percentage}%` }}
                   />
                 </div>
@@ -201,7 +201,7 @@ export const MonthlyReportTab: React.FC<MonthlyReportTabProps> = ({
                     <span className="w-16 text-slate-500 flex-shrink-0 text-[11px] font-medium">{formatDate(date).split(',')[0]}</span>
                     <div className="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
                       <div
-                        className="bg-indigo-500 h-full rounded-full transition-all duration-300"
+                        className="bg-red-600 h-full rounded-full transition-all duration-300"
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>

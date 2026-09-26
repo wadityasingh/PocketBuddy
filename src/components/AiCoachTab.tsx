@@ -271,10 +271,10 @@ export const AiCoachTab: React.FC<AiCoachTabProps> = ({
       <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-sm border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div>
           <div className="flex items-center gap-2.5 mb-1.5">
-            <span className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-400">
+            <span className="w-8 h-8 rounded-xl bg-red-500/20 border border-red-400/30 flex items-center justify-center text-red-400">
               <Bot className="w-4 h-4" />
             </span>
-            <span className="text-xs uppercase font-bold tracking-wider text-indigo-300">
+            <span className="text-xs uppercase font-bold tracking-wider text-red-300">
               Ultra-Fast AI Student Financial Mentor
             </span>
             <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
@@ -293,7 +293,7 @@ export const AiCoachTab: React.FC<AiCoachTabProps> = ({
           type="button"
           onClick={() => fetchCoachingInsights()}
           disabled={loading}
-          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+          className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs shadow-red-600/20 flex items-center gap-2 self-start sm:self-auto cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Analysis</span>
@@ -303,7 +303,7 @@ export const AiCoachTab: React.FC<AiCoachTabProps> = ({
       {/* Coach Analysis Card */}
       {loading && !insight ? (
         <div className="p-10 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col items-center justify-center text-center gap-3">
-          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
           <div>
             <p className="text-sm font-black text-slate-900">Analyzing Your Pocket Money Pace</p>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -364,7 +364,7 @@ export const AiCoachTab: React.FC<AiCoachTabProps> = ({
                   key={idx}
                   className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-start gap-2.5"
                 >
-                  <span className="w-5 h-5 rounded-md bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px] shrink-0">
+                  <span className="w-5 h-5 rounded-md bg-red-100 text-red-700 font-bold flex items-center justify-center text-[10px] shrink-0">
                     {idx + 1}
                   </span>
                   <span className="leading-relaxed font-medium">{hack}</span>
@@ -379,11 +379,11 @@ export const AiCoachTab: React.FC<AiCoachTabProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-indigo-600" />
+            <MessageSquare className="w-4 h-4 text-red-600" />
             <h3 className="text-sm font-black text-slate-900">
               Ask Your Student Money Coach Anything
             </h3>
-            <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md font-semibold">
+            <span className="text-[10px] bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-md font-semibold">
               Instant Answers
             </span>
           </div>
@@ -409,7 +409,7 @@ export const AiCoachTab: React.FC<AiCoachTabProps> = ({
               type="button"
               disabled={askingQuestion}
               onClick={() => sendChatMessage(q)}
-              className="text-xs bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 disabled:opacity-50 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 transition cursor-pointer text-left font-medium"
+              className="text-xs bg-slate-50 hover:bg-red-50 hover:text-red-700 hover:border-red-200 disabled:opacity-50 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 transition cursor-pointer text-left font-medium"
             >
               &quot;{q}&quot;
             </button>
@@ -443,7 +443,7 @@ export const AiCoachTab: React.FC<AiCoachTabProps> = ({
           {askingQuestion && (
             <div className="flex justify-start">
               <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-bl-none text-xs text-slate-600 flex items-center gap-2 shadow-2xs font-medium">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" />
                 <span>Coach is analyzing in ~1s...</span>
               </div>
             </div>
@@ -459,12 +459,12 @@ export const AiCoachTab: React.FC<AiCoachTabProps> = ({
             value={userQuestion}
             onChange={(e) => setUserQuestion(e.target.value)}
             disabled={askingQuestion}
-            className="flex-1 text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium disabled:opacity-60"
+            className="flex-1 text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-red-600 focus:outline-none font-medium disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={!userQuestion.trim() || askingQuestion}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer shrink-0"
+            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-xs shadow-red-600/20 cursor-pointer shrink-0"
           >
             {askingQuestion ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

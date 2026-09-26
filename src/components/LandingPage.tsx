@@ -40,7 +40,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [previewWalletMode, setPreviewWalletMode] = useState<'all' | 'upi' | 'cash'>('all');
 
   return (
-    <div className="min-h-screen bg-[#fafafc] text-slate-900 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-[#fafafc] text-slate-900 flex flex-col font-sans selection:bg-red-600 selection:text-white">
       {/* 1. Header Navigation */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -54,7 +54,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="text-indigo-600 font-bold transition hover:text-indigo-700 cursor-pointer"
+              className="text-red-600 font-bold transition hover:text-red-700 cursor-pointer"
             >
               Home
             </button>
@@ -102,7 +102,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               id="landing-get-started-btn"
               type="button"
               onClick={onOpenRegister}
-              className="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer inline-flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-xs shadow-red-600/20 transition cursor-pointer inline-flex items-center gap-1.5"
             >
               <span>Get Started</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -133,7 +133,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   setMobileMenuOpen(false);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="px-3 py-2 text-left rounded-lg bg-indigo-50/70 text-indigo-700 font-bold"
+                className="px-3 py-2 text-left rounded-lg bg-red-50 text-red-700 font-bold"
               >
                 Home
               </button>
@@ -196,7 +196,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   setMobileMenuOpen(false);
                   onOpenRegister();
                 }}
-                className="w-full py-2.5 text-center text-xs font-bold text-white bg-indigo-600 rounded-xl shadow-xs"
+                className="w-full py-2.5 text-center text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs shadow-red-600/20"
               >
                 Get Started
               </button>
@@ -216,7 +216,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-950 tracking-tight leading-[1.12] [text-wrap:balance]">
-            Manage Your Money. <span className="text-indigo-600">Together.</span>
+            Manage Your Money. <span className="text-red-600">Together.</span>
           </h1>
 
           {/* Supporting Text */}
@@ -230,7 +230,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               id="hero-get-started-btn"
               type="button"
               onClick={onOpenRegister}
-              className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all duration-150 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md shadow-red-600/20 hover:shadow-lg transition-all duration-150 cursor-pointer flex items-center justify-center gap-2"
             >
               <span>Get Started</span>
               <ArrowRight className="w-4 h-4" />
@@ -277,14 +277,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
                     <div className="text-[10px] font-bold text-slate-500">Available Balance</div>
-                    <div className="text-base sm:text-xl font-black text-indigo-700 mt-1">₹7,830</div>
-                    <div className="text-[10px] text-indigo-600 mt-0.5 font-medium">Ready to spend</div>
+                    <div className="text-base sm:text-xl font-black text-zinc-950 mt-1">₹7,830</div>
+                    <div className="text-[10px] text-zinc-500 mt-0.5 font-medium">Ready to spend</div>
                   </div>
 
-                  <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-200/60">
-                    <div className="text-[10px] font-bold text-indigo-800">UPI Balance</div>
-                    <div className="text-base sm:text-xl font-black text-indigo-900 mt-1">₹5,880</div>
-                    <div className="text-[10px] text-indigo-700 mt-0.5">Google Pay / PhonePe</div>
+                  <div className="p-3 bg-zinc-50/80 rounded-xl border border-zinc-200">
+                    <div className="text-[10px] font-bold text-zinc-800">UPI Balance</div>
+                    <div className="text-base sm:text-xl font-black text-zinc-950 mt-1">₹5,880</div>
+                    <div className="text-[10px] text-zinc-500 mt-0.5">Google Pay / PhonePe</div>
                   </div>
 
                   <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/60">
@@ -300,7 +300,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-indigo-600" />
+                        <Users className="w-3.5 h-3.5 text-red-600" />
                         <span>Room 302 · Who Owes Whom</span>
                       </span>
                       <span className="text-[10px] font-bold text-slate-500">3 Roommates</span>
@@ -325,10 +325,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <Sparkles className="w-3.5 h-3.5 text-red-600" />
                         <span>AI Instant Entry</span>
                       </span>
-                      <span className="text-[10px] font-bold text-indigo-600">Gemini Powered</span>
+                      <span className="text-[10px] font-bold text-red-600">Smart Engine</span>
                     </div>
 
                     <div className="space-y-1.5 pt-1 text-xs">
@@ -375,7 +375,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1 */}
             <div className="p-6 rounded-2xl border border-slate-200/90 bg-[#fafafc] space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200/80 text-red-600 flex items-center justify-center">
                 <Wallet className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900">Separate UPI &amp; Cash Wallets</h3>
@@ -386,7 +386,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* Feature 2 */}
             <div className="p-6 rounded-2xl border border-slate-200/90 bg-[#fafafc] space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200/80 text-red-600 flex items-center justify-center">
                 <Users className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900">Roommate Splits &amp; Who Owes Whom</h3>
@@ -397,7 +397,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* Feature 3 */}
             <div className="p-6 rounded-2xl border border-slate-200/90 bg-[#fafafc] space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200/80 text-red-600 flex items-center justify-center">
                 <FileText className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900">Printable Statement PDF Export</h3>
@@ -465,21 +465,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={onOpenRegister}
-              className="hover:text-indigo-600 transition cursor-pointer"
+              className="hover:text-red-600 transition cursor-pointer"
             >
               Create Account
             </button>
             <button
               type="button"
               onClick={() => onExploreTab('overview')}
-              className="hover:text-indigo-600 transition cursor-pointer"
+              className="hover:text-red-600 transition cursor-pointer"
             >
               My Money
             </button>
             <button
               type="button"
               onClick={() => onExploreTab('room')}
-              className="hover:text-indigo-600 transition cursor-pointer"
+              className="hover:text-red-600 transition cursor-pointer"
             >
               My Room
             </button>

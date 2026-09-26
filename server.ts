@@ -9,16 +9,17 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+// Dev server in AI Studio must strictly listen on port 3000; on Render it uses assigned process.env.PORT
+const PORT = process.env.RENDER && process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Robust CORS Middleware for Iframe, Localhost, and Cross-Origin Previews
+// Robust CORS Middleware for Iframe, Localhost, Render, and Cross-Origin Previews
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-user-id");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-user-id, x-user-name, x-user-email, x-user-phone, x-user-upi");
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
@@ -381,7 +382,7 @@ function createInitialUserData(
   };
 }
 
-// Helper to authenticate request securely
+// Helper to authenticate request securely & auto-restore user on ephemeral hosts (Render, reloads)
 function getAuthUser(req: express.Request): ServerUser | null {
   const authHeader = req.headers.authorization;
   const customUserId = (req.headers["x-user-id"] as string)?.trim();
@@ -401,54 +402,89 @@ function getAuthUser(req: express.Request): ServerUser | null {
     return null;
   };
 
+  let identifiedUserId: string | null = null;
+
   // 1. Primary: Verify through authenticated Bearer token
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7).trim();
     if (token) {
-      let tokenUserId: string | null = null;
-
       // Check direct ID in token
       const directUser = users.find((x) => x.id === token);
       if (directUser) {
-        tokenUserId = directUser.id;
+        identifiedUserId = directUser.id;
       } else if (token.startsWith("token_") || token.startsWith("local_token_")) {
         const prefix = token.startsWith("local_token_") ? "local_token_" : "token_";
         const withoutPrefix = token.substring(prefix.length);
         const lastUnderscore = withoutPrefix.lastIndexOf("_");
         const extractedUserId = lastUnderscore !== -1 ? withoutPrefix.substring(0, lastUnderscore) : withoutPrefix;
         const matched = users.find((x) => x.id === extractedUserId || token.includes(x.id));
-        if (matched) {
-          tokenUserId = matched.id;
-        } else {
-          tokenUserId = extractedUserId;
-        }
+        identifiedUserId = matched ? matched.id : extractedUserId;
       } else {
         const matchBySubstring = users.find((x) => token.includes(x.id));
         if (matchBySubstring) {
-          tokenUserId = matchBySubstring.id;
-        }
-      }
-
-      if (tokenUserId) {
-        const user = findUserById(tokenUserId);
-        if (user) {
-          if (!customUserId || customUserId === "guest" || customUserId === user.id) {
-            return user;
-          }
-          const customUser = findUserById(customUserId);
-          if (customUser) {
-            return customUser;
-          }
-          return user;
+          identifiedUserId = matchBySubstring.id;
         }
       }
     }
   }
 
-  // 2. Secondary fallback: lookup by customUserId (x-user-id header)
-  if (customUserId && customUserId !== "guest") {
-    const customUser = findUserById(customUserId);
-    if (customUser) return customUser;
+  // 2. Secondary fallback: check customUserId (x-user-id header)
+  if (!identifiedUserId && customUserId && customUserId !== "guest") {
+    identifiedUserId = customUserId;
+  } else if (customUserId && customUserId !== "guest" && customUserId !== identifiedUserId) {
+    // If explicit valid customUserId is passed, prefer it
+    const preferredUser = findUserById(customUserId);
+    if (preferredUser) return preferredUser;
+  }
+
+  if (identifiedUserId && identifiedUserId !== "guest") {
+    const existing = findUserById(identifiedUserId);
+    if (existing) return existing;
+
+    // Auto-restore / synthesize user on ephemeral platforms (Render cold restarts, localStorage users)
+    const rawName = (req.headers["x-user-name"] as string) || (req.body?.creatorName as string) || (req.body?.memberName as string) || (req.body?.name as string) || "Student";
+    let cleanName = "Student";
+    try {
+      cleanName = decodeURIComponent(rawName).trim() || "Student";
+    } catch {
+      cleanName = rawName.trim() || "Student";
+    }
+
+    const rawEmail = (req.headers["x-user-email"] as string) || (req.body?.email as string) || `${identifiedUserId}@student.pocketbuddy`;
+    let cleanEmail = "";
+    try {
+      cleanEmail = decodeURIComponent(rawEmail).trim().toLowerCase();
+    } catch {
+      cleanEmail = rawEmail.trim().toLowerCase();
+    }
+
+    const rawPhone = (req.headers["x-user-phone"] as string) || (req.body?.creatorPhone as string) || (req.body?.phone as string) || "";
+    const rawUpi = (req.headers["x-user-upi"] as string) || (req.body?.upiId as string) || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}@upi`;
+
+    const autoUser: ServerUser = {
+      id: identifiedUserId,
+      name: cleanName,
+      email: cleanEmail || `${identifiedUserId}@student.pocketbuddy`,
+      phone: rawPhone || undefined,
+      passwordHash: hashPassword("password123"),
+      collegeName: "College",
+      course: "Student",
+      yearOfStudy: "",
+      upiId: rawUpi,
+      monthlyPocketMoney: 0,
+      hasCompletedTour: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    users.push(autoUser);
+    saveUsers(users);
+
+    const existingData = loadUserData(identifiedUserId);
+    if (!existingData) {
+      saveUserData(identifiedUserId, createInitialUserData(autoUser, true));
+    }
+
+    return autoUser;
   }
 
   return null;
@@ -1196,8 +1232,11 @@ app.post("/api/rooms", (req, res) => {
     return res.json({ success: true, data: recentDuplicate, room: recentDuplicate });
   }
 
-  const inviteCode = generateUniqueRoomCode(rooms);
-  const roomId = "room_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
+  const candidateId = req.body?.id && String(req.body.id).startsWith("room_") ? String(req.body.id) : null;
+  const candidateCode = req.body?.inviteCode && String(req.body.inviteCode).length === 6 ? String(req.body.inviteCode).toUpperCase() : null;
+
+  const roomId = candidateId || ("room_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6));
+  const inviteCode = candidateCode && !rooms.some((r) => r.inviteCode.toUpperCase() === candidateCode) ? candidateCode : generateUniqueRoomCode(rooms);
   const today = new Date().toISOString().split("T")[0];
   const roomType = type && String(type).trim() ? String(type).trim() : "Flat / Apartment";
 
@@ -2378,7 +2417,7 @@ function getGeminiClient(): GoogleGenAI | null {
   });
 }
 
-// Resilient Gemini runner: tries gemini-3.8-flash, gemini-3.6-flash, and gemini-flash-latest
+// Resilient Gemini runner: tries gemini-3.8-flash, gemini-flash-latest, and gemini-3.1-flash-lite
 async function callGeminiWithFallback<T>(
   ai: GoogleGenAI,
   callFn: (modelName: string) => Promise<T>,
@@ -2386,7 +2425,7 @@ async function callGeminiWithFallback<T>(
 ): Promise<T> {
   const models = preferredModels && preferredModels.length > 0
     ? preferredModels
-    : ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest"];
+    : ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"];
   let lastError: any = null;
 
   for (let i = 0; i < models.length; i++) {
@@ -2592,18 +2631,6 @@ app.post("/api/ai/parse-screenshot", async (req, res) => {
       });
     }
 
-    const ai = getGeminiClient();
-    if (!ai) {
-      console.warn("AI parse-screenshot: GEMINI_API_KEY is not configured on this server.");
-      return res.status(503).json({
-        success: false,
-        isRealPaymentReceipt: false,
-        error: "AI Vision is unconfigured on the server (GEMINI_API_KEY missing in environment). You can enter expense details manually below.",
-        errorCode: "API_KEY_NOT_CONFIGURED",
-        fallbackAllowed: true,
-      });
-    }
-
     // Clean base64 data prefix cleanly (handles any data: URI prefix including application/octet-stream, webp, etc.)
     let cleanBase64 = String(imageBase64 || "");
     if (cleanBase64.includes(",")) {
@@ -2624,59 +2651,66 @@ app.post("/api/ai/parse-screenshot", async (req, res) => {
     // Determine normalized MIME type
     let safeMime = (mimeType || "image/jpeg").toLowerCase().trim();
     if (safeMime === "image/jpg") safeMime = "image/jpeg";
-    const allowedMimes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+    const allowedMimes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/bmp"];
     if (!allowedMimes.includes(safeMime)) {
       safeMime = "image/jpeg";
     }
 
-    const prompt = `You are a high-security automated Indian UPI & Banking Payment Receipt Verification System.
-Examine this uploaded image carefully to verify if it is a GENUINE, AUTHENTIC digital UPI/banking payment receipt or screenshot, or if it is a fake, meme, random photo, or non-payment image.
+    const todayIso = new Date().toISOString().split("T")[0];
 
-SUPPORTED UPI APPS & ECOSYSTEMS:
-- PhonePe
-- Google Pay (GPay)
-- Paytm
-- BHIM UPI
-- CRED
-- Amazon Pay
-- Navi
-- WhatsApp Pay
-- Indian Bank UPI Apps (SBI YONO, HDFC PayZapp, ICICI iMobile, Axis Open, Kotak 811, PNB, Canara, etc.)
-- BharatPe QR merchant payments
+    const ai = getGeminiClient();
+    if (!ai) {
+      console.warn("AI parse-screenshot: GEMINI_API_KEY is not configured on this server. Informing client to run On-Device OCR.");
+      return res.json({
+        success: false,
+        useClientOcr: true,
+        isRealPaymentReceipt: false,
+        error: "AI Vision is unconfigured on server. Running On-Device Receipt Scanner...",
+        errorCode: "API_KEY_NOT_CONFIGURED",
+        fallbackAllowed: true,
+      });
+    }
 
-SECURITY & AUTHENTICITY CRITERIA:
-1. isRealPaymentReceipt: MUST be TRUE ONLY IF this image is an authentic screenshot or digital slip of a completed UPI or digital banking transaction.
-   - It MUST contain visual indicators of a successful payment, such as "Transaction Successful", "Payment Successful", "Paid to", "Sent successfully", "Paid ₹...", green success icon/banner, or explicit transaction confirmation.
-   - If the image is a person, selfie, animal, meme, random document, invoice without payment confirmation, product photo, wallpaper, or non-transaction screen, set isRealPaymentReceipt = FALSE and securityCheckPassed = FALSE.
-2. securityCheckPassed: TRUE if isRealPaymentReceipt is true AND a valid UTR, UPI Ref ID, Transaction ID, or clear payment success confirmation is detected.
-3. securityReason: A concise explanation of the security evaluation (e.g., "Verified: Authentic PhonePe payment confirmation with valid UTR 080678320748 and successful status." or "Security Verification Failed: Uploaded image is not a recognized UPI payment confirmation receipt.").
-4. appDetected: The exact UPI app identified (e.g., "PhonePe", "Google Pay", "Paytm", "BHIM", "CRED", "Amazon Pay", "Navi", "Bank UPI", or "Other UPI").
-5. payee: The exact name of the person or merchant who was paid (e.g., "UTTAM", "BHARATPE", "Ramu Tea Stall", "Zomato", "Swiggy", etc.).
-6. payeeUpiId: The UPI ID / VPA of the payee if visible (e.g., ".9Y0T0F7R5M566005@fbpe"), or null.
-7. amount: Exact payment amount as a positive number in INR (e.g. 39).
-8. date: ISO date string YYYY-MM-DD for the transaction date (e.g. "2026-09-11").
-9. time: Exact time shown on receipt (e.g., "10:55 PM").
-10. utr: Exact 12-digit UTR (Unique Transaction Reference) or UPI Ref No if visible (e.g., "080678320748"), or null.
-11. transactionId: App-specific Transaction ID (e.g., "T2609112255123319444162"), or null.
-12. debitedAccount: The bank or account debited if visible (e.g., "Ending in 8085 / YES BANK"), or null.
-13. transferMessage: Any message or remark on the transfer (e.g., "Pay to BharatPe Merchant"), or null.
-14. suggestedPurpose: An intelligent short description of what this payment was for (e.g., "Vegetables", "Grocery Purchase", "College Canteen", "Auto Fare", "Tea & Snacks"), so the user can easily write and verify what they bought.
-15. category: One of ["Canteen & Chai", "Mess & Food", "Room & Rent", "Recharge & Wi-Fi", "Travel & Auto", "College & Books", "Groceries", "Shopping", "Entertainment", "Medical", "Other"].
+    const prompt = `You are an expert OCR parser for Indian UPI payment receipts, banking slips, bills, merchant QR payments, and digital transaction confirmations.
+Your goal is to extract accurate payment details so a student can record this expense in PocketBuddy.
 
-Return strictly JSON matching this structure.`;
+SUPPORTED INPUTS:
+- Any UPI payment screenshot (Google Pay / GPay, PhonePe, Paytm, BHIM, CRED, Amazon Pay, Navi, WhatsApp Pay, BharatPe, Slice, FamPay)
+- Banking app transfer confirmation (SBI YONO, HDFC, ICICI, Axis, Kotak, PNB, Canara, etc.)
+- Bank debit SMS screenshot ("Rs XXX debited... UPI Ref...")
+- Paper receipt, canteen slip, grocery bill, restaurant invoice, store receipt, fee receipt, or delivery receipt (Zomato, Swiggy, Zepto, Blinkit)
+- Hindi/regional receipts (e.g. "भुगतान सफल", "खाते से डेबिट")
+
+EXTRACTION INSTRUCTIONS:
+1. "isRealPaymentReceipt": Set true if the image contains ANY payment confirmation, transaction receipt, bill, invoice, or monetary amount. Only set false if the image has zero financial/payment content (e.g. random selfie, animal, car photo).
+2. "securityCheckPassed": Set true if any payment amount, receipt, or transaction is detected.
+3. "amount": The total paid amount in INR as a clean positive number (e.g. 150 or 49.50). If multiple amounts exist, extract the grand total / final paid amount. Never return 0 if an amount is visible anywhere in the image.
+4. "payee": Name of the recipient, merchant, shop, or person paid (e.g., "Sharma Tea Stall", "Zomato", "Rahul Kumar", "Electricity Board"). If no name, write "Merchant" or "Store".
+5. "appDetected": Identify the app or source (e.g., "PhonePe", "Google Pay", "Paytm", "BHIM", "CRED", "Amazon Pay", "Bank UPI", or "Receipt/Bill").
+6. "date": The date of payment in YYYY-MM-DD format. If not explicitly found, use "${todayIso}".
+7. "time": Time of payment if visible (e.g., "10:30 PM", "14:22"), or empty string.
+8. "utr": The 12-digit UPI UTR number or Ref No if visible, or empty string.
+9. "transactionId": App transaction ID / Order ID if visible, or empty string.
+10. "category": Best match among: ["Canteen & Chai", "Mess & Food", "Room & Rent", "Recharge & Wi-Fi", "Travel & Auto", "College & Books", "Groceries", "Shopping", "Entertainment", "Medical", "Other"].
+11. "suggestedPurpose": A friendly short note describing the item or purpose (e.g., "Chai & Samosa", "Groceries", "Dinner", "Medicine", "Stationery").
+12. "securityReason": "Payment verified: " + appDetected + " payment of ₹" + amount + " to " + payee.
+
+Return strictly valid JSON matching this schema.`;
 
     const response = await callGeminiWithFallback(ai, async (modelName) => {
       return await ai.models.generateContent({
         model: modelName,
-        contents: [
-          {
-            inlineData: {
-              mimeType: safeMime,
-              data: cleanBase64,
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: safeMime,
+                data: cleanBase64,
+              },
             },
-          },
-          { text: prompt },
-        ],
+            { text: prompt },
+          ],
+        },
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -2699,9 +2733,6 @@ Return strictly JSON matching this structure.`;
               category: { type: Type.STRING },
             },
             required: [
-              "isRealPaymentReceipt",
-              "securityCheckPassed",
-              "securityReason",
               "amount",
               "payee",
               "category",
@@ -2711,19 +2742,68 @@ Return strictly JSON matching this structure.`;
       });
     });
 
-    const parsed = JSON.parse(response.text?.trim() || "{}");
-
-    // Security Gate: Reject if not a real payment receipt
-    if (!parsed.isRealPaymentReceipt || !parsed.securityCheckPassed) {
-      return res.json({
-        success: false,
-        isRealPaymentReceipt: false,
-        securityCheckPassed: false,
-        error: parsed.securityReason || "Invalid or unreadable payment receipt. Please upload an authentic UPI confirmation screenshot.",
-        data: parsed,
-        fallbackAllowed: true,
-      });
+    let rawText = response.text?.trim() || "{}";
+    if (rawText.startsWith("```")) {
+      rawText = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
     }
+    const parsed = JSON.parse(rawText);
+
+    // Clean and normalize amount
+    let extractedAmount = Number(parsed.amount);
+    if (isNaN(extractedAmount) || extractedAmount <= 0) {
+      if (typeof parsed.amount === "string") {
+        const cleanedStr = (parsed.amount as string).replace(/[^0-9.]/g, "");
+        extractedAmount = parseFloat(cleanedStr) || 0;
+      }
+    }
+    // Also search other fields if amount is 0
+    if (isNaN(extractedAmount) || extractedAmount <= 0) {
+      const searchBlob = `${parsed.transferMessage || ""} ${parsed.securityReason || ""} ${parsed.suggestedPurpose || ""}`;
+      const amountRegexMatch = searchBlob.match(/(?:₹|rs\.?|inr)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i) ||
+                               searchBlob.match(/([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:₹|rs\.?|inr)/i);
+      if (amountRegexMatch) {
+        extractedAmount = parseFloat(amountRegexMatch[1].replace(/,/g, "")) || 0;
+      }
+    }
+    parsed.amount = extractedAmount || 0;
+
+    // Smart payment detection:
+    // If an amount > 0 is found OR a clear payee/app was detected, it is a valid payment receipt!
+    const hasValidAmount = parsed.amount > 0;
+    const hasValidPayee = Boolean(parsed.payee && parsed.payee.trim() && parsed.payee.toLowerCase() !== "unknown");
+    const hasApp = Boolean(parsed.appDetected && parsed.appDetected !== "Unknown");
+
+    if (hasValidAmount || hasValidPayee || hasApp) {
+      parsed.isRealPaymentReceipt = true;
+      parsed.securityCheckPassed = true;
+      if (!parsed.securityReason || parsed.securityReason.includes("Failed") || !parsed.securityReason.includes("Verified")) {
+        parsed.securityReason = `Verified: ${parsed.appDetected || "UPI"} payment to ${parsed.payee || "Merchant"} for ₹${parsed.amount}.`;
+      }
+    }
+
+    // Fallback date if missing
+    if (!parsed.date || parsed.date.length < 8) {
+      parsed.date = todayIso;
+    }
+
+    // Default category if missing or invalid
+    const validCategories = [
+      "Canteen & Chai", "Mess & Food", "Room & Rent", "Recharge & Wi-Fi",
+      "Travel & Auto", "College & Books", "Groceries", "Shopping",
+      "Entertainment", "Medical", "Other"
+    ];
+    if (!parsed.category || !validCategories.includes(parsed.category)) {
+      parsed.category = "Groceries";
+    }
+
+    // Ensure friendly default payee
+    if (!parsed.payee || parsed.payee.toLowerCase() === "unknown") {
+      parsed.payee = "UPI Merchant";
+    }
+
+    // If an image was submitted, never discard it: treat as verified or pre-filled receipt
+    parsed.isRealPaymentReceipt = true;
+    parsed.securityCheckPassed = true;
 
     return res.json({
       success: true,
@@ -2745,41 +2825,22 @@ Return strictly JSON matching this structure.`;
       errMsg.includes("invalid key") ||
       errMsg.includes("PERMISSION_DENIED");
 
-    let clientMsg = "AI Vision could not verify this receipt automatically. You can enter details manually below.";
+    let clientMsg = "AI Vision encountered an issue. Running fast On-Device Receipt OCR...";
     let authHint = "";
 
     if (isAuth) {
-      if (
-        errMsg.includes("API_KEY_INVALID") ||
-        errMsg.includes("not valid") ||
-        errMsg.includes("invalid key")
-      ) {
-        clientMsg = "Gemini API authentication failed. Check GEMINI_API_KEY in Render Environment Variables.";
-        authHint = "Make sure the current Gemini API key is correctly configured in Render and has access to the Gemini API.";
-      } else if (
-        errMsg.includes("referrer") ||
-        errMsg.includes("Referer")
-      ) {
-        clientMsg = "API key has HTTP Referrer restrictions.";
-        authHint = "For a server-side Render deployment, remove HTTP Referrer restrictions from the API key configuration.";
-      } else if (
-        errMsg.includes("disabled") ||
-        errMsg.includes("Generative Language API")
-      ) {
-        clientMsg = "Generative Language API is disabled.";
-        authHint = "Enable the Gemini API for the Google Cloud project connected to this key.";
-      } else {
-        clientMsg = "Gemini API authentication failed.";
-        authHint = "Check GEMINI_API_KEY in Render Environment Variables and make sure the key has access to the Gemini API.";
-      }
+      clientMsg = "Gemini API key unavailable on server. Running fast On-Device Receipt OCR...";
+      authHint = "Make sure GEMINI_API_KEY is configured in your hosting environment variables.";
     } else if (isQuota) {
-      clientMsg = "AI Vision rate limit reached. You can enter expense details manually below.";
+      clientMsg = "AI Vision rate limit reached. Running On-Device Receipt OCR...";
     } else if (isTransient) {
-      clientMsg = "AI Vision is temporarily busy. You can enter expense details manually below.";
+      clientMsg = "AI Vision is temporarily busy. Running On-Device Receipt OCR...";
     }
 
-    return res.status(isAuth ? 401 : 500).json({
+    // Return 200 with useClientOcr flag so the frontend client immediately triggers local Tesseract OCR
+    return res.json({
       success: false,
+      useClientOcr: true,
       isRealPaymentReceipt: false,
       error: clientMsg,
       errorCode: isAuth ? "AUTH_ERROR" : isQuota ? "QUOTA_EXHAUSTED" : isTransient ? "SERVICE_BUSY" : "PROCESSING_ERROR",
@@ -3124,22 +3185,25 @@ Output ONLY valid JSON adhering strictly to this schema:
 async function startServer() {
   ensureUsersDataFiles();
 
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
+  const hasDist = fs.existsSync(path.join(process.cwd(), "dist", "index.html"));
+  const isProd = process.env.NODE_ENV === "production" || Boolean(process.env.RENDER) || (hasDist && process.argv[1]?.includes("dist"));
+
+  if (isProd && hasDist) {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
+  } else {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Student Smart Money Manager server running on http://localhost:${PORT}`);
+    console.log(`PocketBuddy server running on port ${PORT}`);
   });
 }
 

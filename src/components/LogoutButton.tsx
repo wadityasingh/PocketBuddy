@@ -23,7 +23,7 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
       id="header-logout-btn"
       type="button"
       onClick={onClick}
-      className={`relative rounded-full shrink-0 group transition-all duration-150 active:scale-95 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${dimensions[size]} ${className}`}
+      className={`relative rounded-full shrink-0 group transition-all duration-150 active:scale-95 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 ${dimensions[size]} ${className}`}
       title="Log Out of PocketBuddy"
       aria-label="Log Out"
     >

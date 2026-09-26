@@ -30,17 +30,17 @@ export const ExpenseInputActionBar: React.FC<ExpenseInputActionBarProps> = ({
         <button
           type="button"
           onClick={onOpenScanner}
-          className="p-3.5 rounded-xl border border-slate-200 hover:border-indigo-400 bg-slate-50/50 hover:bg-white text-left transition duration-150 flex items-start gap-3 group cursor-pointer"
+          className="p-3.5 rounded-xl border border-slate-200 hover:border-red-400 bg-slate-50/50 hover:bg-white text-left transition duration-150 flex items-start gap-3 group cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 text-red-600 flex items-center justify-center shrink-0 group-hover:bg-red-600 group-hover:text-white transition-colors">
             <Camera className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-1">
-              <span className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+              <span className="text-xs font-bold text-slate-900 group-hover:text-red-600 transition-colors">
                 Scan Receipt / UPI
               </span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+              <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-600 transition-colors" />
             </div>
             <p className="text-[11px] text-slate-500 mt-1 leading-snug">
               Extract amount and merchant details from payment receipts.

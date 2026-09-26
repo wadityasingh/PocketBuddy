@@ -69,7 +69,7 @@ export const FixedExpensesCard: React.FC<FixedExpensesCardProps> = ({
     if (text.includes('electric') || text.includes('bill') || text.includes('power') || text.includes('water')) {
       return <Zap className="w-4 h-4 text-yellow-600" />;
     }
-    return <CreditCard className="w-4 h-4 text-indigo-600" />;
+    return <CreditCard className="w-4 h-4 text-red-600" />;
   };
 
   const formatDueText = (dueDateStr: string) => {
@@ -144,7 +144,7 @@ export const FixedExpensesCard: React.FC<FixedExpensesCardProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-600"
               />
             </div>
 
@@ -157,7 +157,7 @@ export const FixedExpensesCard: React.FC<FixedExpensesCardProps> = ({
                 onChange={(e) => setAmount(e.target.value)}
                 required
                 min="1"
-                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-600"
               />
             </div>
           </div>
@@ -168,7 +168,7 @@ export const FixedExpensesCard: React.FC<FixedExpensesCardProps> = ({
               <select
                 value={dayOfMonth}
                 onChange={(e) => setDayOfMonth(e.target.value)}
-                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-600"
               >
                 {[1, 2, 3, 5, 7, 10, 15, 20, 25, 28, 30].map((d) => (
                   <option key={d} value={d}>
@@ -183,7 +183,7 @@ export const FixedExpensesCard: React.FC<FixedExpensesCardProps> = ({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-600"
               >
                 <option value="Room Rent">Room / PG Rent</option>
                 <option value="Kiraya & Travel">Bus / Metro Commute</option>
@@ -199,7 +199,7 @@ export const FixedExpensesCard: React.FC<FixedExpensesCardProps> = ({
               <select
                 value={payMode}
                 onChange={(e) => setPayMode(e.target.value as PaymentMode)}
-                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-600"
               >
                 <option value="UPI">UPI</option>
                 <option value="Cash">Cash</option>
@@ -209,7 +209,7 @@ export const FixedExpensesCard: React.FC<FixedExpensesCardProps> = ({
 
           <button
             type="submit"
-            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+            className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs shadow-red-600/20 cursor-pointer"
           >
             Save Fixed Expense
           </button>

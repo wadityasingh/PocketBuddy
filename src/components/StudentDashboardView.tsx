@@ -161,7 +161,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
         </div>
 
         <div className="text-xs font-semibold text-slate-500 self-start sm:self-auto flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+          <Calendar className="w-3.5 h-3.5 text-red-600" />
           <span>
             {new Date().toLocaleDateString('en-IN', {
               month: 'long',
@@ -169,7 +169,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             })}
           </span>
           <span className="text-slate-400">·</span>
-          <span className="text-indigo-600 font-bold">{daysRemaining} days left</span>
+          <span className="text-red-600 font-bold">{daysRemaining} days left</span>
         </div>
       </div>
 
@@ -193,24 +193,24 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             <span>Available Balance</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
           </div>
-          <div className="text-base sm:text-2xl font-black text-indigo-700 tabular-nums">
+          <div className="text-base sm:text-2xl font-black text-zinc-950 tabular-nums">
             {formatINR(availableTotal)}
           </div>
-          <div className="text-[10px] text-indigo-600 font-medium truncate">
+          <div className="text-[10px] text-zinc-500 font-medium truncate">
             {formatINR(safeDailyBudget)}/day safe limit
           </div>
         </div>
 
         {/* Metric 3: UPI Balance */}
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-indigo-100 bg-indigo-50/20 shadow-2xs space-y-1">
-          <div className="text-[11px] font-bold text-indigo-800 truncate flex items-center justify-between">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-zinc-200 bg-zinc-50/40 shadow-2xs space-y-1">
+          <div className="text-[11px] font-bold text-zinc-800 truncate flex items-center justify-between">
             <span>UPI Balance</span>
-            <Smartphone className="w-3.5 h-3.5 text-indigo-600" />
+            <Smartphone className="w-3.5 h-3.5 text-red-600" />
           </div>
-          <div className="text-base sm:text-2xl font-black text-indigo-950 tabular-nums">
+          <div className="text-base sm:text-2xl font-black text-zinc-950 tabular-nums">
             {formatINR(availableUpi)}
           </div>
-          <div className="text-[10px] text-indigo-700 font-medium">Digital wallet &amp; apps</div>
+          <div className="text-[10px] text-zinc-500 font-medium">Digital wallet &amp; apps</div>
         </div>
 
         {/* Metric 4: Cash Balance */}
@@ -236,7 +236,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
           id="qa-add-expense"
           type="button"
           onClick={onOpenAddExpense}
-          className="shrink-0 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          className="shrink-0 px-3 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shadow-red-600/20"
         >
           <PlusCircle className="w-3.5 h-3.5" />
           <span>Add Expense</span>
@@ -246,9 +246,9 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
           id="qa-add-money"
           type="button"
           onClick={onOpenAddMoney}
-          className="shrink-0 px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+          className="shrink-0 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200/80 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
         >
-          <Wallet className="w-3.5 h-3.5 text-indigo-600" />
+          <Wallet className="w-3.5 h-3.5 text-red-600" />
           <span>Add Money</span>
         </button>
 
@@ -278,7 +278,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
           onClick={() => onNavigateTab('room')}
           className="shrink-0 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ml-auto"
         >
-          <Home className="w-3.5 h-3.5 text-indigo-600" />
+          <Home className="w-3.5 h-3.5 text-red-600" />
           <span>My Room</span>
         </button>
       </div>
@@ -287,7 +287,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
       <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-indigo-50 border border-indigo-200/70 text-indigo-600 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-lg bg-red-50 border border-red-200/70 text-red-600 flex items-center justify-center">
               <Sparkles className="w-3.5 h-3.5" />
             </div>
             <h2 className="text-sm font-bold text-slate-900">
@@ -321,7 +321,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
               <div className="text-xs font-semibold text-slate-800">
                 {highestCategory ? (
                   <>
-                    <strong className="text-indigo-700 font-bold">{highestCategory}</strong> is currently your highest spending category.
+                    <strong className="text-red-600 font-bold">{highestCategory}</strong> is currently your highest spending category.
                   </>
                 ) : (
                   'Spending is evenly balanced across categories.'
@@ -362,7 +362,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             <button
               type="button"
               onClick={() => onNavigateTab('overview')}
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
             >
               <span>Manage in My Money</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -377,8 +377,8 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-bold text-indigo-700">UPI Spent</div>
-              <div className="text-sm sm:text-base font-extrabold text-indigo-900 mt-0.5">
+              <div className="text-[10px] font-bold text-zinc-700">UPI Spent</div>
+              <div className="text-sm sm:text-base font-extrabold text-zinc-950 mt-0.5">
                 {formatINR(upiSpent)}
               </div>
             </div>
@@ -409,7 +409,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-indigo-600 rounded-full"
+                          className="h-full bg-red-600 rounded-full"
                           style={{ width: `${Math.min(100, pct)}%` }}
                         />
                       </div>
@@ -426,7 +426,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <Home className="w-4 h-4 text-indigo-600" />
+                <Home className="w-4 h-4 text-red-600" />
                 <span>My Room</span>
               </span>
               {currentRoom && (
@@ -441,7 +441,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-600 font-medium">Room Code</span>
-                    <span className="font-mono font-bold text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200/60">
+                    <span className="font-mono font-bold text-red-700 bg-white px-2 py-0.5 rounded border border-red-200/60">
                       {currentRoom.inviteCode}
                     </span>
                   </div>
@@ -509,7 +509,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigateTab('overview')}
-            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+            className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
           >
             <span>View All</span>
             <ArrowRight className="w-3.5 h-3.5" />

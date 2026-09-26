@@ -100,10 +100,10 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({
         </div>
         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
           <span className="text-xs text-slate-500 font-medium">Overall Progress</span>
-          <div className="text-2xl font-black text-indigo-600 mt-1">
+          <div className="text-2xl font-black text-red-600 mt-1">
             {Math.round((totalSaved / (totalTarget || 1)) * 100)}%
           </div>
-          <span className="text-[11px] text-indigo-500 font-medium">Consistent daily drops fill the bucket</span>
+          <span className="text-[11px] text-red-500 font-medium">Consistent daily drops fill the bucket</span>
         </div>
       </div>
 

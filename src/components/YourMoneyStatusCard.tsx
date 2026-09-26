@@ -67,7 +67,7 @@ export const YourMoneyStatusCard: React.FC<YourMoneyStatusCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200">
             <Calendar className="w-3.5 h-3.5" />
             {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left in month
           </span>
@@ -109,7 +109,7 @@ export const YourMoneyStatusCard: React.FC<YourMoneyStatusCardProps> = ({
         </div>
 
         {/* Safe Daily Budget */}
-        <div className={`p-4 rounded-2xl border ${isExceededToday ? 'bg-amber-50/50 border-amber-200' : 'bg-indigo-50/50 border-indigo-100'}`}>
+        <div className={`p-4 rounded-2xl border ${isExceededToday ? 'bg-amber-50/50 border-amber-200' : 'bg-red-50/40 border-red-200/70'}`}>
           <div className="flex items-center justify-between">
             <div className="text-xs font-bold text-slate-600 uppercase tracking-wider">
               Safe Daily Budget
@@ -120,9 +120,9 @@ export const YourMoneyStatusCard: React.FC<YourMoneyStatusCardProps> = ({
               </span>
             )}
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-indigo-950 mt-1.5 tracking-tight">
+          <div className="text-2xl sm:text-3xl font-black text-red-950 mt-1.5 tracking-tight">
             {formatINR(safeDailyBudget)}
-            <span className="text-xs font-semibold text-indigo-700 ml-1">/ day</span>
+            <span className="text-xs font-semibold text-red-600 ml-1">/ day</span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             Spendable amount per day across {daysLeft} remaining days
@@ -140,7 +140,7 @@ export const YourMoneyStatusCard: React.FC<YourMoneyStatusCardProps> = ({
                 <div className="text-base font-extrabold text-slate-900 truncate">
                   {nextBill.title}
                 </div>
-                <div className="text-xs font-bold text-indigo-600 mt-0.5">
+                <div className="text-xs font-bold text-red-600 mt-0.5">
                   {formatINR(nextBill.amount)} • Due {nextBill.dueDate}
                 </div>
               </div>
@@ -155,7 +155,7 @@ export const YourMoneyStatusCard: React.FC<YourMoneyStatusCardProps> = ({
           {onOpenBills && (
             <button
               onClick={onOpenBills}
-              className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition cursor-pointer self-start"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 transition cursor-pointer self-start"
             >
               <span>Manage fixed bills</span>
               <ArrowRight className="w-3.5 h-3.5" />

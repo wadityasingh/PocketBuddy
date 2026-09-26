@@ -598,9 +598,9 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
             id="btn-scan-loan-note"
             type="button"
             onClick={handleOpenScan}
-            className="flex-1 sm:flex-initial h-11 px-4.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 active:scale-[0.99] text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+            className="flex-1 sm:flex-initial h-11 px-4.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200/80 active:scale-[0.99] text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            <ScanLine className="w-4 h-4 text-indigo-600" />
+            <ScanLine className="w-4 h-4 text-red-600" />
             <span>Scan Loan Note</span>
           </button>
         </div>
@@ -701,7 +701,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
               id="empty-state-no-loans"
               className="text-center py-10 px-4 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200"
             >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3">
                 <FileText className="w-6 h-6" />
               </div>
               <h4 className="text-sm sm:text-base font-bold text-slate-800">
@@ -727,7 +727,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="mt-2 text-xs font-semibold text-indigo-600 hover:underline cursor-pointer"
+                  className="mt-2 text-xs font-semibold text-red-600 hover:underline cursor-pointer"
                 >
                   Clear search
                 </button>
@@ -754,7 +754,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                     className="min-w-0 flex-1 cursor-pointer group"
                   >
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-indigo-600 transition">
+                      <span className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-red-600 transition">
                         {loan.person}
                       </span>
 
@@ -823,7 +823,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                             {loan.paymentMode === 'Cash' ? (
                               <Banknote className="w-3 h-3 text-emerald-600" />
                             ) : (
-                              <Smartphone className="w-3 h-3 text-indigo-600" />
+                              <Smartphone className="w-3 h-3 text-red-600" />
                             )}
                             <span>{loan.paymentMode}</span>
                           </span>
@@ -833,7 +833,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                       {loan.notes && (
                         <span
                           title="Contains private note"
-                          className="inline-flex items-center gap-1 text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100"
+                          className="inline-flex items-center gap-1 text-[10px] text-red-600 bg-red-50 px-1.5 py-0.2 rounded border border-red-100"
                         >
                           <Lock className="w-2.5 h-2.5" />
                           <span>Private Note</span>
@@ -1074,7 +1074,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                    <Lock className="w-3 h-3 text-indigo-600" />
+                    <Lock className="w-3 h-3 text-red-600" />
                     <span>Private Note (Optional)</span>
                   </label>
                   <span className="text-[10px] text-slate-400">Visible only to you</span>
@@ -1195,13 +1195,13 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
             </div>
 
             {/* Private Note Section (Account-Isolated) */}
-            <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3.5 space-y-2">
+            <div className="rounded-xl border border-red-100 bg-red-50/40 p-3.5 space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900">
-                  <Lock className="w-3 h-3 text-indigo-600" />
+                <div className="flex items-center gap-1.5 text-xs font-bold text-red-900">
+                  <Lock className="w-3 h-3 text-red-600" />
                   <span>Private Note</span>
                 </div>
-                <span className="text-[10px] text-indigo-600 font-medium">Visible only to you</span>
+                <span className="text-[10px] text-red-600 font-medium">Visible only to you</span>
               </div>
 
               {isEditingNote ? (
@@ -1211,7 +1211,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                     value={noteDraft}
                     onChange={(e) => setNoteDraft(e.target.value)}
                     placeholder="Write a private note..."
-                    className="w-full p-2 text-xs bg-white border border-indigo-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-900 font-medium"
+                    className="w-full p-2 text-xs bg-white border border-red-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-600 text-slate-900 font-medium"
                   />
                   <div className="flex items-center justify-end gap-1.5">
                     <button
@@ -1224,7 +1224,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                     <button
                       type="button"
                       onClick={handleSavePrivateNote}
-                      className="px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md cursor-pointer shadow-2xs"
+                      className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white font-bold rounded-md cursor-pointer shadow-2xs shadow-red-600/20"
                     >
                       Save Note
                     </button>
@@ -1232,7 +1232,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                 </div>
               ) : selectedLoan.notes ? (
                 <div className="space-y-2">
-                  <p className="text-xs text-slate-700 bg-white/80 p-2.5 rounded-lg border border-indigo-100/80 font-medium italic">
+                  <p className="text-xs text-slate-700 bg-white/80 p-2.5 rounded-lg border border-red-100/80 font-medium italic">
                     &ldquo;{selectedLoan.notes}&rdquo;
                   </p>
                   <div className="flex items-center justify-end gap-2 text-[11px] font-bold">
@@ -1242,7 +1242,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                         setNoteDraft(selectedLoan.notes || '');
                         setIsEditingNote(true);
                       }}
-                      className="text-indigo-700 hover:underline cursor-pointer"
+                      className="text-red-700 hover:underline cursor-pointer"
                     >
                       Edit Note
                     </button>
@@ -1265,7 +1265,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                       setNoteDraft('');
                       setIsEditingNote(true);
                     }}
-                    className="px-3 py-1 rounded-lg bg-white border border-indigo-200 text-indigo-700 text-xs font-bold hover:bg-indigo-50 transition cursor-pointer"
+                    className="px-3 py-1 rounded-lg bg-white border border-red-200 text-red-700 text-xs font-bold hover:bg-red-50 transition cursor-pointer"
                   >
                     + Add Private Note
                   </button>
@@ -1347,7 +1347,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
                   <ScanLine className="w-4 h-4" />
                 </div>
                 <div>
@@ -1380,9 +1380,9 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                 {!scannedImage ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/20 rounded-2xl p-6 text-center cursor-pointer transition space-y-2"
+                    className="border-2 border-dashed border-slate-300 hover:border-red-400 hover:bg-red-50/20 rounded-2xl p-6 text-center cursor-pointer transition space-y-2"
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
                       <Camera className="w-6 h-6" />
                     </div>
                     <p className="text-xs sm:text-sm font-bold text-slate-800">
@@ -1415,7 +1415,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                       <button
                         type="button"
                         onClick={processImageOCR}
-                        className="flex-1 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                        className="flex-1 h-10 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs shadow-red-600/20 cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         <ScanLine className="w-3.5 h-3.5" />
                         <span>Extract Details</span>
@@ -1436,7 +1436,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
             {/* Step 2: Scanning State */}
             {scanStep === 'scanning' && (
               <div className="py-12 text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto animate-pulse">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto animate-pulse">
                   <ScanLine className="w-6 h-6 animate-spin" />
                 </div>
                 <h4 className="text-sm font-bold text-slate-800">Reading Handwritten Note...</h4>
@@ -1449,12 +1449,12 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
             {/* Step 3: Review Scanned Loan (MANDATORY CONFIRMATION BEFORE SAVING) */}
             {scanStep === 'review' && (
               <div className="space-y-3">
-                <div className="p-2.5 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-900 text-xs">
+                <div className="p-2.5 rounded-xl bg-red-50 border border-red-100 text-red-900 text-xs">
                   <div className="font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-red-600" />
                     <span>Review Scanned Loan</span>
                   </div>
-                  <p className="text-[11px] text-indigo-700 mt-0.5">
+                  <p className="text-[11px] text-red-700 mt-0.5">
                     Verify and edit the extracted details before saving.
                   </p>
                 </div>
@@ -1652,7 +1652,7 @@ export const UdhaarKhatabookTab: React.FC<UdhaarKhatabookTabProps> = ({
                   onClick={() => setSettlePaymentMode('UPI')}
                   className={`h-9 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border cursor-pointer ${
                     settlePaymentMode === 'UPI'
-                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      ? 'bg-red-600 text-white border-red-600 shadow-xs shadow-red-600/20'
                       : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >

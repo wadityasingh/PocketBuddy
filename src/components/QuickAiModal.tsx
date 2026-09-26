@@ -232,7 +232,7 @@ export const QuickAiModal: React.FC<QuickAiModalProps> = ({
         {/* Header */}
         <div className="p-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-indigo-500/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300">
+            <div className="w-9 h-9 rounded-2xl bg-red-500/30 border border-red-400/40 flex items-center justify-center text-red-300">
               <Bot className="w-5 h-5" />
             </div>
             <div>
@@ -293,7 +293,7 @@ export const QuickAiModal: React.FC<QuickAiModalProps> = ({
                 key={idx}
                 disabled={loading}
                 onClick={() => sendMessage(pill)}
-                className="text-[11px] whitespace-nowrap bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 px-3 py-1 rounded-full text-slate-700 font-medium transition cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
+                className="text-[11px] whitespace-nowrap bg-white hover:bg-red-50 hover:text-red-700 hover:border-red-300 border border-slate-200 px-3 py-1 rounded-full text-slate-700 font-medium transition cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
               >
                 {pill}
               </button>
@@ -337,7 +337,7 @@ export const QuickAiModal: React.FC<QuickAiModalProps> = ({
           {loading && (
             <div className="flex justify-start">
               <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-bl-none text-xs text-slate-600 flex items-center gap-2 shadow-2xs font-medium">
-                <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                <Loader2 className="w-4 h-4 animate-spin text-red-600" />
                 <span>Coach is thinking &amp; calculating your student numbers...</span>
               </div>
             </div>
@@ -361,12 +361,12 @@ export const QuickAiModal: React.FC<QuickAiModalProps> = ({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium"
+              className="flex-1 px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-600 focus:outline-none font-medium"
             />
             <button
               type="submit"
               disabled={!inputText.trim() || loading}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-40 cursor-pointer shadow-xs"
+              className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-40 cursor-pointer shadow-xs shadow-red-600/20"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Ask</span>

@@ -56,19 +56,19 @@ export const PocketMoneyCard: React.FC<PocketMoneyCardProps> = ({
       className="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden border border-slate-800"
     >
       {/* Background ambient glow */}
-      <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 rounded-full bg-indigo-500/20 blur-2xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/3 -mb-10 w-40 h-40 rounded-full bg-emerald-500/15 blur-2xl pointer-events-none" />
+      <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 rounded-full bg-red-600/20 blur-2xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/3 -mb-10 w-40 h-40 rounded-full bg-red-500/10 blur-2xl pointer-events-none" />
 
       {/* Header row */}
       <div className="flex items-center justify-between relative z-10 mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/30 border border-indigo-400/30 flex items-center justify-center text-indigo-200">
+          <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400">
             <Wallet className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider uppercase text-indigo-300">Pocket Money Mode</span>
-              <span className="px-2 py-0.5 text-[11px] font-medium bg-indigo-500/20 text-indigo-200 rounded-full border border-indigo-400/20">
+              <span className="text-xs font-semibold tracking-wider uppercase text-red-400">Pocket Money Mode</span>
+              <span className="px-2 py-0.5 text-[11px] font-medium bg-red-500/20 text-red-300 rounded-full border border-red-400/20">
                 {daysLeft} days left
               </span>
             </div>
@@ -82,7 +82,7 @@ export const PocketMoneyCard: React.FC<PocketMoneyCardProps> = ({
             setTempAllowance(allowance.toString());
             setIsEditing(!isEditing);
           }}
-          className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition text-indigo-200 hover:text-white"
+          className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition text-slate-300 hover:text-white"
         >
           <Edit3 className="w-3.5 h-3.5" />
           <span>{isEditing ? 'Cancel' : 'Edit Budget'}</span>
@@ -90,20 +90,20 @@ export const PocketMoneyCard: React.FC<PocketMoneyCardProps> = ({
       </div>
 
       {isEditing ? (
-        <form onSubmit={handleSave} className="mb-4 bg-indigo-950/80 p-3 rounded-xl border border-indigo-600/40 relative z-10">
-          <label className="text-xs text-indigo-200 mb-1 block">Set Monthly Pocket Money (₹)</label>
+        <form onSubmit={handleSave} className="mb-4 bg-zinc-900/90 p-3 rounded-xl border border-red-500/30 relative z-10">
+          <label className="text-xs text-slate-300 mb-1 block">Set Monthly Pocket Money (₹)</label>
           <div className="flex gap-2">
             <input
               type="number"
               value={tempAllowance}
               onChange={(e) => setTempAllowance(e.target.value)}
-              className="bg-indigo-900 border border-indigo-500/50 rounded-lg px-3 py-1.5 text-white font-bold text-base w-full focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="bg-black/60 border border-zinc-700 focus:border-red-500 rounded-lg px-3 py-1.5 text-white font-bold text-base w-full focus:outline-none focus:ring-2 focus:ring-red-500/40"
               placeholder="e.g. 10000"
               autoFocus
             />
             <button
               type="submit"
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold px-4 py-1.5 rounded-lg text-sm transition"
+              className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-1.5 rounded-lg text-sm transition"
             >
               Save
             </button>
@@ -115,11 +115,11 @@ export const PocketMoneyCard: React.FC<PocketMoneyCardProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-10 mb-4">
         {/* Remaining Pocket Money */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3.5 border border-white/10">
-          <div className="text-xs text-indigo-200 font-medium">Remaining to Spend</div>
+          <div className="text-xs text-slate-300 font-medium">Remaining to Spend</div>
           <div className="text-2xl sm:text-3xl font-black text-white mt-0.5 tracking-tight">
             {formatINR(remainingPocketMoney)}
           </div>
-          <div className="text-[11px] text-indigo-300 mt-1 flex items-center gap-1">
+          <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
             <span>of {formatINR(allowance)} received</span>
           </div>
         </div>
@@ -133,7 +133,7 @@ export const PocketMoneyCard: React.FC<PocketMoneyCardProps> = ({
             : 'bg-emerald-500/15 border-emerald-500/30'
         }`}>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-indigo-100 font-medium">Safe Daily Spending Cap</span>
+            <span className="text-xs text-slate-200 font-medium">Safe Daily Spending Cap</span>
             {isOverDailyLimit ? (
               <span className="flex items-center gap-1 text-[10px] font-bold text-rose-300 uppercase px-1.5 py-0.5 bg-rose-500/30 rounded">
                 <AlertTriangle className="w-3 h-3" /> Overspent
@@ -146,20 +146,20 @@ export const PocketMoneyCard: React.FC<PocketMoneyCardProps> = ({
           </div>
           <div className="text-2xl sm:text-3xl font-black text-white mt-0.5 tracking-tight">
             {formatINR(safeDailyLimit)}
-            <span className="text-xs font-normal text-indigo-200 ml-1">/ day</span>
+            <span className="text-xs font-normal text-slate-300 ml-1">/ day</span>
           </div>
-          <div className="text-[11px] text-indigo-200 mt-1">
+          <div className="text-[11px] text-slate-300 mt-1">
             Weekly safe budget: <span className="font-semibold text-white">{formatINR(safeWeeklyLimit)}</span>
           </div>
         </div>
 
         {/* Today's Spend Monitor */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3.5 border border-white/10">
-          <div className="text-xs text-indigo-200 font-medium">Spent Today</div>
+          <div className="text-xs text-slate-300 font-medium">Spent Today</div>
           <div className="text-2xl sm:text-3xl font-black text-white mt-0.5 tracking-tight">
             {formatINR(todaySpent)}
           </div>
-          <div className="text-[11px] mt-1 text-indigo-200">
+          <div className="text-[11px] mt-1 text-slate-300">
             {isOverDailyLimit ? (
               <span className="text-rose-300 font-semibold">
                 ⚠️ ₹{todaySpent - safeDailyLimit} above daily safe cap!
@@ -175,7 +175,7 @@ export const PocketMoneyCard: React.FC<PocketMoneyCardProps> = ({
 
       {/* Pocket Money Burn Progress Bar */}
       <div className="relative z-10">
-        <div className="flex items-center justify-between text-xs text-indigo-200 mb-1.5">
+        <div className="flex items-center justify-between text-xs text-slate-300 mb-1.5">
           <span>Month Budget Spent: <strong className="text-white">{formatINR(spent)}</strong> ({spentPercentage}%)</span>
           <span className="flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5" />

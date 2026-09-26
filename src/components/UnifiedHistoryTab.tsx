@@ -608,7 +608,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="mt-2 text-xs text-indigo-600 font-bold hover:underline cursor-pointer"
+                className="mt-2 text-xs text-red-600 font-bold hover:underline cursor-pointer"
               >
                 Clear search
               </button>
@@ -621,7 +621,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                 {/* Month Section Header with Total Monthly Spent */}
                 <div className="flex items-center justify-between pt-2 pb-1 border-b border-slate-200">
                   <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                    <Calendar className="w-3.5 h-3.5 text-red-600" />
                     <span className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
                       {month.monthLabel}
                     </span>
@@ -713,7 +713,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => onEditTransaction(item.rawTransaction)}
-                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
                                     title="Edit transaction"
                                   >
                                     <Edit2 className="w-3.5 h-3.5" />
@@ -779,7 +779,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="mt-2 text-xs text-indigo-600 font-bold hover:underline cursor-pointer"
+                className="mt-2 text-xs text-red-600 font-bold hover:underline cursor-pointer"
               >
                 Clear search
               </button>
@@ -792,7 +792,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                 {/* Month Section Header with Room Total */}
                 <div className="flex items-center justify-between pt-2 pb-1 border-b border-slate-200">
                   <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                    <Calendar className="w-3.5 h-3.5 text-red-600" />
                     <span className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
                       {month.monthLabel}
                     </span>
@@ -800,7 +800,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                   <div className="text-[11px] sm:text-xs font-semibold text-slate-500">
                     Room Total: <strong className="text-slate-900 font-extrabold">{formatINR(month.totalSpent)}</strong>
                     {month.totalUserShare > 0 && (
-                      <span className="ml-2 text-indigo-700 font-bold bg-indigo-50 border border-indigo-100 px-1.5 py-0.2 rounded text-[10px]">
+                      <span className="ml-2 text-red-700 font-bold bg-red-50 border border-red-100 px-1.5 py-0.2 rounded text-[10px]">
                         Your Share: {formatINR(month.totalUserShare)}
                       </span>
                     )}
@@ -820,7 +820,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                           Total Spent: <strong className="font-extrabold text-rose-600">{formatINR(group.totalSpent)}</strong>
                         </span>
                         {group.totalUserShare > 0 && (
-                          <span className="font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.2 rounded text-[10px]">
+                          <span className="font-bold text-red-700 bg-red-50 border border-red-100 px-1.5 py-0.2 rounded text-[10px]">
                             Your Share: {formatINR(group.totalUserShare)}
                           </span>
                         )}
@@ -836,7 +836,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                         >
                           {/* Left: Icon + Title + Details */}
                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-indigo-50 border border-indigo-100 text-indigo-600">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-red-50 border border-red-100 text-red-600">
                               <Home className="w-4 h-4" />
                             </div>
 
@@ -850,7 +850,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                                 <span className="text-slate-300">•</span>
                                 <span
                                   className={`font-semibold ${
-                                    item.isPaidByCurrentUser ? 'text-indigo-700' : 'text-slate-600'
+                                    item.isPaidByCurrentUser ? 'text-red-700' : 'text-slate-600'
                                   }`}
                                 >
                                   Paid by {item.isPaidByCurrentUser ? 'You' : item.paidBy}
@@ -889,7 +889,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                                   onViewRoom();
                                 }
                               }}
-                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
                               title="View split breakdown"
                             >
                               <Receipt className="w-3.5 h-3.5" />
@@ -912,7 +912,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
           <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-red-700 bg-red-50 px-2 py-0.5 rounded-md">
                   Shared Room Purchase
                 </span>
                 <h3 className="text-sm sm:text-base font-black text-slate-900 mt-1">
@@ -960,14 +960,14 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                           key={idx}
                           className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs ${
                             isMe
-                              ? 'bg-indigo-50 border border-indigo-200/80 font-bold'
+                              ? 'bg-red-50 border border-red-200/80 font-bold'
                               : 'bg-slate-50 text-slate-700'
                           }`}
                         >
                           <span>
                             {p.name} {isMe && '(You)'}
                           </span>
-                          <span className={isMe ? 'text-indigo-900 font-black' : 'text-slate-900 font-bold'}>
+                          <span className={isMe ? 'text-red-950 font-black' : 'text-slate-900 font-bold'}>
                             {formatINR(p.share)}
                           </span>
                         </div>
@@ -991,7 +991,7 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
                     setViewingRoomExpense(null);
                     onViewRoom();
                   }}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer flex items-center gap-1"
+                  className="text-xs font-bold text-red-600 hover:text-red-700 cursor-pointer flex items-center gap-1"
                 >
                   <Home className="w-3.5 h-3.5" />
                   <span>Go to My Room</span>

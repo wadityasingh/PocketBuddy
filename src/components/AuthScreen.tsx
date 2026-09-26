@@ -515,16 +515,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   // MAIN AUTH INTERFACE (Inspired by Image 2 - Figma App Login Concept)
   // =========================================================================
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] text-slate-900 flex flex-col justify-between items-center relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen w-full bg-[#f8fafc] text-slate-900 flex flex-col justify-between items-center relative overflow-x-hidden selection:bg-red-600 selection:text-white">
       
       {/* ---------------------------------------------------------------------
-          TOP ORGANIC HEADER WAVE (Inspired by Image 2 design style)
+          TOP ORGANIC HEADER WAVE (Red, Black & White Aesthetic)
           --------------------------------------------------------------------- */}
-      <div className="w-full bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 text-white pt-8 pb-16 px-4 sm:px-6 relative overflow-hidden shadow-lg">
-        {/* Soft Organic Background Circles */}
-        <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-        <div className="absolute top-10 -left-10 w-48 h-48 rounded-full bg-violet-400/20 blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-10 right-1/4 w-52 h-52 rounded-full bg-indigo-400/20 blur-xl pointer-events-none" />
+      <div className="w-full bg-gradient-to-br from-black via-zinc-900 to-zinc-950 text-white pt-8 pb-16 px-4 sm:px-6 relative overflow-hidden shadow-xl border-b border-zinc-900">
+        {/* Soft Organic Red & Black Accent Circles */}
+        <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-red-600/15 blur-2xl pointer-events-none" />
+        <div className="absolute top-10 -left-10 w-48 h-48 rounded-full bg-red-500/10 blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-1/4 w-52 h-52 rounded-full bg-red-600/10 blur-xl pointer-events-none" />
 
         {/* Decorative Wave SVG Divider at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none overflow-hidden leading-none">
@@ -545,7 +545,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 id="auth-back-button"
                 type="button"
                 onClick={() => switchMode('login')}
-                className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md flex items-center justify-center text-white transition-all cursor-pointer border border-white/20"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all cursor-pointer border border-white/15"
                 title="Back to Sign In"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -555,7 +555,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 id="auth-home-button"
                 type="button"
                 onClick={onClose}
-                className="h-9 px-3 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md flex items-center gap-1.5 text-white text-xs font-semibold transition-all cursor-pointer border border-white/20"
+                className="h-9 px-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center gap-1.5 text-white text-xs font-semibold transition-all cursor-pointer border border-white/15"
                 title="Back to Landing Page"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -565,7 +565,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               <div className="w-9" />
             )}
 
-            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/25 shadow-xs">
+            <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-zinc-800 shadow-xs">
               <BrandLogo size="xs" showWordmark={true} tagline={false} variant="dark" />
             </div>
 
@@ -579,7 +579,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               {mode === 'register' && 'Create Account'}
               {mode === 'forgot' && 'Reset Password'}
             </h1>
-            <p className="text-xs sm:text-sm text-indigo-100/90 mt-1 font-medium">
+            <p className="text-xs sm:text-sm text-zinc-300 mt-1 font-medium">
               {mode === 'login' && 'Welcome back! Enter your details to continue.'}
               {mode === 'register' && 'Join PocketBuddy to manage expenses & room splits.'}
               {mode === 'forgot' && 'Enter your email or mobile to set a new password.'}
@@ -607,7 +607,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className="mt-1.5 inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                  className="mt-1.5 inline-flex items-center gap-1 font-bold text-red-600 hover:text-red-700 underline cursor-pointer"
                 >
                   Create new account now <ArrowRight className="w-3 h-3" />
                 </button>
@@ -650,7 +650,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
                     placeholder="Email or 10-digit mobile number"
-                    className={`w-full pl-10 pr-3.5 py-3 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
+                    className={`w-full pl-10 pr-3.5 py-3 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all ${
                       fieldErrors.loginIdentifier ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
                     }`}
                     autoComplete="username"
@@ -676,7 +676,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Enter password"
-                    className={`w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
+                    className={`w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all ${
                       fieldErrors.loginPassword ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
                     }`}
                     autoComplete="current-password"
@@ -707,7 +707,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   />
                   <div
                     className={`w-4 h-4 rounded-md flex items-center justify-center transition-colors ${
-                      rememberMe ? 'bg-indigo-600 text-white' : 'border border-slate-300 bg-slate-50'
+                      rememberMe ? 'bg-red-600 text-white' : 'border border-slate-300 bg-slate-50'
                     }`}
                   >
                     {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
@@ -719,7 +719,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   id="auth-forgot-link"
                   type="button"
                   onClick={() => switchMode('forgot')}
-                  className="font-bold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+                  className="font-bold text-red-600 hover:text-red-700 transition-colors cursor-pointer"
                 >
                   Forgot Password?
                 </button>
@@ -730,7 +730,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 id="auth-login-submit-btn"
                 type="submit"
                 disabled={loading}
-                className="w-full mt-3 py-3.5 px-5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-[0.99] transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full mt-3 py-3.5 px-5 rounded-2xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition-all shadow-md shadow-red-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {loading ? (
                   <span className="inline-flex items-center gap-2">
@@ -753,7 +753,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     id="switch-to-register-btn"
                     type="button"
                     onClick={() => switchMode('register')}
-                    className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                    className="font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
                   >
                     Sign Up
                   </button>
@@ -791,7 +791,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       }
                     }}
                     placeholder="Enter full name"
-                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
+                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all ${
                       fieldErrors.fullName ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
                     }`}
                   />
@@ -825,7 +825,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       }
                     }}
                     placeholder="student@gmail.com"
-                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
+                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all ${
                       fieldErrors.regEmail ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
                     }`}
                   />
@@ -859,7 +859,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       }
                     }}
                     placeholder="Enter 10-digit mobile number"
-                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
+                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all ${
                       fieldErrors.regPhone ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
                     }`}
                   />
@@ -893,7 +893,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       }
                     }}
                     placeholder="Create password (min 6 characters)"
-                    className={`w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
+                    className={`w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all ${
                       fieldErrors.regPassword ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
                     }`}
                   />
@@ -935,7 +935,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       }
                     }}
                     placeholder="Re-enter password to confirm"
-                    className={`w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all ${
+                    className={`w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all ${
                       fieldErrors.confirmPassword ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200'
                     }`}
                   />
@@ -974,13 +974,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   />
                   <div
                     className={`w-4 h-4 mt-0.5 rounded-md flex items-center justify-center transition-colors ${
-                      agreeTerms ? 'bg-indigo-600 text-white' : 'border border-slate-300 bg-slate-50'
+                      agreeTerms ? 'bg-red-600 text-white' : 'border border-slate-300 bg-slate-50'
                     }`}
                   >
                     {agreeTerms && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
                   <span className="text-[11px] text-slate-600 leading-tight">
-                    I agree to the <span className="font-semibold text-indigo-600">Privacy Policy</span> and keep my financial data secure
+                    I agree to the <span className="font-semibold text-red-600">Privacy Policy</span> and keep my financial data secure
                   </span>
                 </label>
                 {fieldErrors.terms && (
@@ -993,7 +993,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 id="auth-reg-submit-btn"
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3.5 px-5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-[0.99] transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full mt-2 py-3.5 px-5 rounded-2xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition-all shadow-md shadow-red-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {loading ? (
                   <span className="inline-flex items-center gap-2">
@@ -1016,7 +1016,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     id="switch-to-login-btn"
                     type="button"
                     onClick={() => switchMode('login')}
-                    className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                    className="font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
                   >
                     Sign In
                   </button>
@@ -1044,7 +1044,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     value={forgotIdentifier}
                     onChange={(e) => setForgotIdentifier(e.target.value)}
                     placeholder="Enter registered email or mobile number"
-                    className="w-full pl-10 pr-3.5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                    className="w-full pl-10 pr-3.5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all"
                   />
                 </div>
                 {fieldErrors.forgotIdentifier && (
@@ -1066,7 +1066,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     value={forgotNewPassword}
                     onChange={(e) => setForgotNewPassword(e.target.value)}
                     placeholder="Enter new password (min 6 characters)"
-                    className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all"
                   />
                   <button
                     type="button"
@@ -1096,7 +1096,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     value={forgotConfirmPassword}
                     onChange={(e) => setForgotConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password to confirm"
-                    className="w-full pl-10 pr-3.5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                    className="w-full pl-10 pr-3.5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all"
                   />
                 </div>
                 {fieldErrors.forgotConfirmPassword && (
@@ -1108,7 +1108,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 id="auth-forgot-submit-btn"
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3.5 px-5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-[0.99] transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full mt-2 py-3.5 px-5 rounded-2xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition-all shadow-md shadow-red-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {loading ? (
                   <span className="inline-flex items-center gap-2">
@@ -1138,23 +1138,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       {/* ---------------------------------------------------------------------
           FOOTER WITH OFFICIAL LINKS & CONNECT TO DEVELOPER
           --------------------------------------------------------------------- */}
-      <footer id="auth-footer" className="w-full mt-auto bg-[#0d1627] text-slate-400 py-2.5 px-4 border-t border-slate-800/80 transition-colors">
+      <footer id="auth-footer" className="w-full mt-auto bg-zinc-950 text-zinc-400 py-2.5 px-4 border-t border-zinc-900 transition-colors">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-black text-white tracking-tight flex items-center gap-1">
               <span>PocketBuddy</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600 inline-block"></span>
             </span>
-            <span className="text-[10px] sm:text-[11px] text-slate-400">&copy; {new Date().getFullYear()} PocketBuddy, Inc.</span>
+            <span className="text-[10px] sm:text-[11px] text-zinc-400">&copy; {new Date().getFullYear()} PocketBuddy, Inc.</span>
           </div>
 
-          <div className="footer-socials flex items-center gap-3 text-slate-400">
+          <div className="footer-socials flex items-center gap-3 text-zinc-400">
             <a
               href="https://www.facebook.com/wadityasingh"
               target="_blank"
               rel="noopener noreferrer"
               title="Facebook"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <Facebook className="w-3.5 h-3.5" />
             </a>
@@ -1163,7 +1163,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               title="Instagram"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <Instagram className="w-3.5 h-3.5" />
             </a>
@@ -1172,7 +1172,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               title="GitHub"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <Github className="w-3.5 h-3.5" />
             </a>
@@ -1181,7 +1181,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               title="WhatsApp"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <MessageCircle className="w-3.5 h-3.5" />
             </a>
@@ -1190,7 +1190,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               title="LinkedIn"
-              className="p-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
             >
               <Linkedin className="w-3.5 h-3.5" />
             </a>

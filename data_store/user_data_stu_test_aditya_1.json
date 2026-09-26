@@ -1,0 +1,57 @@
+{
+  "monthlyPocketMoney": 0,
+  "wallets": {
+    "cash": 0,
+    "upi": 0,
+    "bank": 0
+  },
+  "isSampleData": false,
+  "transactions": [],
+  "roomExpenses": [],
+  "roommates": [],
+  "roomGroups": [
+    {
+      "id": "room_1790415169000_t8sv",
+      "name": "Room 204",
+      "type": "Flat",
+      "inviteCode": "UA2KXT",
+      "ownerId": "stu_test_aditya_1",
+      "members": [
+        {
+          "id": "rm_stu_test_aditya_1",
+          "userId": "stu_test_aditya_1",
+          "name": "Aditya",
+          "email": "stu_test_aditya_1@student.pocketbuddy",
+          "upiId": "aditya@upi",
+          "role": "owner",
+          "joinedAt": "2026-09-26",
+          "isSelf": true
+        }
+      ],
+      "expenses": [],
+      "settlements": [],
+      "activities": [
+        {
+          "id": "act_1790415169000",
+          "roomId": "room_1790415169000_t8sv",
+          "text": "Aditya created room \"Room 204\"",
+          "time": "2026-09-26T09:32:49.000Z",
+          "type": "join"
+        }
+      ],
+      "createdAt": "2026-09-26"
+    }
+  ],
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "udhaarRecords": [],
+  "bills": [],
+  "goals": [],
+  "hasCompletedTour": true,
+  "activeRoomId": "room_1790415169000_t8sv"
+}

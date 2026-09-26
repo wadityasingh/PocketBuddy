@@ -299,10 +299,10 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                   setTempUpi(fixedUpi.toString());
                   setActiveWalletModal(activeWalletModal === 'edit' ? 'none' : 'edit');
                 }}
-                className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200/80 font-semibold hover:bg-indigo-100 transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs"
+                className="px-2 py-1 rounded-lg bg-zinc-950 text-white border border-zinc-950 font-semibold hover:bg-black transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs shadow-2xs"
                 title="Available UPI Balance (Click to adjust fixed wallet)"
               >
-                <Smartphone className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <Smartphone className="w-3.5 h-3.5 text-red-400 shrink-0" />
                 <span>UPI: {formatINR(availableUpi)}</span>
               </button>
             </div>
@@ -366,7 +366,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                   setEditCashVal(fixedCash.toString());
                   setIsEditingAllowance(true);
                 }}
-                className="p-1 text-slate-400 hover:text-indigo-600 rounded transition cursor-pointer -mr-1"
+                className="p-1 text-slate-400 hover:text-red-600 rounded transition cursor-pointer -mr-1"
                 title="Edit UPI & Cash Budget"
               >
                 <Edit3 className="w-3 h-3" />
@@ -377,8 +377,8 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
           {isEditingAllowance ? (
             <form onSubmit={handleSaveBudgetUpiAndCash} className="mt-1 space-y-1.5">
               <div>
-                <label className="text-[9px] font-bold text-indigo-900 block flex items-center gap-0.5 truncate">
-                  <Smartphone className="w-2.5 h-2.5 text-indigo-600 shrink-0" />
+                <label className="text-[9px] font-bold text-zinc-900 block flex items-center gap-0.5 truncate">
+                  <Smartphone className="w-2.5 h-2.5 text-red-600 shrink-0" />
                   <span>UPI Money (₹)</span>
                 </label>
                 <input
@@ -387,14 +387,14 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                   min="0"
                   value={editUpiVal}
                   onChange={(e) => setEditUpiVal(e.target.value)}
-                  className="w-full text-xs font-bold px-1.5 py-1 rounded-md border border-indigo-400 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full text-xs font-bold px-1.5 py-1 rounded-md border border-zinc-300 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
                   placeholder="0"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="text-[9px] font-bold text-emerald-900 block flex items-center gap-0.5 truncate">
-                  <Banknote className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                <label className="text-[9px] font-bold text-zinc-900 block flex items-center gap-0.5 truncate">
+                  <Banknote className="w-2.5 h-2.5 text-zinc-700 shrink-0" />
                   <span>Fixed Cash (₹)</span>
                 </label>
                 <input
@@ -403,14 +403,14 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                   min="0"
                   value={editCashVal}
                   onChange={(e) => setEditCashVal(e.target.value)}
-                  className="w-full text-xs font-bold px-1.5 py-1 rounded-md border border-emerald-400 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full text-xs font-bold px-1.5 py-1 rounded-md border border-zinc-300 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
                   placeholder="0"
                 />
               </div>
               <div className="flex items-center gap-1 pt-0.5">
                 <button
                   type="submit"
-                  className="flex-1 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[10px] font-bold cursor-pointer transition shadow-2xs"
+                  className="flex-1 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md text-[10px] font-bold cursor-pointer transition shadow-xs shadow-red-600/30"
                 >
                   Save
                 </button>
@@ -434,9 +434,9 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               title="Click to edit UPI & Cash Budget"
             >
               {/* UPI Row */}
-              <div className="flex items-center justify-between gap-1 text-[10px] sm:text-xs font-bold text-indigo-900 bg-indigo-50/90 hover:bg-indigo-100/90 border border-indigo-200/70 px-1.5 py-0.5 rounded-lg transition">
+              <div className="flex items-center justify-between gap-1 text-[10px] sm:text-xs font-bold text-zinc-900 bg-zinc-100/90 hover:bg-zinc-200/90 border border-zinc-200/70 px-1.5 py-0.5 rounded-lg transition">
                 <span className="flex items-center gap-0.5 truncate shrink-0">
-                  <Smartphone className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-indigo-600 shrink-0" />
+                  <Smartphone className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-600 shrink-0" />
                   <span>UPI</span>
                 </span>
                 <span className="font-extrabold text-slate-900 shrink-0">{formatINR(fixedUpi)}</span>
@@ -489,7 +489,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
           >
             {formatINR(safeDailyBudget)}
           </div>
-          <div className="text-[9px] sm:text-[10px] text-indigo-600 font-semibold mt-0.5 truncate">
+          <div className="text-[9px] sm:text-[10px] text-red-600 font-bold mt-0.5 truncate">
             {daysLeft} days left
           </div>
         </div>
@@ -512,40 +512,40 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
       {activeWalletModal === 'edit' && (
         <form
           onSubmit={handleSaveWallets}
-          className="p-3.5 bg-slate-50 rounded-xl border border-indigo-200/80 space-y-2.5 animate-in fade-in duration-150"
+          className="p-3.5 bg-zinc-50/80 rounded-xl border border-zinc-300 space-y-2.5 animate-in fade-in duration-150"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Set Fixed Wallet Balances</span>
+            <span className="text-xs font-bold text-zinc-900">Set Fixed Wallet Balances</span>
             <button
               type="button"
               onClick={() => setActiveWalletModal('none')}
-              className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+              className="text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">Fixed Cash (₹)</label>
+              <label className="text-[10px] font-bold text-zinc-600 block mb-1">Fixed Cash (₹)</label>
               <input
                 id="input-edit-cash"
                 type="number"
                 min="0"
                 value={tempCash}
                 onChange={(e) => setTempCash(e.target.value)}
-                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-indigo-500 focus:outline-none bg-white"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-zinc-300 focus:border-red-600 focus:outline-none bg-white"
                 placeholder="0"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 block mb-1">UPI Money (₹)</label>
+              <label className="text-[10px] font-bold text-zinc-600 block mb-1">UPI Money (₹)</label>
               <input
                 id="input-edit-upi"
                 type="number"
                 min="0"
                 value={tempUpi}
                 onChange={(e) => setTempUpi(e.target.value)}
-                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-indigo-500 focus:outline-none bg-white"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-zinc-300 focus:border-red-600 focus:outline-none bg-white"
                 placeholder="0"
               />
             </div>

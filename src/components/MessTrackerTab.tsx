@@ -130,10 +130,10 @@ export const MessTrackerTab: React.FC<MessTrackerTabProps> = ({
           <span className="text-[11px] text-amber-800">{totalGuestMeals} guest diets added</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 shadow-sm">
-          <span className="text-xs text-indigo-900 font-medium block">Effective Monthly Cost</span>
-          <div className="text-xl font-extrabold text-indigo-700 mt-1">{formatINR(effectiveMessFee)}</div>
-          <span className="text-[11px] text-indigo-700 font-semibold">≈ ₹{costPerDay}/day per head</span>
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 shadow-sm">
+          <span className="text-xs text-red-900 font-medium block">Effective Monthly Cost</span>
+          <div className="text-xl font-extrabold text-red-700 mt-1">{formatINR(effectiveMessFee)}</div>
+          <span className="text-[11px] text-red-700 font-semibold">≈ ₹{costPerDay}/day per head</span>
         </div>
       </div>
 
@@ -207,12 +207,12 @@ export const MessTrackerTab: React.FC<MessTrackerTabProps> = ({
                     onClick={() => onToggleMeal(meal.date, 'dinner')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
                       meal.dinner
-                        ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                        ? 'bg-red-100 text-red-800 border border-red-300'
                         : 'bg-white text-slate-400 border border-slate-200 line-through'
                     }`}
                   >
                     <span>🍲 Dinner</span>
-                    {meal.dinner ? <Check className="w-3 h-3 text-indigo-700" /> : <X className="w-3 h-3" />}
+                    {meal.dinner ? <Check className="w-3 h-3 text-red-700" /> : <X className="w-3 h-3" />}
                   </button>
 
                   {/* Guest count */}

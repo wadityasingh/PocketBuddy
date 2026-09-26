@@ -74,12 +74,12 @@ export const MonthlyAllowanceHero: React.FC<MonthlyAllowanceHeroProps> = ({
                   min="0"
                   value={tempAllowance}
                   onChange={(e) => setTempAllowance(e.target.value)}
-                  className="w-36 text-2xl font-black px-2 py-0.5 rounded-lg border-2 border-indigo-500 focus:outline-none"
+                  className="w-36 text-2xl font-black px-2 py-0.5 rounded-lg border-2 border-red-600 focus:outline-none"
                   autoFocus
                 />
                 <button
                   type="submit"
-                  className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition cursor-pointer shadow-xs shadow-red-600/20"
                 >
                   Save
                 </button>
@@ -126,7 +126,7 @@ export const MonthlyAllowanceHero: React.FC<MonthlyAllowanceHeroProps> = ({
           <button
             type="button"
             onClick={() => setIsEditingWallets(!isEditingWallets)}
-            className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 ml-2 cursor-pointer"
+            className="text-[11px] font-bold text-red-600 hover:text-red-700 ml-2 cursor-pointer"
           >
             {isEditingWallets ? 'Close' : 'Edit'}
           </button>
@@ -172,7 +172,7 @@ export const MonthlyAllowanceHero: React.FC<MonthlyAllowanceHeroProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold cursor-pointer"
+              className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold cursor-pointer shadow-xs shadow-red-600/20"
             >
               Save Balances
             </button>
@@ -194,14 +194,14 @@ export const MonthlyAllowanceHero: React.FC<MonthlyAllowanceHeroProps> = ({
         </div>
 
         {/* Total Available */}
-        <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100">
-          <div className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200">
+          <div className="text-[11px] font-bold text-zinc-800 uppercase tracking-wider">
             Total Available
           </div>
-          <div className="text-lg sm:text-xl font-black text-indigo-950 mt-1">
+          <div className="text-lg sm:text-xl font-black text-zinc-950 mt-1">
             {formatINR(totalAvailable)}
           </div>
-          <p className="text-[10px] text-indigo-600 mt-0.5">Cash + UPI in hand</p>
+          <p className="text-[10px] text-zinc-500 mt-0.5">Cash + UPI in hand</p>
         </div>
 
         {/* Spent This Month */}

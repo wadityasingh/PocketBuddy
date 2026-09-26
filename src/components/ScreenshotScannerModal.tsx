@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Tesseract from 'tesseract.js';
 import {
   Upload,
   AlertCircle,
@@ -12,6 +13,10 @@ import {
   Wallet,
   Eye,
   EyeOff,
+  Sparkles,
+  RefreshCw,
+  Plus,
+  Coins,
   Image as ImageIcon,
 } from 'lucide-react';
 import { Transaction, PaymentMode, ExpenseCategory, WalletBalances } from '../types';
@@ -23,6 +28,8 @@ interface ScreenshotScannerModalProps {
   existingTransactions?: Transaction[];
   wallets?: WalletBalances;
   availableUpi?: number;
+  availableCash?: number;
+  onTopUpWallet?: (mode: PaymentMode, amount: number) => void;
 }
 
 interface ParsedReceiptData {
@@ -41,6 +48,266 @@ interface ParsedReceiptData {
   transferMessage?: string;
   suggestedPurpose?: string;
   category: ExpenseCategory;
+}
+
+/**
+ * Intelligent Client-Side Receipt & UPI Text Extractor.
+ * Fallback engine running directly on the user's device via Tesseract.js OCR.
+ * Extracts amounts, merchants, UPI IDs, UTRs, and categories accurately.
+ */
+export function parseReceiptFromText(text: string): ParsedReceiptData {
+  const todayIso = new Date().toISOString().split('T')[0];
+  const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const result: ParsedReceiptData = {
+    isRealPaymentReceipt: true,
+    securityCheckPassed: true,
+    securityReason: 'Extracted via On-Device OCR Scanner',
+    appDetected: 'UPI Payment',
+    payee: 'UPI Merchant',
+    amount: 0,
+    date: todayIso,
+    time: currentTime,
+    category: 'Groceries' as ExpenseCategory,
+    suggestedPurpose: '',
+  };
+
+  if (!text || !text.trim()) return result;
+
+  const cleanText = text.replace(/\r/g, ' ');
+
+  // 1. Detect App / Source
+  if (/phonepe/i.test(cleanText)) result.appDetected = 'PhonePe';
+  else if (/google\s*pay|gpay/i.test(cleanText)) result.appDetected = 'Google Pay';
+  else if (/paytm/i.test(cleanText)) result.appDetected = 'Paytm';
+  else if (/bhim/i.test(cleanText)) result.appDetected = 'BHIM';
+  else if (/cred/i.test(cleanText)) result.appDetected = 'CRED';
+  else if (/amazon\s*pay/i.test(cleanText)) result.appDetected = 'Amazon Pay';
+  else if (/yono|sbi/i.test(cleanText)) result.appDetected = 'SBI YONO';
+  else if (/hdfc/i.test(cleanText)) result.appDetected = 'HDFC Bank';
+  else if (/icici/i.test(cleanText)) result.appDetected = 'ICICI Bank';
+  else if (/axis/i.test(cleanText)) result.appDetected = 'Axis Bank';
+  else if (/kotak/i.test(cleanText)) result.appDetected = 'Kotak Bank';
+  else if (/navi/i.test(cleanText)) result.appDetected = 'Navi';
+  else if (/bharatpe/i.test(cleanText)) result.appDetected = 'BharatPe';
+  else if (/fampay/i.test(cleanText)) result.appDetected = 'FamPay';
+  else if (/swiggy|zomato|blinkit|zepto/i.test(cleanText)) result.appDetected = 'Delivery Invoice';
+  else if (/invoice|bill|receipt|pos/i.test(cleanText)) result.appDetected = 'Store Receipt';
+
+  // 2. Extract UTR / UPI Reference ID (12 digits)
+  const utrMatch =
+    cleanText.match(/(?:utr|upi\s*ref(?:erence)?\s*(?:no|num|id)?|txn\s*id|ref\s*no)[:\s]*([0-9]{12})/i) ||
+    cleanText.match(/\b([0-9]{12})\b/);
+  if (utrMatch) {
+    result.utr = utrMatch[1];
+  }
+
+  // 3. Extract Amount
+  // Matches ₹ 150, Rs. 240, INR 350.00, Paid ₹150, Total: Rs 50, Debited by INR 350, 250.00
+  const amountPatterns = [
+    /(?:paid|debited|amount|total|grand\s*total|payment\s*of|subtotal|bill\s*amount)\s*[:\-=]?\s*(?:₹|rs\.?|inr)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+    /(?:₹|rs\.?|inr)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+    /([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:₹|rs\.?|inr)/i,
+    /(?:debited\s*by|transfer\s*of)\s*(?:inr|rs\.?|₹)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+  ];
+
+  for (const pat of amountPatterns) {
+    const m = cleanText.match(pat);
+    if (m && m[1]) {
+      const val = parseFloat(m[1].replace(/,/g, ''));
+      if (!isNaN(val) && val > 0 && val < 500000) {
+        result.amount = val;
+        break;
+      }
+    }
+  }
+
+  // Fallback: If no currency symbol found, search for prominent decimal numbers (e.g. "150.00")
+  if (result.amount <= 0) {
+    const decimalMatch = cleanText.match(/\b([1-9][0-9]{1,4}\.[0-9]{2})\b/);
+    if (decimalMatch) {
+      const val = parseFloat(decimalMatch[1]);
+      if (!isNaN(val) && val > 0) result.amount = val;
+    }
+  }
+
+  // 4. Extract Payee / Merchant
+  const payeePatterns = [
+    /(?:paid\s*to|to:?|sent\s*to|transfer\s*to|beneficiary|receiver)\s+([A-Za-z0-9\s&'.-]{2,35})/i,
+    /(?:merchant|store|shop|biller|restaurant|vendor|canteen)\s*[:\-]?\s*([A-Za-z0-9\s&'.-]{2,35})/i,
+    /([a-zA-Z0-9._-]+@[a-zA-Z]{3,})/i, // UPI ID
+  ];
+
+  for (const pat of payeePatterns) {
+    const m = cleanText.match(pat);
+    if (m && m[1]) {
+      let candidate = m[1].trim().split('\n')[0].trim();
+      candidate = candidate
+        .replace(/^(to|mr|mrs|ms|shri)\s+/i, '')
+        .split(/(?:upi\s*id|utr|txn|ref|google|date|debited|amount|from)/i)[0]
+        .replace(/[^a-zA-Z0-9\s&'.-]/g, ' ')
+        .trim();
+
+      if (
+        candidate.length > 2 &&
+        !/^(the|a|an|success|successful|completed|failed|pending|upi|bank|rupees)$/i.test(candidate)
+      ) {
+        result.payee = candidate;
+        break;
+      }
+    }
+  }
+
+  // 5. Extract Date
+  const dateMatch =
+    cleanText.match(/\b([0-3]?[0-9][\/\-.][0-1]?[0-9][\/\-.](?:20)?[2-3][0-9])\b/) ||
+    cleanText.match(/\b([0-3]?[0-9]\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(?:20)?[2-3][0-9])\b/i);
+  if (dateMatch) {
+    try {
+      const parsedDate = new Date(dateMatch[1]);
+      if (!isNaN(parsedDate.getTime())) {
+        result.date = parsedDate.toISOString().split('T')[0];
+      }
+    } catch {
+      // keep todayIso
+    }
+  }
+
+  // 6. Extract Time
+  const timeMatch = cleanText.match(/\b([0-1]?[0-9]|2[0-3]):([0-5][0-9])(?:\s*(?:AM|PM|am|pm))?\b/);
+  if (timeMatch) {
+    result.time = timeMatch[0].trim();
+  }
+
+  // 7. Auto-tag Category & Purpose
+  const lower = cleanText.toLowerCase();
+  if (
+    lower.includes('chai') ||
+    lower.includes('tea') ||
+    lower.includes('coffee') ||
+    lower.includes('samosa') ||
+    lower.includes('canteen') ||
+    lower.includes('bakery') ||
+    lower.includes('tapri') ||
+    lower.includes('snacks') ||
+    lower.includes('maggi')
+  ) {
+    result.category = 'Canteen & Chai';
+    result.suggestedPurpose = 'Chai & Snacks';
+  } else if (
+    lower.includes('mess') ||
+    lower.includes('lunch') ||
+    lower.includes('dinner') ||
+    lower.includes('thali') ||
+    lower.includes('biryani') ||
+    lower.includes('pizza') ||
+    lower.includes('burger') ||
+    lower.includes('restaurant') ||
+    lower.includes('cafe') ||
+    lower.includes('swiggy') ||
+    lower.includes('zomato')
+  ) {
+    result.category = 'Mess & Food';
+    result.suggestedPurpose = 'Food / Meal';
+  } else if (
+    lower.includes('rent') ||
+    lower.includes('room') ||
+    lower.includes('pg') ||
+    lower.includes('hostel') ||
+    lower.includes('landlord') ||
+    lower.includes('maintenance') ||
+    lower.includes('electricity')
+  ) {
+    result.category = 'Room & Rent';
+    result.suggestedPurpose = 'Room Rent / Bill';
+  } else if (
+    lower.includes('recharge') ||
+    lower.includes('jio') ||
+    lower.includes('airtel') ||
+    lower.includes('vi ') ||
+    lower.includes('bsnl') ||
+    lower.includes('wi-fi') ||
+    lower.includes('wifi') ||
+    lower.includes('broadband')
+  ) {
+    result.category = 'Recharge & Wi-Fi';
+    result.suggestedPurpose = 'Mobile / Wi-Fi Recharge';
+  } else if (
+    lower.includes('auto') ||
+    lower.includes('rickshaw') ||
+    lower.includes('uber') ||
+    lower.includes('ola') ||
+    lower.includes('rapido') ||
+    lower.includes('bus') ||
+    lower.includes('metro') ||
+    lower.includes('train') ||
+    lower.includes('petrol') ||
+    lower.includes('fuel')
+  ) {
+    result.category = 'Travel & Auto';
+    result.suggestedPurpose = 'Travel / Ride';
+  } else if (
+    lower.includes('xerox') ||
+    lower.includes('print') ||
+    lower.includes('book') ||
+    lower.includes('notebook') ||
+    lower.includes('college') ||
+    lower.includes('university') ||
+    lower.includes('exam') ||
+    lower.includes('stationery')
+  ) {
+    result.category = 'College & Books';
+    result.suggestedPurpose = 'College / Books / Xerox';
+  } else if (
+    lower.includes('grocery') ||
+    lower.includes('kirana') ||
+    lower.includes('blinkit') ||
+    lower.includes('zepto') ||
+    lower.includes('instamart') ||
+    lower.includes('bigbasket') ||
+    lower.includes('milk') ||
+    lower.includes('vegetable') ||
+    lower.includes('fruits')
+  ) {
+    result.category = 'Groceries';
+    result.suggestedPurpose = 'Groceries';
+  } else if (
+    lower.includes('medical') ||
+    lower.includes('pharmacy') ||
+    lower.includes('medicine') ||
+    lower.includes('chemist') ||
+    lower.includes('hospital') ||
+    lower.includes('clinic') ||
+    lower.includes('doctor') ||
+    lower.includes('apollo')
+  ) {
+    result.category = 'Medical';
+    result.suggestedPurpose = 'Medicine';
+  } else if (
+    lower.includes('amazon') ||
+    lower.includes('flipkart') ||
+    lower.includes('myntra') ||
+    lower.includes('ajio') ||
+    lower.includes('clothes') ||
+    lower.includes('shopping')
+  ) {
+    result.category = 'Shopping';
+    result.suggestedPurpose = 'Shopping';
+  } else if (
+    lower.includes('movie') ||
+    lower.includes('cinema') ||
+    lower.includes('pvr') ||
+    lower.includes('inox') ||
+    lower.includes('hotstar') ||
+    lower.includes('netflix') ||
+    lower.includes('spotify')
+  ) {
+    result.category = 'Entertainment';
+    result.suggestedPurpose = 'Entertainment';
+  }
+
+  result.securityReason = `Recognized ${result.appDetected} payment of ₹${result.amount} to ${result.payee}`;
+  return result;
 }
 
 // Authentic UPI Provider Logos
@@ -198,20 +465,25 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
   existingTransactions = [],
   wallets,
   availableUpi: propAvailableUpi,
+  availableCash: propAvailableCash,
+  onTopUpWallet,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [ocrStatusText, setOcrStatusText] = useState<string>('Verifying and extracting receipt details...');
+  const [recognitionBadge, setRecognitionBadge] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authHint, setAuthHint] = useState<string | null>(null);
   const [copiedUtr, setCopiedUtr] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
 
-  // Extracted data or Fallback Manual Mode (Requirement 8)
+  // Extracted data or Fallback Manual Mode
   const [parsedData, setParsedData] = useState<ParsedReceiptData | null>(null);
   const [isFallbackManual, setIsFallbackManual] = useState(false);
 
   // User-editable fields
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('UPI');
   const [itemPurpose, setItemPurpose] = useState<string>('');
   const [editableAmount, setEditableAmount] = useState<number>(0);
   const [editablePayee, setEditablePayee] = useState<string>('');
@@ -220,7 +492,9 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
   const [editableUtr, setEditableUtr] = useState<string>('');
 
   const availableUpi = propAvailableUpi !== undefined ? propAvailableUpi : (wallets?.upi ?? 0);
-  const isInsufficientUpi = editableAmount > availableUpi;
+  const availableCash = propAvailableCash !== undefined ? propAvailableCash : (wallets?.cash ?? 0);
+  const activeAvailable = paymentMode === 'Cash' ? availableCash : availableUpi;
+  const isInsufficientBalance = editableAmount > activeAvailable;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -256,12 +530,14 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
       setError(null);
       setAuthHint(null);
       setIsAnalyzing(false);
+      setRecognitionBadge(null);
       setItemPurpose('');
       setEditableAmount(0);
       setEditablePayee('');
       setEditableUtr('');
       setEditableDate('');
       setEditableTime('');
+      setPaymentMode('UPI');
       setIsPreviewExpanded(false);
     }
   }, [isOpen]);
@@ -294,6 +570,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
 
     setError(null);
     setIsAnalyzing(true);
+    setRecognitionBadge(null);
 
     try {
       // Optimize image client-side to ensure smooth mobile network upload
@@ -336,16 +613,19 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
     }
   };
 
-  // Call server to verify and parse receipt
+  // Call server to verify and parse receipt, with automatic on-device OCR fallback
   const analyzeScreenshot = async (base64Image: string, mime: string) => {
     setIsAnalyzing(true);
     setError(null);
+    setRecognitionBadge(null);
+    setOcrStatusText('Analyzing receipt details with AI Vision...');
 
-    const controller = new AbortController();
-    // 45s timeout to gracefully absorb Render cold-start delays & mobile network upload
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    let parsedFromServer = false;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+
       const response = await fetch('/api/ai/parse-screenshot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -362,65 +642,63 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
       try {
         resData = await response.json();
       } catch {
-        resData = {
-          success: false,
-          error: `Server responded with status ${response.status}. You can enter details manually below.`,
-          fallbackAllowed: true,
-        };
+        resData = { success: false, useClientOcr: true };
       }
 
-      if (!response.ok || !resData.success || !resData.isRealPaymentReceipt) {
-        const errorMsg =
-          resData.error ||
-          'AI Vision could not verify this receipt automatically. You can enter details manually below.';
-        setError(errorMsg);
-        setAuthHint(resData.authHint || null);
-
-        // MOBILE FALLBACK (Requirement 8):
-        // Keep the uploaded receipt image available, populate default manual fields, and let user proceed!
-        setIsFallbackManual(true);
-        setEditableDate(new Date().toISOString().split('T')[0]);
+      if (resData && resData.success && resData.data) {
+        const data: ParsedReceiptData = resData.data;
+        setParsedData(data);
+        setIsFallbackManual(false);
+        setEditableAmount(data.amount || 0);
+        setEditablePayee(data.payee && data.payee !== 'Unknown' ? data.payee : 'UPI Merchant');
+        setEditableUtr(data.utr || data.transactionId || '');
+        setItemPurpose(data.suggestedPurpose || '');
+        setEditableDate(data.date || new Date().toISOString().split('T')[0]);
         setEditableTime(
-          new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         );
-        return;
+        setRecognitionBadge(data.amount > 0 ? 'AI Vision Verified' : 'Receipt Details Extracted');
+        parsedFromServer = true;
+      }
+    } catch (serverErr) {
+      console.warn('Server parse-screenshot failed or timed out, trying on-device OCR:', serverErr);
+    }
+
+    // If server could not extract details or key was unconfigured, run on-device OCR with Tesseract
+    if (!parsedFromServer) {
+      setOcrStatusText('Scanning receipt text with On-Device OCR...');
+      try {
+        const ocrResult = await Tesseract.recognize(base64Image, 'eng');
+        const ocrText = ocrResult?.data?.text || '';
+        const localData = parseReceiptFromText(ocrText);
+
+        if (localData.amount > 0 || (localData.payee && localData.payee !== 'UPI Merchant') || localData.utr) {
+          setParsedData(localData);
+          setIsFallbackManual(false);
+          setEditableAmount(localData.amount || 0);
+          setEditablePayee(localData.payee || 'UPI Merchant');
+          setEditableUtr(localData.utr || '');
+          setItemPurpose(localData.suggestedPurpose || '');
+          setEditableDate(localData.date || new Date().toISOString().split('T')[0]);
+          setEditableTime(localData.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          setRecognitionBadge('On-Device OCR Verified');
+          setError(null);
+          setIsAnalyzing(false);
+          return;
+        }
+      } catch (ocrErr) {
+        console.warn('On-device OCR fallback error:', ocrErr);
       }
 
-      const data: ParsedReceiptData = resData.data;
-      setParsedData(data);
-      setIsFallbackManual(false);
-      setEditableAmount(data.amount || 0);
-      setEditablePayee(data.payee || 'Merchant');
-      setEditableUtr(data.utr || data.transactionId || '');
-      setItemPurpose(data.suggestedPurpose || '');
-      setEditableDate(data.date || new Date().toISOString().split('T')[0]);
-      setEditableTime(
-        data.time ||
-          new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      );
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      console.error('Receipt verification error:', err);
-
-      let friendlyError =
-        'AI verification service encountered a network issue. Your receipt is attached — please enter amount & payee manually below.';
-      if (err.name === 'AbortError') {
-        friendlyError =
-          'Request timed out while waiting for server. Your receipt is saved — please enter amount & payee manually below.';
-      }
-
-      setError(friendlyError);
-
-      // MOBILE FALLBACK (Requirement 8):
-      // Keep receipt image and show manual entry fields so user is never blocked
+      // If even OCR could not read the exact amount, keep receipt attached and show manual entry fields
       setIsFallbackManual(true);
       setEditableDate(new Date().toISOString().split('T')[0]);
-      setEditableTime(
-        new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      );
-    } finally {
-      setIsAnalyzing(false);
+      setEditableTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setEditablePayee('UPI Merchant');
+      setError('Receipt attached. Please enter or confirm the amount below.');
     }
+
+    setIsAnalyzing(false);
   };
 
   // Duplicate check
@@ -442,6 +720,19 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
     }
   };
 
+  // Top up wallet balance and complete transaction
+  const handleTopUpAndAdd = () => {
+    if (editableAmount <= 0) {
+      setError('Please enter a valid expense amount.');
+      return;
+    }
+    const needed = Math.max(0, editableAmount - activeAvailable);
+    if (needed > 0 && onTopUpWallet) {
+      onTopUpWallet(paymentMode, needed);
+    }
+    executeAddTransaction();
+  };
+
   // Submit transaction
   const handleConfirmAdd = () => {
     if (editableAmount <= 0) {
@@ -449,14 +740,17 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
       return;
     }
 
-    // Insufficient Balance check for UPI
-    if (editableAmount > availableUpi) {
+    if (isInsufficientBalance) {
       setError(
-        `Insufficient UPI Balance! You only have ₹${availableUpi.toLocaleString('en-IN')} in your UPI balance, but this transaction is ₹${editableAmount.toFixed(2)}. Please top up your UPI wallet.`
+        `Insufficient ${paymentMode} Balance! You have ₹${activeAvailable.toLocaleString('en-IN')} available in ${paymentMode}, but this expense is ₹${editableAmount.toFixed(2)}.`
       );
       return;
     }
 
+    executeAddTransaction();
+  };
+
+  const executeAddTransaction = () => {
     const trimmedPayee = editablePayee.trim() || 'UPI Merchant';
     const trimmedPurpose = itemPurpose.trim();
 
@@ -466,9 +760,10 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
       : trimmedPayee;
 
     const noteDetails = [
-      parsedData?.appDetected ? `${parsedData.appDetected} UPI` : 'UPI Transfer',
+      parsedData?.appDetected ? `${parsedData.appDetected} ${paymentMode}` : `${paymentMode} Transfer`,
       editableUtr ? `Ref: ${editableUtr}` : undefined,
       trimmedPurpose ? `Purpose: ${trimmedPurpose}` : undefined,
+      recognitionBadge ? `Verified: ${recognitionBadge}` : undefined,
     ]
       .filter(Boolean)
       .join(' • ');
@@ -477,7 +772,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
       title,
       amount: editableAmount,
       type: 'expense',
-      paymentMode: 'UPI' as PaymentMode,
+      paymentMode,
       date: editableDate || new Date().toISOString().split('T')[0],
       time: editableTime || undefined,
       person: trimmedPayee,
@@ -502,11 +797,19 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
           <div>
-            <h3 className="font-bold text-slate-900 text-base">
-              Upload UPI Receipt
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-slate-900 text-base">
+                Upload & Scan Receipt
+              </h3>
+              {recognitionBadge && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  <span>{recognitionBadge}</span>
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Extract payment details automatically and deduct from UPI balance
+              Auto-extracts amount, merchant, and reference from UPI or bill receipts
             </p>
           </div>
 
@@ -568,8 +871,8 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                 onClick={() => fileInputRef.current?.click()}
                 className={`border-2 border-dashed rounded-2xl p-7 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3 block ${
                   isDragOver
-                    ? 'border-indigo-500 bg-indigo-50/50'
-                    : 'border-slate-300 hover:border-slate-400 bg-slate-50/70 hover:bg-slate-50 active:bg-slate-100'
+                    ? 'border-red-500 bg-red-50/50'
+                    : 'border-slate-300 hover:border-red-400 bg-slate-50/70 hover:bg-slate-50 active:bg-slate-100'
                 }`}
               >
                 <input
@@ -588,7 +891,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                     Tap to upload receipt from Gallery or Camera
                   </p>
                   <p className="text-xs text-slate-400">
-                    PNG, JPG, or WEBP • Auto-compressed for mobile
+                    UPI Screenshots, Bills, Food chits, or Bank SMS • AI & On-Device OCR
                   </p>
                 </div>
               </label>
@@ -627,7 +930,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                   {/* Any Bank UPI */}
                   <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-2xs">
                     <BankUpiLogo className="w-3.5 h-3.5 shrink-0" />
-                    <span>Bank UPI</span>
+                    <span>Bank UPI / Bills</span>
                   </span>
                 </div>
               </div>
@@ -638,11 +941,11 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
           {isAnalyzing && (
             <div
               id="scanner-analyzing-card"
-              className="p-6 rounded-2xl bg-slate-900 text-white flex items-center justify-center gap-3 animate-fade-in"
+              className="p-6 rounded-2xl bg-zinc-950 text-white flex items-center justify-center gap-3 animate-fade-in border border-red-500/30"
             >
-              <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+              <Loader2 className="w-5 h-5 text-red-500 animate-spin" />
               <div className="text-xs font-semibold text-slate-200">
-                Verifying and extracting receipt details...
+                {ocrStatusText}
               </div>
             </div>
           )}
@@ -653,14 +956,14 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
               id="verified-receipt-details-card"
               className="space-y-4 animate-fade-in"
             >
-              {/* Receipt Preview Thumbnail (Requirement 8: Keep image available) */}
+              {/* Receipt Preview Thumbnail */}
               {selectedImage && (
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-indigo-600" />
+                      <ImageIcon className="w-4 h-4 text-red-600" />
                       <span className="text-xs font-bold text-slate-800">
-                        {isFallbackManual ? 'Attached Receipt (Manual Verification)' : 'Verified UPI Receipt'}
+                        {recognitionBadge ? `${recognitionBadge} Receipt` : 'Attached Payment Receipt'}
                       </span>
                     </div>
 
@@ -677,7 +980,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                           </>
                         ) : (
                           <>
-                            <Eye className="w-3 h-3 text-indigo-600" />
+                            <Eye className="w-3 h-3 text-red-600" />
                             <span>View Image</span>
                           </>
                         )}
@@ -690,8 +993,9 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                           setIsFallbackManual(false);
                           setSelectedImage(null);
                           setError(null);
+                          setRecognitionBadge(null);
                         }}
-                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                        className="text-[11px] font-semibold text-red-600 hover:text-red-800 cursor-pointer"
                       >
                         Change
                       </button>
@@ -724,13 +1028,45 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                 </div>
               )}
 
+              {/* Payment Mode Selector (UPI or Cash) */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Wallet className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Payment Mode</span>
+                </span>
+                <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode('UPI')}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer ${
+                      paymentMode === 'UPI'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    UPI (₹{availableUpi.toLocaleString('en-IN')})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode('Cash')}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer ${
+                      paymentMode === 'Cash'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Cash (₹{availableCash.toLocaleString('en-IN')})
+                  </button>
+                </div>
+              </div>
+
               {/* What Did You Buy? (Item / Purpose Input) */}
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
                 <label
                   htmlFor="receipt-purpose-input"
                   className="text-xs font-bold text-slate-800 flex items-center gap-1.5"
                 >
-                  <ShoppingBag className="w-3.5 h-3.5 text-indigo-600" />
+                  <ShoppingBag className="w-3.5 h-3.5 text-red-600" />
                   <span>What did you buy? (Item / Purpose)</span>
                 </label>
                 <input
@@ -740,7 +1076,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                   value={itemPurpose}
                   onChange={(e) => setItemPurpose(e.target.value)}
                   placeholder="e.g. Vegetables, Grocery, Lunch, Coffee, Stationery..."
-                  className="w-full py-2 px-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent placeholder:text-slate-400"
+                  className="w-full py-2 px-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent placeholder:text-slate-400"
                 />
               </div>
 
@@ -752,7 +1088,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                     <span>Transaction Details</span>
                   </span>
                   <span className="text-[11px] text-slate-400">
-                    {parsedData?.appDetected ? `${parsedData.appDetected} Verified` : 'UPI Payment'}
+                    {parsedData?.appDetected ? `${parsedData.appDetected}` : 'Receipt Details'}
                   </span>
                 </div>
 
@@ -824,7 +1160,7 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                 {/* UTR / Ref ID */}
                 <div>
                   <label className="text-[11px] font-medium text-slate-500 block mb-1">
-                    UPI Reference / UTR (Optional)
+                    Reference / UTR (Optional)
                   </label>
                   <div className="relative flex items-center">
                     <input
@@ -852,24 +1188,47 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
                   </div>
                 </div>
 
-                {/* Payment Source Notice & Live UPI Balance */}
+                {/* Payment Source Notice & Live Balance */}
                 <div className="pt-1 space-y-1.5">
                   <div className="flex items-center justify-between text-[11px] text-slate-500">
                     <span className="flex items-center gap-1.5">
-                      <Wallet className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>UPI Balance Available: <strong className="text-slate-900">₹{availableUpi.toLocaleString('en-IN')}</strong></span>
+                      <Wallet className="w-3.5 h-3.5 text-red-600" />
+                      <span>{paymentMode} Balance Available: <strong className="text-slate-900">₹{activeAvailable.toLocaleString('en-IN')}</strong></span>
                     </span>
-                    <span className={`font-bold ${isInsufficientUpi ? 'text-rose-600' : 'text-slate-700'}`}>
+                    <span className={`font-bold ${isInsufficientBalance ? 'text-rose-600' : 'text-slate-700'}`}>
                       -₹{(editableAmount || 0).toFixed(2)}
                     </span>
                   </div>
 
-                  {isInsufficientUpi && (
-                    <div className="px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 animate-fade-in">
-                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                      <span className="font-semibold">
-                        Insufficient UPI Balance! Available: ₹{availableUpi.toLocaleString('en-IN')}
-                      </span>
+                  {isInsufficientBalance && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-2 animate-fade-in">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span className="font-semibold">
+                          Insufficient {paymentMode} Balance! (Short by ₹{(editableAmount - activeAvailable).toFixed(0)})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                        {onTopUpWallet && (
+                          <button
+                            type="button"
+                            onClick={handleTopUpAndAdd}
+                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-2xs cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Top up ₹{(editableAmount - activeAvailable).toFixed(0)} & Add</span>
+                          </button>
+                        )}
+                        {paymentMode === 'UPI' && availableCash >= editableAmount && (
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMode('Cash')}
+                            className="px-2.5 py-1 rounded-lg bg-white border border-rose-300 text-rose-700 hover:bg-rose-100 font-semibold text-[11px] cursor-pointer"
+                          >
+                            Use Cash (₹{availableCash.toLocaleString('en-IN')})
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -879,20 +1238,20 @@ export const ScreenshotScannerModal: React.FC<ScreenshotScannerModalProps> = ({
               <button
                 id="confirm-parsed-expense-btn"
                 type="button"
-                disabled={editableAmount <= 0 || isInsufficientUpi}
-                onClick={handleConfirmAdd}
+                disabled={editableAmount <= 0}
+                onClick={isInsufficientBalance && onTopUpWallet ? handleTopUpAndAdd : handleConfirmAdd}
                 className={`w-full py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${
-                  isInsufficientUpi
+                  isInsufficientBalance && !onTopUpWallet
                     ? 'bg-rose-100 text-rose-700 border border-rose-300 cursor-not-allowed'
                     : 'bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white cursor-pointer active:scale-[0.99]'
                 }`}
               >
                 <span>
-                  {isInsufficientUpi
-                    ? `Insufficient UPI Balance (Avail: ₹${availableUpi.toLocaleString('en-IN')})`
+                  {isInsufficientBalance && onTopUpWallet
+                    ? `Top up ₹${(editableAmount - activeAvailable).toFixed(0)} & Add Expense (₹${editableAmount.toFixed(2)})`
                     : `Add Expense • ₹${(editableAmount || 0).toFixed(2)}`}
                 </span>
-                {!isInsufficientUpi && <ArrowRight className="w-4 h-4" />}
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           )}

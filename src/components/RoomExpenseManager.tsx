@@ -787,7 +787,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 placeholder="e.g., Roomies, Flat 304"
                 value={newRoomName}
                 onChange={(e) => setNewRoomName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
               />
             </div>
             <div>
@@ -797,7 +797,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               <select
                 value={newRoomType}
                 onChange={(e) => setNewRoomType(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-600 bg-white"
               >
                 <option value="Flat / Apartment">Flat / Apartment</option>
                 <option value="Hostel">Hostel</option>
@@ -896,7 +896,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 placeholder="e.g., AB3K9X"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                className="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-mono font-bold text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
+                className="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-mono font-bold text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-red-600 uppercase"
               />
               <p className="text-xs text-slate-500 mt-1.5">
                 Ask any of your roommates for their 6-character room invite code.
@@ -994,7 +994,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-sm">
         <div className="flex items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100">
               <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
@@ -1021,7 +1021,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 <span>•</span>
                 <button
                   onClick={handleCopyInviteCode}
-                  className="inline-flex items-center gap-1 font-mono font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-1.5 py-0.5 rounded transition"
+                  className="inline-flex items-center gap-1 font-mono font-semibold text-red-600 hover:text-red-700 bg-red-50 px-1.5 py-0.5 rounded transition"
                   title="Click to copy invite code"
                 >
                   <span>Code: {currentRoom.inviteCode}</span>
@@ -1039,7 +1039,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-60"
               title="Refresh and sync shared room data"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-red-600 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Sync</span>
             </button>
             <button
@@ -1065,7 +1065,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-2.5 sm:p-4 shadow-xs space-y-2">
         <button
           onClick={openAddExpenseModal}
-          className="w-full min-h-[42px] sm:min-h-[46px] py-2.5 sm:py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition active:scale-[0.99] cursor-pointer"
+          className="w-full min-h-[42px] sm:min-h-[46px] py-2.5 sm:py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm shadow-red-600/20 transition active:scale-[0.99] cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           Add Expense
@@ -1079,7 +1079,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
             }}
             className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
           >
-            <UserPlus className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <UserPlus className="w-3.5 h-3.5 text-red-600 shrink-0" />
             <span className="truncate">Add Roommate</span>
           </button>
           <button
@@ -1170,7 +1170,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-5 shadow-xs space-y-2 sm:space-y-3">
         <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
-            <Handshake className="w-4 h-4 text-indigo-600" />
+            <Handshake className="w-4 h-4 text-red-600" />
             <h3 className="text-xs sm:text-base font-bold text-slate-900">
               Who Owes Whom?
             </h3>
@@ -1240,7 +1240,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                     {isDebtor && (
                       <button
                         onClick={() => handleOpenSettleWith(d.to, d.amount)}
-                        className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0 active:scale-95"
+                        className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0 active:scale-95"
                       >
                         Settle
                       </button>
@@ -1272,7 +1272,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               onClick={() => setActiveListTab('expenses')}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
                 activeListTab === 'expenses'
-                  ? 'bg-white text-indigo-700 shadow-sm'
+                  ? 'bg-white text-red-600 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -1283,7 +1283,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               onClick={() => setActiveListTab('history')}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
                 activeListTab === 'history'
-                  ? 'bg-white text-indigo-700 shadow-sm'
+                  ? 'bg-white text-red-600 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -1311,7 +1311,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                   {/* Month Header with Total Spent */}
                   <div className="flex items-center justify-between pt-2 pb-1 border-b border-slate-200">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                      <Calendar className="w-3.5 h-3.5 text-red-600" />
                       <span className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
                         {month.monthLabel}
                       </span>
@@ -1373,7 +1373,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                                   <div className="flex items-center gap-0.5 border-l border-slate-200 pl-1.5 ml-0.5">
                                     <button
                                       onClick={() => setSelectedDetailExpense(exp)}
-                                      className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition cursor-pointer"
+                                      className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-slate-100 transition cursor-pointer"
                                       title="View full details"
                                       aria-label="View expense details"
                                     >
@@ -1384,7 +1384,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                                       <>
                                         <button
                                           onClick={() => openEditExpenseModal(exp)}
-                                          className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition cursor-pointer"
+                                          className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-slate-100 transition cursor-pointer"
                                           title="Edit expense"
                                           aria-label="Edit expense"
                                         >
@@ -1446,7 +1446,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 let iconBg = 'bg-slate-100 text-slate-600';
                 if (act.type === 'expense') {
                   ActIcon = Receipt;
-                  iconBg = 'bg-indigo-50 text-indigo-600';
+                  iconBg = 'bg-red-50 text-red-600';
                 } else if (act.type === 'settlement') {
                   ActIcon = Handshake;
                   iconBg = 'bg-emerald-50 text-emerald-600';
@@ -1782,7 +1782,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                       setViewingExpense(null);
                       openEditExpenseModal(exp);
                     }}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold text-indigo-600 hover:bg-indigo-50 border border-indigo-200"
+                    className="px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200"
                   >
                     Edit
                   </button>
@@ -2191,7 +2191,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                         key={idx}
                         className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs ${
                           isMe
-                            ? 'bg-indigo-50/70 border-indigo-200 text-indigo-900 font-semibold'
+                            ? 'bg-red-50/70 border-red-200 text-red-900 font-semibold'
                             : 'bg-slate-50 border-slate-200/80 text-slate-700'
                         }`}
                       >
@@ -2253,7 +2253,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                         setSelectedDetailExpense(null);
                         openEditExpenseModal(target);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 transition flex items-center gap-1"
                     >
                       <Edit2 className="w-3 h-3" />
                       <span>Edit</span>
@@ -2314,7 +2314,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                   placeholder="e.g. Rohan Sharma"
                   value={newMemberName}
                   onChange={(e) => setNewMemberName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-red-600"
                 />
               </div>
 
@@ -2327,7 +2327,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                   placeholder="e.g. rohan@upi"
                   value={newMemberUpi}
                   onChange={(e) => setNewMemberUpi(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-red-600"
                 />
               </div>
 
@@ -2340,7 +2340,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                   placeholder="e.g. 9876543210"
                   value={newMemberPhone}
                   onChange={(e) => setNewMemberPhone(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-red-600"
                 />
               </div>
 
@@ -2362,7 +2362,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 <button
                   type="submit"
                   disabled={members.length >= 12}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-sm disabled:opacity-50"
                 >
                   Add Roommate
                 </button>
@@ -2391,11 +2391,11 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
             </p>
 
             {/* Room Invite Code Box */}
-            <div className="p-4 rounded-xl bg-indigo-50/60 border border-indigo-200">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-700 block">
+            <div className="p-4 rounded-xl bg-red-50/60 border border-red-200">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-red-700 block">
                 Room Invite Code
               </span>
-              <span className="text-2xl font-mono font-black text-indigo-950 tracking-widest block mt-1">
+              <span className="text-2xl font-mono font-black text-red-950 tracking-widest block mt-1">
                 {currentRoom.inviteCode}
               </span>
             </div>
@@ -2403,7 +2403,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
             <div className="space-y-2">
               <button
                 onClick={handleCopyInviteCode}
-                className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition"
+                className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm shadow-red-600/20"
               >
                 {copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 <span>{copiedCode ? 'Code Copied!' : 'Copy Code'}</span>
@@ -2447,7 +2447,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                     onSelectRoom(e.target.value);
                     setIsSettingsModalOpen(false);
                   }}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-red-600 bg-white"
                 >
                   {allRooms.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -2493,7 +2493,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                           {m.name}
                         </span>
                         {isSelf && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 shrink-0">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-700 border border-red-100 shrink-0">
                             You
                           </span>
                         )}
@@ -2684,7 +2684,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
             </h3>
             <p className="text-xs text-slate-600 text-center mb-4 leading-relaxed">
               Are you sure you want to leave <span className="font-bold text-slate-900">"{leaveConfirmRoom.name}"</span>?
-              You will no longer see this room unless you rejoin with code <span className="font-mono font-bold text-indigo-600">{leaveConfirmRoom.inviteCode}</span>.
+              You will no longer see this room unless you rejoin with code <span className="font-mono font-bold text-red-600">{leaveConfirmRoom.inviteCode}</span>.
             </p>
 
             {actionError && (

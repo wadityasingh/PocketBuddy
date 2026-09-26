@@ -84,10 +84,10 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
       <div className="bg-slate-900 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-400">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-red-500/20 border border-red-400/30 flex items-center justify-center text-red-400">
               <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
-            <span className="text-[11px] sm:text-xs uppercase font-bold tracking-wider text-indigo-300">
+            <span className="text-[11px] sm:text-xs uppercase font-bold tracking-wider text-red-300">
               Fixed Commitments
             </span>
           </div>
@@ -113,7 +113,7 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
           <button
             type="button"
             onClick={() => setIsAddOpen(!isAddOpen)}
-            className="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+            className="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs shadow-red-600/20 flex items-center gap-1.5 cursor-pointer shrink-0"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Add Bill</span>
@@ -164,11 +164,11 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
       {isAddOpen && (
         <form
           onSubmit={handleAddSubmit}
-          className="p-5 sm:p-6 bg-white rounded-2xl border-2 border-indigo-200 shadow-sm space-y-4"
+          className="p-5 sm:p-6 bg-white rounded-2xl border-2 border-red-200 shadow-sm space-y-4"
         >
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-              <Bell className="w-4 h-4 text-indigo-600" />
+              <Bell className="w-4 h-4 text-red-600" />
               <span>Add Student Bill / Rent Reminder</span>
             </h4>
             <button
@@ -189,7 +189,7 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
                 placeholder="e.g. PG Room Rent, Jio 5G, Mess"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-bold focus:outline-none focus:ring-2 focus:ring-red-600"
                 autoFocus
               />
             </div>
@@ -202,7 +202,7 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
                 placeholder="e.g. 3500"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-bold focus:outline-none focus:ring-2 focus:ring-red-600"
               />
             </div>
             <div>
@@ -212,7 +212,7 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
                 required
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-semibold focus:outline-none focus:ring-2 focus:ring-red-600"
               />
             </div>
           </div>
@@ -253,7 +253,7 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 text-xs font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition cursor-pointer shadow-xs"
+              className="px-5 py-2.5 text-xs font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition cursor-pointer shadow-xs shadow-red-600/20"
             >
               Save Bill Reminder
             </button>
@@ -299,7 +299,7 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
                         ? 'bg-slate-100 text-slate-400 border-slate-200'
                         : isOverdue
                         ? 'bg-rose-100 text-rose-700 border-rose-200'
-                        : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                        : 'bg-red-50 text-red-700 border-red-100'
                     }`}
                   >
                     <Bell className="w-4 h-4" />
@@ -355,7 +355,7 @@ export const BillRemindersTab: React.FC<BillRemindersTabProps> = ({
                     </div>
                     <div className="text-[10px] text-slate-400 font-semibold flex items-center justify-end gap-1">
                       {bill.preferredMode === 'UPI' ? (
-                        <span className="text-indigo-600">via UPI</span>
+                        <span className="text-red-600">via UPI</span>
                       ) : (
                         <span className="text-emerald-600">via Cash</span>
                       )}

@@ -50,7 +50,7 @@ export const MonthEndPacingCard: React.FC<MonthEndPacingCardProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
-          <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
+          <span className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold">
             <Compass className="w-4 h-4" />
           </span>
           <div>
@@ -69,15 +69,15 @@ export const MonthEndPacingCard: React.FC<MonthEndPacingCardProps> = ({
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Safe Daily Cap */}
-        <div className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200/80">
-          <div className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider">
+        <div className="p-3.5 rounded-xl bg-red-50/70 border border-red-200/80">
+          <div className="text-[11px] font-bold text-red-900 uppercase tracking-wider">
             Safe Daily Limit
           </div>
-          <div className="text-2xl font-black text-indigo-700 mt-1">
+          <div className="text-2xl font-black text-red-700 mt-1">
             {formatINR(safeDailyBudget)}
-            <span className="text-xs font-semibold text-indigo-600"> / day</span>
+            <span className="text-xs font-semibold text-red-600"> / day</span>
           </div>
-          <p className="text-[11px] text-indigo-800/80 mt-1">
+          <p className="text-[11px] text-red-800/80 mt-1">
             Spend under this cap to make allowance last full month.
           </p>
         </div>
@@ -128,7 +128,7 @@ export const MonthEndPacingCard: React.FC<MonthEndPacingCardProps> = ({
           <div
             style={{ width: `${budgetUsedPct}%` }}
             className={`h-full transition-all duration-300 ${
-              isCritical ? 'bg-rose-500' : isTight ? 'bg-amber-500' : 'bg-indigo-600'
+              isCritical ? 'bg-rose-500' : isTight ? 'bg-amber-500' : 'bg-red-600'
             }`}
           />
         </div>

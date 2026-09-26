@@ -107,7 +107,7 @@ export const WalletsCard: React.FC<WalletsCardProps> = ({
               setIsAddOpen(!isAddOpen);
               setIsTransferOpen(false);
             }}
-            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shadow-red-600/20"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Money</span>
@@ -146,7 +146,7 @@ export const WalletsCard: React.FC<WalletsCardProps> = ({
             <div className="flex items-end gap-2">
               <button
                 type="submit"
-                className="w-full py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition cursor-pointer"
+                className="w-full py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition cursor-pointer shadow-xs shadow-red-600/20"
               >
                 Confirm
               </button>
@@ -164,15 +164,15 @@ export const WalletsCard: React.FC<WalletsCardProps> = ({
 
       {/* Quick Add Money Form */}
       {isAddOpen && (
-        <form onSubmit={handleAddSubmit} className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-3">
-          <div className="text-xs font-bold text-indigo-900">Add Money (Allowance or Top-up)</div>
+        <form onSubmit={handleAddSubmit} className="p-4 rounded-2xl bg-red-50/50 border border-red-200/70 space-y-3">
+          <div className="text-xs font-bold text-red-900">Add Money (Allowance or Top-up)</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
             <div>
               <label className="block text-[11px] font-bold text-slate-600 mb-1">Account</label>
               <select
                 value={addTarget}
                 onChange={(e) => setAddTarget(e.target.value as PaymentMode)}
-                className="w-full px-2.5 py-2 rounded-xl border border-indigo-200 font-bold bg-white text-slate-800"
+                className="w-full px-2.5 py-2 rounded-xl border border-red-200 font-bold bg-white text-slate-800"
               >
                 <option value="UPI">UPI</option>
                 <option value="Cash">Cash</option>
@@ -187,13 +187,13 @@ export const WalletsCard: React.FC<WalletsCardProps> = ({
                 placeholder="e.g. 1000"
                 value={addAmount}
                 onChange={(e) => setAddAmount(e.target.value)}
-                className="w-full px-2.5 py-2 rounded-xl border border-indigo-200 font-bold bg-white text-slate-800"
+                className="w-full px-2.5 py-2 rounded-xl border border-red-200 font-bold bg-white text-slate-800"
               />
             </div>
             <div className="flex items-end gap-2">
               <button
                 type="submit"
-                className="w-full py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition cursor-pointer"
+                className="w-full py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition cursor-pointer shadow-xs shadow-red-600/20"
               >
                 Add to {addTarget}
               </button>
@@ -257,8 +257,8 @@ export const WalletsCard: React.FC<WalletsCardProps> = ({
         {/* UPI Card */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-indigo-700 font-bold text-xs">
-              <span className="p-1.5 rounded-lg bg-indigo-100/70 text-indigo-700">
+            <div className="flex items-center gap-2 text-zinc-800 font-bold text-xs">
+              <span className="p-1.5 rounded-lg bg-zinc-100 text-zinc-900">
                 <Smartphone className="w-4 h-4" />
               </span>
               <span>UPI</span>
@@ -286,7 +286,7 @@ export const WalletsCard: React.FC<WalletsCardProps> = ({
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit('UPI')}
                 autoFocus
-                className="w-full px-2 py-1 text-base font-black rounded-lg border border-indigo-500 bg-white focus:outline-none"
+                className="w-full px-2 py-1 text-base font-black rounded-lg border border-red-600 bg-white focus:outline-none"
               />
             </div>
           ) : (
@@ -298,19 +298,19 @@ export const WalletsCard: React.FC<WalletsCardProps> = ({
         </div>
 
         {/* Total Available Card */}
-        <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-2">
+        <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
+            <span className="text-xs font-bold text-zinc-700 uppercase tracking-wider">
               Total Available
             </span>
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
+            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-zinc-200 text-zinc-900">
               Cash + UPI
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-indigo-950 tracking-tight">
+          <div className="text-xl sm:text-2xl font-black text-zinc-950 tracking-tight">
             {formatINR(totalAvailable)}
           </div>
-          <div className="text-[11px] text-indigo-600 font-medium">Ready for payments &amp; expenses</div>
+          <div className="text-[11px] text-zinc-500 font-medium">Ready for payments &amp; expenses</div>
         </div>
       </div>
     </div>
