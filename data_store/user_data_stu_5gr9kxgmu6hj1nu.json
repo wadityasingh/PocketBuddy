@@ -1,22 +1,14 @@
 {
-  "monthlyPocketMoney": 400,
+  "monthlyPocketMoney": 0,
   "wallets": {
     "cash": 0,
-    "upi": 4000,
+    "upi": 0,
     "bank": 0
   },
-  "transactions": [
-    {
-      "title": "Pocket Money added to UPI",
-      "amount": 4000,
-      "type": "income",
-      "category": "Pocket Money",
-      "paymentMode": "UPI",
-      "date": "2026-09-18",
-      "notes": "Added ₹4000 to UPI & increased this month's budget allowance",
-      "id": "id_jtgw0kpmu74uxd7"
-    }
-  ],
+  "isSampleData": false,
+  "transactions": [],
+  "roomExpenses": [],
+  "roommates": [],
   "roomGroups": [
     {
       "id": "room_1789707154532_yhxk",
@@ -271,7 +263,6 @@
       "createdAt": "2026-09-18"
     }
   ],
-  "activeRoomId": "room_1789707154532_yhxk",
   "meals": [],
   "messConfig": {
     "monthlyMessFee": 0,
@@ -282,5 +273,6 @@
   "udhaarRecords": [],
   "bills": [],
   "goals": [],
-  "hasCompletedTour": false
+  "hasCompletedTour": true,
+  "activeRoomId": "room_1789707154532_yhxk"
 }

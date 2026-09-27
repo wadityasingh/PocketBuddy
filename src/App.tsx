@@ -159,7 +159,20 @@ export default function App() {
 
   const [roomGroups, setRoomGroups] = useState<RoomGroup[]>(() => {
     try {
-      const saved = localStorage.getItem('smm_room_groups');
+      const savedUser = localStorage.getItem('smm_current_user');
+      const u = savedUser ? JSON.parse(savedUser) : null;
+      const userPrefix = u?.id ? `smm_${u.id}_` : '';
+      const saved = (userPrefix && localStorage.getItem(`${userPrefix}room_groups`)) || localStorage.getItem('smm_room_groups');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      if (u?.id) {
+        const uStored = getUserStoredData(u.id);
+        if (Array.isArray(uStored?.roomGroups) && uStored.roomGroups.length > 0) {
+          return uStored.roomGroups;
+        }
+      }
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
@@ -170,7 +183,18 @@ export default function App() {
 
   const [activeRoomId, setActiveRoomId] = useState<string | null>(() => {
     try {
-      return localStorage.getItem('smm_active_room_id') || null;
+      const savedUser = localStorage.getItem('smm_current_user');
+      const u = savedUser ? JSON.parse(savedUser) : null;
+      const userPrefix = u?.id ? `smm_${u.id}_` : '';
+      const saved = (userPrefix && localStorage.getItem(`${userPrefix}active_room_id`)) || localStorage.getItem('smm_active_room_id');
+      if (saved) return saved;
+      if (u?.id) {
+        const uStored = getUserStoredData(u.id);
+        if (uStored?.activeRoomId) return uStored.activeRoomId;
+        if (Array.isArray(uStored?.roomGroups) && uStored.roomGroups[0]?.id) {
+          return uStored.roomGroups[0].id;
+        }
+      }
     } catch {}
     return null;
   });
@@ -341,6 +365,33 @@ export default function App() {
             if (Array.isArray(serverData?.goals) && serverData.goals.length > 0) setGoals(serverData.goals);
             else if (Array.isArray(localData?.goals)) setGoals(localData.goals);
 
+            // Reconcile room groups and active room ID
+            const serverRooms = Array.isArray(serverData?.roomGroups) ? serverData.roomGroups : [];
+            const localRooms = Array.isArray(localData?.roomGroups) ? localData.roomGroups : [];
+            const userPrefixedRoomsRaw = localStorage.getItem(`smm_${targetUser.id}_room_groups`);
+            let userPrefixedRooms: RoomGroup[] = [];
+            try {
+              if (userPrefixedRoomsRaw) userPrefixedRooms = JSON.parse(userPrefixedRoomsRaw);
+            } catch {}
+
+            const mergedRooms = serverRooms.length > 0 ? serverRooms : (localRooms.length > 0 ? localRooms : userPrefixedRooms);
+            if (mergedRooms.length > 0) {
+              setRoomGroups(mergedRooms);
+              localStorage.setItem('smm_room_groups', JSON.stringify(mergedRooms));
+              localStorage.setItem(`smm_${targetUser.id}_room_groups`, JSON.stringify(mergedRooms));
+              const targetActiveId =
+                serverData?.activeRoomId ||
+                localData?.activeRoomId ||
+                localStorage.getItem(`smm_${targetUser.id}_active_room_id`) ||
+                mergedRooms[0]?.id ||
+                null;
+              if (targetActiveId) {
+                setActiveRoomId(targetActiveId);
+                localStorage.setItem('smm_active_room_id', targetActiveId);
+                localStorage.setItem(`smm_${targetUser.id}_active_room_id`, targetActiveId);
+              }
+            }
+
             // Hydrate private user personal notes strictly for targetUser
             const localNotes = getUserNotes(targetUser.id);
             setPersonalNotes(localNotes);
@@ -450,6 +501,8 @@ export default function App() {
     localStorage.setItem(`${userPrefix}wallets`, JSON.stringify(wallets));
     localStorage.setItem(`${userPrefix}transactions`, JSON.stringify(transactions));
     localStorage.setItem(`${userPrefix}personal_notes`, JSON.stringify(personalNotes));
+    localStorage.setItem(`${userPrefix}room_groups`, JSON.stringify(roomGroups));
+    if (activeRoomId) localStorage.setItem(`${userPrefix}active_room_id`, activeRoomId);
   }, [
     isDataHydrated,
     currentUser?.id,
@@ -471,16 +524,17 @@ export default function App() {
   roomGroupsRef.current = roomGroups;
 
   // Fetch Rooms from Backend on Mount, Login, or Polling with Smart Deep-Diffing
-  const fetchRooms = async (explicitUserId?: string) => {
-    const uid = explicitUserId || currentUser?.id;
+  const fetchRooms = async (explicitUserId?: string, explicitUser?: StudentUser) => {
+    const userToUse = explicitUser || currentUser;
+    const uid = explicitUserId || userToUse?.id;
     if (!uid) return;
     const token = localStorage.getItem('smm_auth_token') || '';
     const headers: Record<string, string> = {
       'x-user-id': uid,
-      'x-user-name': encodeURIComponent(currentUser?.name || 'Student'),
-      'x-user-email': currentUser?.email || '',
-      'x-user-phone': currentUser?.phone || '',
-      'x-user-upi': currentUser?.upiId || '',
+      'x-user-name': encodeURIComponent(userToUse?.name || 'Student'),
+      'x-user-email': userToUse?.email || '',
+      'x-user-phone': userToUse?.phone || '',
+      'x-user-upi': userToUse?.upiId || '',
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -492,7 +546,7 @@ export default function App() {
           // Merge server rooms with any local-only rooms
           const currentLocal = roomGroupsRef.current || [];
           const localOnlyRooms = currentLocal.filter(
-            (lr) => !roomsList.some((sr) => sr.id === lr.id || (lr.inviteCode && sr.inviteCode === lr.inviteCode))
+            (lr) => lr && !roomsList.some((sr) => sr && (sr.id === lr.id || (lr.inviteCode && sr.inviteCode === lr.inviteCode)))
           );
           const mergedRooms = [...roomsList, ...localOnlyRooms];
 
@@ -500,15 +554,19 @@ export default function App() {
           const mergedJson = JSON.stringify(mergedRooms);
 
           // Deep equality check before calling setRoomGroups to eliminate unnecessary re-renders
-          if (currentJson !== mergedJson) {
+          if (currentJson !== mergedJson || (currentLocal.length === 0 && mergedRooms.length > 0)) {
             setRoomGroups(mergedRooms);
             localStorage.setItem('smm_room_groups', mergedJson);
+            localStorage.setItem(`smm_${uid}_room_groups`, mergedJson);
             setActiveRoomId((prevActive) => {
-              if (prevActive && mergedRooms.some((r) => r.id === prevActive)) {
+              if (prevActive && mergedRooms.some((r) => r && r.id === prevActive)) {
                 return prevActive;
               }
               const fallback = mergedRooms[0]?.id || null;
-              if (fallback) localStorage.setItem('smm_active_room_id', fallback);
+              if (fallback) {
+                localStorage.setItem('smm_active_room_id', fallback);
+                localStorage.setItem(`smm_${uid}_active_room_id`, fallback);
+              }
               return fallback;
             });
           }
@@ -581,6 +639,8 @@ export default function App() {
             monthlyPocketMoney,
             wallets,
             transactions,
+            roomGroups,
+            activeRoomId,
             meals,
             messConfig,
             udhaarRecords,
@@ -599,6 +659,8 @@ export default function App() {
     monthlyPocketMoney,
     wallets,
     transactions,
+    roomGroups,
+    activeRoomId,
     meals,
     messConfig,
     udhaarRecords,
@@ -614,6 +676,8 @@ export default function App() {
     isNewUser?: boolean
   ) => {
     setCurrentUser(user);
+    if (token) localStorage.setItem('smm_auth_token', token);
+    localStorage.setItem('smm_current_user', JSON.stringify(user));
 
     // Prioritize populated stored records if available
     const localStored = getUserStoredData(user.id);
@@ -648,7 +712,33 @@ export default function App() {
     if (billsToUse) setBills(billsToUse);
     const goalsToUse = (Array.isArray(data?.goals) && data.goals.length > 0) ? data.goals : localStored.goals;
     if (goalsToUse) setGoals(goalsToUse);
-    if (data?.activeRoomId || localStored.activeRoomId) setActiveRoomId(data?.activeRoomId || localStored.activeRoomId);
+
+    // Reconcile and hydrate room groups immediately
+    const serverRooms = Array.isArray(data?.roomGroups) ? data.roomGroups : [];
+    const localRooms = Array.isArray(localStored?.roomGroups) ? localStored.roomGroups : [];
+    const userPrefixedRoomsRaw = localStorage.getItem(`smm_${user.id}_room_groups`);
+    let userPrefixedRooms: RoomGroup[] = [];
+    try {
+      if (userPrefixedRoomsRaw) userPrefixedRooms = JSON.parse(userPrefixedRoomsRaw);
+    } catch {}
+
+    const roomsToUse = serverRooms.length > 0 ? serverRooms : (localRooms.length > 0 ? localRooms : userPrefixedRooms);
+    if (roomsToUse.length > 0) {
+      setRoomGroups(roomsToUse);
+      localStorage.setItem('smm_room_groups', JSON.stringify(roomsToUse));
+      localStorage.setItem(`smm_${user.id}_room_groups`, JSON.stringify(roomsToUse));
+    }
+    const targetActiveRoom =
+      data?.activeRoomId ||
+      localStored?.activeRoomId ||
+      localStorage.getItem(`smm_${user.id}_active_room_id`) ||
+      roomsToUse[0]?.id ||
+      null;
+    if (targetActiveRoom) {
+      setActiveRoomId(targetActiveRoom);
+      localStorage.setItem('smm_active_room_id', targetActiveRoom);
+      localStorage.setItem(`smm_${user.id}_active_room_id`, targetActiveRoom);
+    }
 
     setIsSampleMode(false);
     localStorage.setItem('smm_is_sample_mode', 'false');
@@ -657,11 +747,13 @@ export default function App() {
     setIsDataHydrated(true);
     isHydratedRef.current = true;
 
-    // Save snapshot
+    // Save snapshot with rooms included
     saveUserStoredData(user.id, {
       monthlyPocketMoney: mergedAllowance,
       wallets: mergedWallets,
       transactions: mergedTransactions,
+      roomGroups: roomsToUse,
+      activeRoomId: targetActiveRoom || undefined,
     });
 
     // Hydrate private notes strictly scoped to the logged-in user
@@ -676,7 +768,8 @@ export default function App() {
       }
     }).catch(() => {});
 
-    fetchRooms(user.id);
+    // Fetch authoritative rooms list from server with user explicitly provided
+    fetchRooms(user.id, user);
 
     if (isNewUser) {
       setIsSetupWizardOpen(true);
@@ -741,11 +834,54 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // If user was logged in, save latest snapshot to user's personal store and server before clearing session
+    if (currentUser?.id) {
+      saveUserStoredData(currentUser.id, {
+        monthlyPocketMoney,
+        wallets,
+        transactions,
+        roomGroups,
+        activeRoomId: activeRoomId || undefined,
+        meals,
+        messConfig,
+        udhaarRecords,
+        bills,
+        goals,
+        hasCompletedTour: currentUser.hasCompletedTour,
+      });
+      localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(roomGroups));
+      if (activeRoomId) localStorage.setItem(`smm_${currentUser.id}_active_room_id`, activeRoomId);
+
+      // Keepalive snapshot push to backend so server is guaranteed 100% updated on logout
+      try {
+        fetch('/api/user/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser.id },
+          body: JSON.stringify({
+            data: {
+              monthlyPocketMoney,
+              wallets,
+              transactions,
+              roomGroups,
+              activeRoomId,
+              meals,
+              messConfig,
+              udhaarRecords,
+              bills,
+              goals,
+              hasCompletedTour: currentUser.hasCompletedTour,
+            },
+          }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     localStorage.removeItem('smm_auth_token');
     localStorage.removeItem('smm_current_user');
     localStorage.removeItem('smm_room_groups');
     localStorage.removeItem('smm_active_room_id');
-    // Clean all user personal state so next user or empty state is clean
+    // Clean active personal state so next user or empty state is clean
     setMonthlyPocketMoney(0);
     setWallets({ cash: 0, upi: 0 });
     setTransactions([]);
@@ -1237,6 +1373,11 @@ export default function App() {
       const list = prev || [];
       const next = [localRoom, ...list.filter((r) => r && r.id !== localRoom.id)];
       localStorage.setItem('smm_room_groups', JSON.stringify(next));
+      if (currentUser?.id) {
+        localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+        localStorage.setItem(`smm_${currentUser.id}_active_room_id`, localRoom.id);
+        saveUserStoredData(currentUser.id, { roomGroups: next, activeRoomId: localRoom.id });
+      }
       return next;
     });
     setActiveRoomId(localRoom.id);
@@ -1265,6 +1406,11 @@ export default function App() {
             const list = prev || [];
             const next = list.map((r) => (r && (r.id === localRoom.id || r.id === createdRoom.id) ? createdRoom : r));
             localStorage.setItem('smm_room_groups', JSON.stringify(next));
+            if (currentUser?.id) {
+              localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+              localStorage.setItem(`smm_${currentUser.id}_active_room_id`, createdRoom.id);
+              saveUserStoredData(currentUser.id, { roomGroups: next, activeRoomId: createdRoom.id });
+            }
             return next;
           });
           setActiveRoomId(createdRoom.id);
@@ -1317,6 +1463,11 @@ export default function App() {
             next = [joinedRoom, ...list];
           }
           localStorage.setItem('smm_room_groups', JSON.stringify(next));
+          if (currentUser?.id) {
+            localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+            localStorage.setItem(`smm_${currentUser.id}_active_room_id`, joinedRoom.id);
+            saveUserStoredData(currentUser.id, { roomGroups: next, activeRoomId: joinedRoom.id });
+          }
           return next;
         });
         setActiveRoomId(joinedRoom.id);
@@ -1561,6 +1712,8 @@ export default function App() {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'x-user-id': currentUser?.id || 'guest',
+      'x-user-name': encodeURIComponent(currentUser?.name || 'Student'),
+      'x-user-email': currentUser?.email || '',
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -1577,8 +1730,18 @@ export default function App() {
           setRoomGroups((prev) => {
             const next = (prev || []).map((r) => (r && r.id === activeRoomId ? updatedRoom : r));
             localStorage.setItem('smm_room_groups', JSON.stringify(next));
+            if (currentUser?.id) {
+              localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+              saveUserStoredData(currentUser.id, { roomGroups: next });
+            }
             return next;
           });
+          return;
+        }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        if (errData.error) {
+          alert(errData.error);
           return;
         }
       }
@@ -1609,6 +1772,10 @@ export default function App() {
         };
       });
       localStorage.setItem('smm_room_groups', JSON.stringify(next));
+      if (currentUser?.id) {
+        localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+        saveUserStoredData(currentUser.id, { roomGroups: next });
+      }
       return next;
     });
   };
@@ -1631,6 +1798,10 @@ export default function App() {
           setRoomGroups((prev) => {
             const next = (prev || []).map((r) => (r && r.id === activeRoomId ? updatedRoom : r));
             localStorage.setItem('smm_room_groups', JSON.stringify(next));
+            if (currentUser?.id) {
+              localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+              saveUserStoredData(currentUser.id, { roomGroups: next });
+            }
             return next;
           });
           return;
@@ -1650,6 +1821,10 @@ export default function App() {
         };
       });
       localStorage.setItem('smm_room_groups', JSON.stringify(next));
+      if (currentUser?.id) {
+        localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+        saveUserStoredData(currentUser.id, { roomGroups: next });
+      }
       return next;
     });
   };
@@ -1675,9 +1850,10 @@ export default function App() {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        debtorId: currentUser?.id,
-        fromUserId: currentUser?.id,
+        debtorId: fromUserId,
+        fromUserId,
         from,
+        creditorId: toUserId,
         toUserId,
         to,
         amount,
@@ -1698,6 +1874,10 @@ export default function App() {
       setRoomGroups((prev) => {
         const next = (prev || []).map((r) => (r && r.id === activeRoomId ? updatedRoom : r));
         localStorage.setItem('smm_room_groups', JSON.stringify(next));
+        if (currentUser?.id) {
+          localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+          saveUserStoredData(currentUser.id, { roomGroups: next });
+        }
         return next;
       });
       return;
@@ -1728,6 +1908,10 @@ export default function App() {
       setRoomGroups((prev) => {
         const next = (prev || []).map((r) => (r && r.id === activeRoomId ? updatedRoom : r));
         localStorage.setItem('smm_room_groups', JSON.stringify(next));
+        if (currentUser?.id) {
+          localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+          saveUserStoredData(currentUser.id, { roomGroups: next });
+        }
         return next;
       });
     }

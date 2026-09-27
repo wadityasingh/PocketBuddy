@@ -17,6 +17,17 @@
       "id": "id_8sn0nh1mu74vcbt"
     }
   ],
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "udhaarRecords": [],
+  "bills": [],
+  "goals": [],
+  "hasCompletedTour": false,
   "roomGroups": [
     {
       "id": "room_1789707154532_yhxk",
@@ -34,7 +45,7 @@
           "phone": "8957190543",
           "role": "owner",
           "joinedAt": "2026-09-18",
-          "isSelf": false
+          "isSelf": true
         },
         {
           "id": "rm_stu_5gr9kxgmu6hj1nu",
@@ -45,7 +56,7 @@
           "phone": "8957190541",
           "role": "member",
           "joinedAt": "2026-09-18",
-          "isSelf": false
+          "isSelf": true
         },
         {
           "id": "rm_stu_uu4eaxvmu6hm9mn",
@@ -60,6 +71,43 @@
         }
       ],
       "expenses": [
+        {
+          "id": "exp_bitrn6wmujvavk2",
+          "roomId": "room_1789707154532_yhxk",
+          "title": "l",
+          "totalAmount": 562,
+          "amount": 562,
+          "category": "General",
+          "paidByUserId": "stu_uu4eaxvmu6hm9mn",
+          "paidBy": "TEST3",
+          "createdByUserId": "stu_uu4eaxvmu6hm9mn",
+          "createdBy": "TEST3",
+          "splitType": "equal",
+          "participants": [
+            {
+              "userId": "stu_99qqoyqmu6ha1np",
+              "name": "TEST1",
+              "share": 187.34,
+              "hasPaid": false
+            },
+            {
+              "userId": "stu_5gr9kxgmu6hj1nu",
+              "name": "TEST2",
+              "share": 187.33,
+              "hasPaid": false
+            },
+            {
+              "userId": "stu_uu4eaxvmu6hm9mn",
+              "name": "TEST3",
+              "share": 187.33,
+              "hasPaid": true
+            }
+          ],
+          "date": "2026-09-27",
+          "notes": "",
+          "createdAt": "2026-09-27T13:42:00.130Z",
+          "status": "pending"
+        },
         {
           "id": "exp_chicken_150",
           "roomId": "room_1789707154532_yhxk",
@@ -175,6 +223,13 @@
       "settlements": [],
       "activities": [
         {
+          "id": "act_1790516520130",
+          "roomId": "room_1789707154532_yhxk",
+          "text": "TEST3 added l ₹562",
+          "time": "2026-09-27T13:42:00.130Z",
+          "type": "expense"
+        },
+        {
           "id": "act_1789708852086",
           "roomId": "room_1789707154532_yhxk",
           "text": "TEST1 updated \"Chicken\" (₹150)",
@@ -227,16 +282,5 @@
       "createdAt": "2026-09-18"
     }
   ],
-  "activeRoomId": "room_1789707154532_yhxk",
-  "meals": [],
-  "messConfig": {
-    "monthlyMessFee": 0,
-    "mealsPerDay": 3,
-    "rebatePerSkippedMeal": 40,
-    "rebateRuleNoticeHours": 24
-  },
-  "udhaarRecords": [],
-  "bills": [],
-  "goals": [],
-  "hasCompletedTour": false
+  "activeRoomId": "room_1789707154532_yhxk"
 }

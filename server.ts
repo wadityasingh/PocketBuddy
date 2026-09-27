@@ -115,21 +115,98 @@ interface ServerRoomGroup {
 }
 
 function loadRooms(): ServerRoomGroup[] {
+  let rooms: ServerRoomGroup[] = [];
   try {
     if (fs.existsSync(ROOMS_FILE)) {
       const content = fs.readFileSync(ROOMS_FILE, "utf-8");
-      return JSON.parse(content);
+      rooms = JSON.parse(content);
     }
   } catch (err) {
     console.error("Error reading rooms file:", err);
   }
-  return [];
+
+  // Cross-pollinate and recover any rooms stored in individual user_data files
+  try {
+    if (fs.existsSync(DATA_DIR)) {
+      const files = fs.readdirSync(DATA_DIR);
+      let recoveredAny = false;
+      for (const file of files) {
+        if (file.startsWith("user_data_") && file.endsWith(".json") && !file.includes(".backup.")) {
+          try {
+            const uData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf-8"));
+            if (Array.isArray(uData.roomGroups)) {
+              for (const rg of uData.roomGroups) {
+                if (rg && rg.id) {
+                  const existingIdx = rooms.findIndex((r) => r.id === rg.id);
+                  if (existingIdx === -1) {
+                    rooms.unshift(rg);
+                    recoveredAny = true;
+                  } else {
+                    // Merge any members or expenses that might be newer
+                    const existing = rooms[existingIdx];
+                    if (Array.isArray(rg.members) && rg.members.length > (existing.members?.length || 0)) {
+                      existing.members = rg.members;
+                      recoveredAny = true;
+                    }
+                    if (Array.isArray(rg.expenses) && rg.expenses.length > (existing.expenses?.length || 0)) {
+                      existing.expenses = rg.expenses;
+                      recoveredAny = true;
+                    }
+                    if (Array.isArray(rg.settlements) && rg.settlements.length > (existing.settlements?.length || 0)) {
+                      existing.settlements = rg.settlements;
+                      recoveredAny = true;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (_) {}
+        }
+      }
+      if (recoveredAny) {
+        try {
+          fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2), "utf-8");
+        } catch (_) {}
+      }
+    }
+  } catch (recoverErr) {
+    console.warn("Could not check user_data files for room recovery:", recoverErr);
+  }
+
+  return rooms;
 }
 
 function saveRooms(rooms: ServerRoomGroup[]) {
   try {
     fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2), "utf-8");
     try { fs.chmodSync(ROOMS_FILE, 0o666); } catch (_) {}
+
+    // Synchronize saved rooms to owner and member user_data files for redundancy
+    rooms.forEach((room) => {
+      if (!room || !room.id) return;
+      const targetUserIds = new Set<string>();
+      if (room.ownerId && room.ownerId !== "guest") targetUserIds.add(room.ownerId);
+      (room.members || []).forEach((m) => {
+        if (m && m.userId && m.userId !== "guest") targetUserIds.add(m.userId);
+      });
+
+      targetUserIds.forEach((uid) => {
+        try {
+          const uData = loadUserData(uid);
+          if (uData) {
+            if (!Array.isArray(uData.roomGroups)) uData.roomGroups = [];
+            const idx = uData.roomGroups.findIndex((r: any) => r && r.id === room.id);
+            if (idx >= 0) {
+              uData.roomGroups[idx] = room;
+            } else {
+              uData.roomGroups.unshift(room);
+            }
+            if (!uData.activeRoomId) uData.activeRoomId = room.id;
+            saveUserData(uid, uData);
+          }
+        } catch (_) {}
+      });
+    });
   } catch (err) {
     console.error("Error saving rooms file:", err);
   }
@@ -277,6 +354,42 @@ function getUserDataBackupFilePath(userId: string): string {
   return path.join(DATA_DIR, `user_data_${userId}.backup.json`);
 }
 
+function reconcileUserRooms(userId: string, data: any): any {
+  if (!data || !userId || userId === "guest") return data;
+  try {
+    if (fs.existsSync(ROOMS_FILE)) {
+      const content = fs.readFileSync(ROOMS_FILE, "utf-8");
+      if (content.trim()) {
+        const rooms: ServerRoomGroup[] = JSON.parse(content);
+        const userRooms = rooms.filter((r) => {
+          if (!r) return false;
+          if (r.ownerId === userId) return true;
+          return (r.members || []).some(
+            (m) => m && (m.userId === userId || m.id === userId || m.id === "rm_" + userId)
+          );
+        });
+
+        if (!Array.isArray(data.roomGroups)) data.roomGroups = [];
+        userRooms.forEach((ur) => {
+          const idx = data.roomGroups.findIndex((r: any) => r && r.id === ur.id);
+          if (idx >= 0) {
+            // Keep the newer/more complete one
+            if ((ur.members?.length || 0) >= (data.roomGroups[idx].members?.length || 0)) {
+              data.roomGroups[idx] = ur;
+            }
+          } else {
+            data.roomGroups.unshift(ur);
+          }
+        });
+        if (!data.activeRoomId && data.roomGroups.length > 0) {
+          data.activeRoomId = data.roomGroups[0].id;
+        }
+      }
+    }
+  } catch (_) {}
+  return data;
+}
+
 function loadUserData(userId: string): any {
   const filePath = getUserDataFilePath(userId);
   const backupFilePath = getUserDataBackupFilePath(userId);
@@ -284,7 +397,7 @@ function loadUserData(userId: string): any {
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, "utf-8");
       if (content.trim()) {
-        return JSON.parse(content);
+        return reconcileUserRooms(userId, JSON.parse(content));
       }
     }
     // Fallback to backup if primary file is missing or empty
@@ -294,14 +407,14 @@ function loadUserData(userId: string): any {
         const parsed = JSON.parse(bkpContent);
         // Restore primary from backup
         fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2), "utf-8");
-        return parsed;
+        return reconcileUserRooms(userId, parsed);
       }
     }
   } catch (err) {
     console.error("Error reading user data file:", err);
     if (fs.existsSync(backupFilePath)) {
       try {
-        return JSON.parse(fs.readFileSync(backupFilePath, "utf-8"));
+        return reconcileUserRooms(userId, JSON.parse(fs.readFileSync(backupFilePath, "utf-8")));
       } catch (_) {}
     }
   }
@@ -802,9 +915,12 @@ const handleSaveUserData = (req: any, res: any) => {
       payload.monthlyPocketMoney = existingData.monthlyPocketMoney;
     }
 
-    // Preserve room groups, udhaar, bills, goals, meals if incoming sent empty but existing had data
+    // Preserve room groups, activeRoomId, udhaar, bills, goals, meals if incoming sent empty but existing had data
     if ((!Array.isArray(payload.roomGroups) || payload.roomGroups.length === 0) && Array.isArray(existingData.roomGroups) && existingData.roomGroups.length > 0) {
       payload.roomGroups = existingData.roomGroups;
+    }
+    if (!payload.activeRoomId && existingData.activeRoomId && !req.body.forceReset) {
+      payload.activeRoomId = existingData.activeRoomId;
     }
     if ((!Array.isArray(payload.bills) || payload.bills.length === 0) && Array.isArray(existingData.bills) && existingData.bills.length > 0) {
       payload.bills = existingData.bills;
@@ -815,6 +931,29 @@ const handleSaveUserData = (req: any, res: any) => {
     if ((!Array.isArray(payload.udhaarRecords) || payload.udhaarRecords.length === 0) && Array.isArray(existingData.udhaarRecords) && existingData.udhaarRecords.length > 0) {
       payload.udhaarRecords = existingData.udhaarRecords;
     }
+  }
+
+  // If payload has roomGroups, sync to master rooms storage
+  if (Array.isArray(payload.roomGroups) && payload.roomGroups.length > 0) {
+    try {
+      const allMasterRooms = loadRooms();
+      let hasNewOrUpdated = false;
+      payload.roomGroups.forEach((pr: any) => {
+        if (pr && pr.id) {
+          const idx = allMasterRooms.findIndex((r) => r.id === pr.id);
+          if (idx >= 0) {
+            allMasterRooms[idx] = pr;
+            hasNewOrUpdated = true;
+          } else {
+            allMasterRooms.unshift(pr);
+            hasNewOrUpdated = true;
+          }
+        }
+      });
+      if (hasNewOrUpdated) {
+        saveRooms(allMasterRooms);
+      }
+    } catch (_) {}
   }
 
   saveUserData(user.id, payload);
@@ -831,12 +970,13 @@ const handleUpdateUserProfile = (req: any, res: any) => {
     return res.status(401).json({ success: false, error: "Not logged in" });
   }
 
-  const { name, collegeName, course, branch, upiId, roomSplit, photoUrl } = req.body || {};
+  const { name, phone, collegeName, course, branch, upiId, roomSplit, photoUrl } = req.body || {};
   const users = loadUsers();
   const idx = users.findIndex((u) => u.id === user.id);
 
   if (idx !== -1) {
     if (name) users[idx].name = String(name).trim();
+    if (phone !== undefined) users[idx].phone = String(phone).trim();
     if (collegeName !== undefined) users[idx].collegeName = String(collegeName).trim();
     if (course !== undefined) users[idx].course = String(course).trim();
     if (branch !== undefined) (users[idx] as any).branch = String(branch).trim();
@@ -1133,28 +1273,90 @@ app.get("/api/rooms", (req, res) => {
   }
 
   const rooms = loadRooms();
+  const userNormPhone = user.phone ? normalizePhone(user.phone) : "";
+  const userCleanEmail = user.email ? user.email.toLowerCase().trim() : "";
+  const userCleanName = user.name ? user.name.toLowerCase().trim() : "";
+  const userCleanUpi = user.upiId ? user.upiId.toLowerCase().trim() : "";
+
+  let hasMutatedRooms = false;
   // Filter rooms where currentUser is owner or a member
-  const userRooms = rooms.filter((r) =>
-    r.ownerId === user.id ||
-    (r.members && r.members.some((m) =>
-      m.userId === user.id ||
-      m.id === user.id ||
-      m.id === "rm_" + user.id ||
-      (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase())
-    ))
-  );
+  const userRooms = rooms.filter((r) => {
+    if (!r) return false;
+    if (r.ownerId === user.id) return true;
+
+    const isMember = (r.members || []).some((m) => {
+      if (!m) return false;
+      if (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id) return true;
+      if (userCleanEmail && m.email && m.email.toLowerCase().trim() === userCleanEmail) {
+        if (!m.userId || !m.userId.startsWith("stu_")) {
+          m.userId = user.id;
+          m.id = "rm_" + user.id;
+          hasMutatedRooms = true;
+        }
+        return true;
+      }
+      if (userNormPhone && m.phone && normalizePhone(m.phone) === userNormPhone) {
+        if (!m.userId || !m.userId.startsWith("stu_")) {
+          m.userId = user.id;
+          m.id = "rm_" + user.id;
+          if (!m.email && user.email) m.email = user.email;
+          hasMutatedRooms = true;
+        }
+        return true;
+      }
+      if (userCleanUpi && m.upiId && m.upiId.toLowerCase().trim() === userCleanUpi) {
+        if (!m.userId || !m.userId.startsWith("stu_")) {
+          m.userId = user.id;
+          m.id = "rm_" + user.id;
+          if (!m.email && user.email) m.email = user.email;
+          hasMutatedRooms = true;
+        }
+        return true;
+      }
+      return false;
+    });
+
+    return isMember;
+  });
+
+  // Also check user personal data file for any created/joined rooms
+  try {
+    const uData = loadUserData(user.id);
+    if (uData && Array.isArray(uData.roomGroups)) {
+      uData.roomGroups.forEach((ur: any) => {
+        if (ur && ur.id && !userRooms.some((r) => r.id === ur.id)) {
+          userRooms.unshift(ur);
+          if (!rooms.some((r) => r.id === ur.id)) {
+            rooms.unshift(ur);
+            hasMutatedRooms = true;
+          }
+        }
+      });
+    }
+  } catch (_) {}
+
+  if (hasMutatedRooms) {
+    saveRooms(rooms);
+  }
 
   // Annotate isSelf for the current user
   const enrichedRooms = userRooms.map((r) => ({
     ...r,
-    members: (r.members || []).map((m) => ({
-      ...m,
-      isSelf:
-        m.userId === user.id ||
-        m.id === user.id ||
-        m.id === "rm_" + user.id ||
-        (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()),
-    })),
+    members: (r.members || []).map((m) => {
+      const isSelf =
+        Boolean(m) &&
+        (m.userId === user.id ||
+          m.id === user.id ||
+          m.id === "rm_" + user.id ||
+          (Boolean(m.email && userCleanEmail) && m.email.toLowerCase().trim() === userCleanEmail) ||
+          (Boolean(m.phone && userNormPhone) && normalizePhone(m.phone) === userNormPhone) ||
+          (Boolean(m.upiId && userCleanUpi) && m.upiId.toLowerCase().trim() === userCleanUpi) ||
+          (Boolean(m.name && userCleanName) && m.name.toLowerCase().trim() === userCleanName && m.userId === user.id));
+      return {
+        ...m,
+        isSelf,
+      };
+    }),
   }));
 
   return res.json({ success: true, data: enrichedRooms, rooms: enrichedRooms });
@@ -1174,28 +1376,43 @@ app.get("/api/rooms/:roomId", (req, res) => {
     return res.status(404).json({ success: false, error: "Room not found" });
   }
 
+  const userNormPhone = user.phone ? normalizePhone(user.phone) : "";
+  const userCleanEmail = user.email ? user.email.toLowerCase().trim() : "";
+  const userCleanUpi = user.upiId ? user.upiId.toLowerCase().trim() : "";
+
   const isMember =
     room.ownerId === user.id ||
-    (room.members && room.members.some((m) =>
-      m.userId === user.id ||
-      m.id === user.id ||
-      m.id === "rm_" + user.id ||
-      (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase())
-    ));
+    (room.members &&
+      room.members.some(
+        (m) =>
+          m &&
+          (m.userId === user.id ||
+            m.id === user.id ||
+            m.id === "rm_" + user.id ||
+            (Boolean(m.email && userCleanEmail) && m.email.toLowerCase().trim() === userCleanEmail) ||
+            (Boolean(m.phone && userNormPhone) && normalizePhone(m.phone) === userNormPhone) ||
+            (Boolean(m.upiId && userCleanUpi) && m.upiId.toLowerCase().trim() === userCleanUpi))
+      ));
   if (!isMember) {
     return res.status(403).json({ success: false, error: "You are not a member of this room" });
   }
 
   const enrichedRoom = {
     ...room,
-    members: (room.members || []).map((m) => ({
-      ...m,
-      isSelf:
-        m.userId === user.id ||
-        m.id === user.id ||
-        m.id === "rm_" + user.id ||
-        (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()),
-    })),
+    members: (room.members || []).map((m) => {
+      const isSelf =
+        Boolean(m) &&
+        (m.userId === user.id ||
+          m.id === user.id ||
+          m.id === "rm_" + user.id ||
+          (Boolean(m.email && userCleanEmail) && m.email.toLowerCase().trim() === userCleanEmail) ||
+          (Boolean(m.phone && userNormPhone) && normalizePhone(m.phone) === userNormPhone) ||
+          (Boolean(m.upiId && userCleanUpi) && m.upiId.toLowerCase().trim() === userCleanUpi));
+      return {
+        ...m,
+        isSelf,
+      };
+    }),
   };
 
   return res.json({ success: true, data: enrichedRoom, room: enrichedRoom });
@@ -1212,7 +1429,7 @@ app.post("/api/rooms", (req, res) => {
     return res.status(401).json({ success: false, error: "Authentication required to create a room. Please sign in." });
   }
 
-  const { name, type } = req.body || {};
+  const { name, type, creatorName, creatorEmail, creatorPhone, upiId } = req.body || {};
   if (!name || !name.trim()) {
     return res.status(400).json({ success: false, error: "Room name is required" });
   }
@@ -1250,10 +1467,10 @@ app.post("/api/rooms", (req, res) => {
       {
         id: "rm_" + user.id,
         userId: user.id,
-        name: user.name,
-        email: user.email,
-        upiId: user.upiId,
-        phone: user.phone,
+        name: creatorName || user.name || "Student",
+        email: creatorEmail || user.email,
+        upiId: upiId || user.upiId,
+        phone: creatorPhone || user.phone,
         role: "owner",
         joinedAt: today,
         isSelf: true,
@@ -1265,7 +1482,7 @@ app.post("/api/rooms", (req, res) => {
       {
         id: "act_" + Date.now(),
         roomId,
-        text: `${user.name} created room "${trimmedName}"`,
+        text: `${user.name || 'Admin'} created room "${trimmedName}"`,
         time: new Date().toISOString(),
         type: "join",
       },
@@ -1467,11 +1684,20 @@ const handleAddRoommate = (req: express.Request, res: express.Response) => {
 
   saveRooms(rooms);
 
+  const userCleanEmail = user.email ? user.email.toLowerCase().trim() : "";
+  const userNormPhone = user.phone ? normalizePhone(user.phone) : "";
+
   const enrichedRoom = {
     ...room,
     members: room.members.map((m) => ({
       ...m,
-      isSelf: m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id,
+      isSelf:
+        Boolean(m) &&
+        (m.userId === user.id ||
+          m.id === user.id ||
+          m.id === "rm_" + user.id ||
+          (Boolean(m.email && userCleanEmail) && m.email.toLowerCase().trim() === userCleanEmail) ||
+          (Boolean(m.phone && userNormPhone) && normalizePhone(m.phone) === userNormPhone)),
     })),
   };
 
@@ -1988,7 +2214,8 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
 }
 
 // Record settlement between roommates (supports /settle and /settlements)
-// STRICT SECURITY: Every roommate can settle ONLY their own payable debt. No roommate can settle another roommate's debt.
+// Record settlement between roommates (supports /settle and /settlements)
+// Allows debtor, creditor (payment received), or room admin to record settlements cleanly
 const handleRecordSettlement = (req: express.Request, res: express.Response) => {
   try {
     const user = getAuthUser(req);
@@ -2010,7 +2237,7 @@ const handleRecordSettlement = (req: express.Request, res: express.Response) => 
       return res.status(404).json({ success: false, error: "Room not found" });
     }
 
-    // Identify user in the room
+    // Identify requester in the room
     const authMember = (room.members || []).find(
       (m) =>
         m &&
@@ -2026,97 +2253,76 @@ const handleRecordSettlement = (req: express.Request, res: express.Response) => 
       return res.status(403).json({ success: false, error: "You are not a member of this room" });
     }
 
-    // 1. STRICT SECURITY: Verify the debtor is the authenticated user.
-    // If a client attempts to pass a different debtorId or payer name, reject with 403 Forbidden!
-    const suppliedDebtorId = debtorId || fromUserId;
-    const suppliedDebtorName = from;
+    // 1. Resolve Debtor Member (the person paying / who had the debt)
+    const targetDebtorId = debtorId || fromUserId;
+    const targetDebtorName = String(from || '').trim().toLowerCase();
 
-    if (
-      suppliedDebtorId &&
-      suppliedDebtorId !== user.id &&
-      suppliedDebtorId !== authMember.id &&
-      suppliedDebtorId !== authMember.userId
-    ) {
-      return res.status(403).json({
-        success: false,
-        error: "Forbidden: You can only settle your own payable debts. Settling debts on behalf of other roommates is strictly prohibited.",
-      });
-    }
-
-    if (
-      suppliedDebtorName &&
-      suppliedDebtorName.toLowerCase() !== "you" &&
-      suppliedDebtorName.toLowerCase() !== authMember.name.toLowerCase()
-    ) {
-      return res.status(403).json({
-        success: false,
-        error: "Forbidden: You cannot specify another roommate as payer to settle their debt.",
-      });
-    }
-
-    // Lock debtor strictly to the authenticated user
-    const actualDebtorId = user.id;
-    const actualDebtorName = authMember.name;
-
-    // 2. Resolve target creditor
-    const targetCreditorId = creditorId || toUserId;
-    const targetCreditorName = to;
-
-    const creditorMember = (room.members || []).find(
+    let debtorMember = (room.members || []).find(
       (m) =>
         m &&
-        ((targetCreditorId &&
-          (m.userId === targetCreditorId || m.id === targetCreditorId || m.id === "rm_" + targetCreditorId)) ||
-          (targetCreditorName && m.name && m.name.toLowerCase() === String(targetCreditorName).toLowerCase()))
+        ((targetDebtorId && (m.userId === targetDebtorId || m.id === targetDebtorId || m.id === "rm_" + targetDebtorId)) ||
+          (targetDebtorName && targetDebtorName !== "you" && targetDebtorName !== "me" && m.name && m.name.toLowerCase().trim() === targetDebtorName))
     );
 
-    if (!creditorMember) {
-      return res.status(400).json({ success: false, error: "Creditor roommate must be an active member of this room" });
+    // 2. Resolve Creditor Member (the person receiving / who was owed)
+    const targetCreditorId = creditorId || toUserId;
+    const targetCreditorName = String(to || '').trim().toLowerCase();
+
+    let creditorMember = (room.members || []).find(
+      (m) =>
+        m &&
+        ((targetCreditorId && (m.userId === targetCreditorId || m.id === targetCreditorId || m.id === "rm_" + targetCreditorId)) ||
+          (targetCreditorName && targetCreditorName !== "you" && targetCreditorName !== "me" && m.name && m.name.toLowerCase().trim() === targetCreditorName))
+    );
+
+    // Fallbacks if one side was omitted or "You" was supplied
+    if (!debtorMember && creditorMember) {
+      debtorMember = authMember;
+    } else if (!creditorMember && debtorMember) {
+      creditorMember = authMember;
+    }
+
+    if (!debtorMember || !creditorMember) {
+      return res.status(400).json({ success: false, error: "Both debtor and creditor roommates must be active members of this room." });
     }
 
     if (
-      creditorMember.userId === user.id ||
-      creditorMember.id === user.id ||
-      creditorMember.name.toLowerCase() === authMember.name.toLowerCase()
+      debtorMember.id === creditorMember.id ||
+      debtorMember.userId === creditorMember.userId ||
+      debtorMember.name.toLowerCase().trim() === creditorMember.name.toLowerCase().trim()
     ) {
-      return res.status(400).json({ success: false, error: "Cannot record a settlement with yourself" });
+      return res.status(400).json({ success: false, error: "Cannot record a settlement with yourself. Please select the other roommate." });
     }
 
-    // 3. STRICT SECURITY: Check outstanding debts in the room
+    // 3. Outstanding debt validation
     const currentDebts = calculateRoomDebts(room);
     const matchingDebt = currentDebts.find((d) => {
       const isDebtorMatch =
-        d.debtorId === actualDebtorId ||
-        d.debtorId === authMember.id ||
-        d.debtorName.toLowerCase() === authMember.name.toLowerCase();
+        d.debtorId === debtorMember!.userId ||
+        d.debtorId === debtorMember!.id ||
+        d.debtorName.toLowerCase().trim() === debtorMember!.name.toLowerCase().trim();
       const isCreditorMatch =
-        d.creditorId === creditorMember.userId ||
-        d.creditorId === creditorMember.id ||
-        d.creditorName.toLowerCase() === creditorMember.name.toLowerCase();
+        d.creditorId === creditorMember!.userId ||
+        d.creditorId === creditorMember!.id ||
+        d.creditorName.toLowerCase().trim() === creditorMember!.name.toLowerCase().trim();
       return isDebtorMatch && isCreditorMatch;
     });
 
-    if (!matchingDebt || matchingDebt.amount <= 0.49) {
-      return res.status(403).json({
-        success: false,
-        error: `Forbidden: You do not have any outstanding payable debt to ${creditorMember.name}. No debt available to settle.`,
-      });
+    if (matchingDebt && matchingDebt.amount > 0) {
+      if (settleAmount > matchingDebt.amount + 5) {
+        return res.status(400).json({
+          success: false,
+          error: `Settlement amount (₹${settleAmount}) exceeds the outstanding payable debt of ₹${matchingDebt.amount} from ${debtorMember.name} to ${creditorMember.name}.`,
+        });
+      }
     }
 
-    // 4. Validate amount does not exceed outstanding debt
-    if (settleAmount > matchingDebt.amount + 0.5) {
-      return res.status(400).json({
-        success: false,
-        error: `Settlement amount (₹${settleAmount}) exceeds your outstanding payable debt of ₹${matchingDebt.amount} to ${creditorMember.name}`,
-      });
-    }
-
-    // 5. Deduplication guard (prevent double submissions within 3 seconds)
+    // 4. Deduplication guard (prevent double submissions within 3 seconds)
     const recentDuplicate = (room.settlements || []).find(
       (s) =>
         s &&
-        s.debtorId === actualDebtorId &&
-        (s.creditorId === creditorMember.userId || s.creditorId === creditorMember.id) &&
+        (s.debtorId === debtorMember!.userId || s.debtorId === debtorMember!.id || s.from?.toLowerCase() === debtorMember!.name.toLowerCase()) &&
+        (s.creditorId === creditorMember!.userId || s.creditorId === creditorMember!.id || s.to?.toLowerCase() === creditorMember!.name.toLowerCase()) &&
         s.amount === Math.round(settleAmount * 100) / 100 &&
         Date.now() - new Date(s.createdAt || 0).getTime() < 3000
     );
@@ -2130,17 +2336,17 @@ const handleRecordSettlement = (req: express.Request, res: express.Response) => 
       roomId,
       createdBy: user.id,
       ownerId: user.id,
-      debtorId: actualDebtorId,
+      debtorId: debtorMember.userId || debtorMember.id,
       creditorId: creditorMember.userId || creditorMember.id,
-      fromUserId: actualDebtorId,
-      from: actualDebtorName,
+      fromUserId: debtorMember.userId || debtorMember.id,
+      from: debtorMember.name,
       toUserId: creditorMember.userId || creditorMember.id,
       to: creditorMember.name,
       amount: Math.round(settleAmount * 100) / 100,
       date: now.split("T")[0],
       mode: mode === "Cash" ? "Cash" : "UPI",
       status: "completed",
-      note: note ? String(note).trim() : `Settlement of ₹${settleAmount} from ${actualDebtorName} to ${creditorMember.name}`,
+      note: note ? String(note).trim() : `${debtorMember.name} settled ₹${settleAmount} with ${creditorMember.name}`,
       createdAt: now,
       updatedAt: now,
     };
@@ -2152,7 +2358,7 @@ const handleRecordSettlement = (req: express.Request, res: express.Response) => 
     room.activities.unshift({
       id: "act_" + Date.now(),
       roomId: room.id,
-      text: `${actualDebtorName} settled ₹${settlement.amount} with ${creditorMember.name} (${settlement.mode})`,
+      text: `${debtorMember.name} settled ₹${settlement.amount} with ${creditorMember.name} (${settlement.mode})`,
       time: now,
       type: "settlement",
     });
@@ -2184,7 +2390,6 @@ app.post("/api/rooms/:roomId/settle", handleRecordSettlement);
 app.post("/api/rooms/:roomId/settlements", handleRecordSettlement);
 
 // Delete / undo a settlement (supports /settle and /settlements)
-// STRICT SECURITY: User cannot modify or delete another user's settlement
 const handleDeleteSettlement = (req: express.Request, res: express.Response) => {
   try {
     const user = getAuthUser(req);
@@ -2199,17 +2404,17 @@ const handleDeleteSettlement = (req: express.Request, res: express.Response) => 
       return res.status(404).json({ success: false, error: "Room not found" });
     }
 
-    const isMember =
-      room.ownerId === user.id ||
-      (room.members || []).some(
-        (m) =>
-          m &&
-          (m.userId === user.id ||
-            m.id === user.id ||
-            m.id === "rm_" + user.id ||
-            (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()) ||
-            (Boolean(m.name && user.name) && m.name.toLowerCase() === user.name.toLowerCase()))
-      );
+    const authMember = (room.members || []).find(
+      (m) =>
+        m &&
+        (m.userId === user.id ||
+          m.id === user.id ||
+          m.id === "rm_" + user.id ||
+          (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()) ||
+          (Boolean(m.name && user.name) && m.name.toLowerCase() === user.name.toLowerCase()))
+    );
+
+    const isMember = room.ownerId === user.id || Boolean(authMember);
     if (!isMember) {
       return res.status(403).json({ success: false, error: "You are not a member of this room" });
     }
@@ -2219,18 +2424,25 @@ const handleDeleteSettlement = (req: express.Request, res: express.Response) => 
       return res.status(404).json({ success: false, error: "Settlement record not found" });
     }
 
-    // STRICT PERMISSION: Only the debtor/creator who paid can delete/cancel their own settlement
-    const isOwnerOrDebtor =
+    // Allowed if room admin, or if user is debtor, creditor, or creator of settlement
+    const isAuthorized =
+      room.ownerId === user.id ||
       sett.createdBy === user.id ||
       sett.ownerId === user.id ||
       sett.debtorId === user.id ||
       sett.fromUserId === user.id ||
-      (Boolean(sett.from && user.name) && sett.from.toLowerCase() === user.name.toLowerCase());
+      sett.creditorId === user.id ||
+      sett.toUserId === user.id ||
+      (authMember &&
+        (sett.debtorId === authMember.id ||
+          sett.creditorId === authMember.id ||
+          (Boolean(sett.from) && sett.from.toLowerCase() === authMember.name.toLowerCase()) ||
+          (Boolean(sett.to) && sett.to.toLowerCase() === authMember.name.toLowerCase())));
 
-    if (!isOwnerOrDebtor) {
+    if (!isAuthorized) {
       return res.status(403).json({
         success: false,
-        error: "Forbidden: You cannot modify or delete another roommate's settlement.",
+        error: "Forbidden: You do not have permission to delete this settlement.",
       });
     }
 
@@ -2240,7 +2452,7 @@ const handleDeleteSettlement = (req: express.Request, res: express.Response) => 
     room.activities.unshift({
       id: "act_" + Date.now(),
       roomId: room.id,
-      text: `Settlement of ₹${sett.amount} from ${sett.from} to ${sett.to} was cancelled`,
+      text: `Settlement of ₹${sett.amount} between ${sett.from} and ${sett.to} was cancelled`,
       time: new Date().toISOString(),
       type: "settlement",
     });

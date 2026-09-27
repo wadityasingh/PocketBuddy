@@ -4,7 +4,7 @@
     "name": "Aditya Singh",
     "email": "sadityasingh6275520@gmail.com",
     "phone": "8957190542",
-    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "passwordHash": "ab671a90ba6693afd033d15e0797f6ebe06d06cae6fc9d247437e4674debcafd",
     "collegeName": "College",
     "course": "Student",
     "yearOfStudy": "",
@@ -109,5 +109,19 @@
     "monthlyPocketMoney": 0,
     "hasCompletedTour": true,
     "createdAt": "2026-09-26T09:32:49.000Z"
+  },
+  {
+    "id": "user_manual_mujwf1k5",
+    "name": "Rahul Sharma",
+    "email": "user_manual_mujwf1k5@student.pocketbuddy",
+    "phone": "9876543299",
+    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "collegeName": "",
+    "course": "Student",
+    "yearOfStudy": "",
+    "upiId": "rahul@upi",
+    "monthlyPocketMoney": 0,
+    "hasCompletedTour": true,
+    "createdAt": "2026-09-27T00:00:00.000Z"
   }
 ]

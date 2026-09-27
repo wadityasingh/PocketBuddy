@@ -150,6 +150,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   const [settleMode, setSettleMode] = useState<'UPI' | 'Cash'>('UPI');
   const [settleNote, setSettleNote] = useState('');
   const [settleError, setSettleError] = useState('');
+  const [settleDebtType, setSettleDebtType] = useState<'pay' | 'receive' | 'all'>('pay');
   const [isSubmittingSettle, setIsSubmittingSettle] = useState(false);
 
   // Expense detail modal state for viewing full notes, splits, breakdown
@@ -625,23 +626,46 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   };
 
   // Settlement handling
-  const handleOpenSettleWith = (arg1: string, arg2?: any, arg3?: number) => {
+  const handleOpenSettleWith = (arg1?: string, arg2?: any, arg3?: any) => {
     setSettleError('');
-    let toName = '';
-    let amountVal: number | undefined = undefined;
-    if (typeof arg2 === 'number') {
-      toName = arg1;
-      amountVal = arg2;
-    } else if (typeof arg2 === 'string') {
-      toName = arg2;
-      amountVal = typeof arg3 === 'number' ? arg3 : undefined;
-    } else {
-      toName = arg1;
-    }
     const myName = selfMember?.name || effectiveUserName || currentUser?.name || 'You';
-    setSettlePayer(myName);
-    setSettleReceiver(toName);
-    setSettleAmount(amountVal !== undefined ? String(amountVal) : '');
+
+    if (arg3 === 'received' || arg2 === 'received') {
+      // Creditor marking payment as received from roommate
+      const debtorName = arg1 || '';
+      const amtVal = typeof arg2 === 'number' ? arg2 : (typeof arg3 === 'number' ? arg3 : undefined);
+      setSettleDebtType('receive');
+      setSettlePayer(debtorName);
+      setSettleReceiver(myName);
+      setSettleAmount(amtVal !== undefined ? String(amtVal) : '');
+    } else if (typeof arg2 === 'string') {
+      // Settle between two roommates (Admin or peer settle)
+      setSettleDebtType('all');
+      setSettlePayer(arg1 || '');
+      setSettleReceiver(arg2);
+      setSettleAmount(typeof arg3 === 'number' ? String(arg3) : '');
+    } else {
+      // Debtor settling their debt to creditor
+      const toName = arg1 || (myPayableDebts[0]?.to || '');
+      const amtVal = typeof arg2 === 'number' ? arg2 : (myPayableDebts[0]?.amount);
+      if (myPayableDebts.length > 0) {
+        setSettleDebtType('pay');
+        setSettlePayer(myName);
+        setSettleReceiver(toName);
+        setSettleAmount(amtVal !== undefined ? String(amtVal) : '');
+      } else if (myReceivableDebts.length > 0) {
+        setSettleDebtType('receive');
+        setSettlePayer(myReceivableDebts[0].from);
+        setSettleReceiver(myName);
+        setSettleAmount(String(myReceivableDebts[0].amount));
+      } else {
+        setSettleDebtType('all');
+        setSettlePayer(myName);
+        setSettleReceiver(toName);
+        setSettleAmount(amtVal !== undefined ? String(amtVal) : '');
+      }
+    }
+
     setSettleMode('UPI');
     setSettleNote('');
     setIsSettleModalOpen(true);
@@ -651,18 +675,16 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
     e.preventDefault();
     setSettleError('');
 
-    const targetCreditor = settleReceiver.trim();
-    if (!targetCreditor) {
-      setSettleError('Please select a creditor to settle with.');
+    const fromName = settlePayer.trim();
+    const toName = settleReceiver.trim();
+
+    if (!fromName || !toName) {
+      setSettleError('Please select both the paying roommate and receiving roommate.');
       return;
     }
 
-    const matchingPayable = myPayableDebts.find(
-      (d) => d.to.toLowerCase() === targetCreditor.toLowerCase()
-    );
-
-    if (!matchingPayable) {
-      setSettleError(`You do not have any outstanding debt to ${targetCreditor}.`);
+    if (fromName.toLowerCase() === toName.toLowerCase()) {
+      setSettleError('Cannot settle a debt with yourself. Please select another roommate.');
       return;
     }
 
@@ -672,25 +694,24 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       return;
     }
 
-    if (amt > matchingPayable.amount + 0.5) {
-      setSettleError(`Settlement amount cannot exceed your outstanding payable debt of ₹${matchingPayable.amount}.`);
-      return;
-    }
+    const fromMem = members.find((m) => m && m.name.toLowerCase() === fromName.toLowerCase());
+    const toMem = members.find((m) => m && m.name.toLowerCase() === toName.toLowerCase());
 
-    const toMem = members.find((m) => m.name.toLowerCase() === targetCreditor.toLowerCase());
-    const toUserId = toMem?.userId || toMem?.id || targetCreditor;
-    const myUserId = currentUser?.id || effectiveUserId || selfMember?.userId || selfMember?.id || 'guest';
-    const myName = selfMember?.name || effectiveUserName || currentUser?.name || 'You';
+    const isFromSelf = selfNames.has(fromName.toLowerCase());
+    const isToSelf = selfNames.has(toName.toLowerCase());
+
+    const fromUserId = fromMem?.userId || fromMem?.id || (isFromSelf ? (currentUser?.id || effectiveUserId) : fromName);
+    const toUserId = toMem?.userId || toMem?.id || (isToSelf ? (currentUser?.id || effectiveUserId) : toName);
 
     setIsSubmittingSettle(true);
     try {
       await onSettleDebt(
-        myUserId,
-        myName,
+        fromUserId,
+        fromMem?.name || fromName,
         toUserId,
-        targetCreditor,
+        toMem?.name || toName,
         amt,
-        settleNote.trim() || `Settled debt of ₹${amt} with ${targetCreditor}`,
+        settleNote.trim() || `Settled debt of ₹${amt} from ${fromName} to ${toName}`,
         settleMode
       );
 
@@ -1087,6 +1108,8 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               setSettleError('');
               if (myPayableDebts.length > 0) {
                 handleOpenSettleWith(myPayableDebts[0].to, myPayableDebts[0].amount);
+              } else if (myReceivableDebts.length > 0) {
+                handleOpenSettleWith(myReceivableDebts[0].from, myReceivableDebts[0].amount, 'received');
               } else {
                 setSettleReceiver('');
                 setSettleAmount('');
@@ -1096,12 +1119,101 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
             className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
           >
             <Handshake className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span className="truncate">Settle Up ({myPayableDebts.length})</span>
+            <span className="truncate">
+              Settle Up {myPayableDebts.length > 0 ? `(${myPayableDebts.length})` : (myReceivableDebts.length > 0 ? `(${myReceivableDebts.length})` : '')}
+            </span>
           </button>
         </div>
       </div>
 
-      {/* C. DASHBOARD SUMMARY (Total Expenses, To Pay, To Receive) */}
+      {/* C. ROOMMATES / FLATMATE MEMBERS LIST STRIP */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-1.5">
+            <Users className="w-4 h-4 text-slate-700" />
+            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Roommates ({members.length})
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setAddMemberError('');
+              setIsAddRoommateOpen(true);
+            }}
+            className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 transition cursor-pointer"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>+ Add Roommate</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {members.map((m) => {
+            const isSelf =
+              selfNames.has(m.name.toLowerCase()) ||
+              (m.userId && m.userId === (currentUser?.id || effectiveUserId));
+            const isAdmin =
+              m.role === 'owner' ||
+              (currentRoom.ownerId && (m.userId === currentRoom.ownerId || m.id === currentRoom.ownerId));
+
+            return (
+              <div
+                key={m.id || m.userId || m.name}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/90 shrink-0 hover:bg-slate-100/70 transition"
+              >
+                <div className="w-7 h-7 rounded-full bg-red-100 text-red-700 font-extrabold flex items-center justify-center text-xs shrink-0">
+                  {m.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-bold text-slate-900 truncate max-w-[95px] sm:max-w-none">
+                      {m.name}
+                    </span>
+                    {isSelf && (
+                      <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-red-100 text-red-800">
+                        You
+                      </span>
+                    )}
+                    {isAdmin && (
+                      <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800 flex items-center gap-0.5">
+                        <Shield className="w-2.5 h-2.5" />
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  {(m.phone || m.upiId) && (
+                    <span className="text-[10px] text-slate-500 block truncate max-w-[110px]">
+                      {m.phone || m.upiId}
+                    </span>
+                  )}
+                </div>
+                {isRoomOwner && !isSelf && (
+                  <button
+                    onClick={() => setRemoveMemberConfirm({ id: m.id || m.userId || '', name: m.name })}
+                    className="text-slate-400 hover:text-rose-600 p-1 rounded transition ml-1 cursor-pointer"
+                    title={`Remove ${m.name}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          <button
+            onClick={() => {
+              setAddMemberError('');
+              setIsAddRoommateOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-slate-300 text-slate-600 hover:border-red-400 hover:text-red-600 hover:bg-red-50/50 text-xs font-semibold shrink-0 transition cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add</span>
+          </button>
+        </div>
+      </div>
+
+      {/* D. DASHBOARD SUMMARY (Total Expenses, To Pay, To Receive) */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {/* 1. Total Expenses */}
         <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-2.5 sm:p-4 shadow-xs">
@@ -1246,14 +1358,23 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                       </button>
                     )}
                     {isCreditor && (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-semibold text-[10px] shrink-0">
-                        To Receive
-                      </span>
+                      <button
+                        onClick={() => handleOpenSettleWith(d.from, d.amount, 'received')}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0 active:scale-95 flex items-center gap-1"
+                        title="Mark payment as received from roommate"
+                      >
+                        <Check className="w-3 h-3" />
+                        <span>Received</span>
+                      </button>
                     )}
                     {!isDebtor && !isCreditor && (
-                      <span className="text-[10px] text-slate-400 font-medium italic shrink-0">
-                        Pending
-                      </span>
+                      <button
+                        onClick={() => handleOpenSettleWith(d.from, d.to, d.amount)}
+                        className="px-2 py-1 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition cursor-pointer shrink-0 active:scale-95"
+                        title="Record settlement between flatmates"
+                      >
+                        Settle
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1861,169 +1982,246 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               </div>
             )}
 
-            {/* Debts for Logged-In User */}
-            {myPayableDebts.length === 0 ? (
-              <div className="p-5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-center space-y-2">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <h4 className="text-sm font-bold text-emerald-950">No Outstanding Debts!</h4>
-                <p className="text-xs text-emerald-700 max-w-xs mx-auto leading-relaxed">
-                  You are all squared up! You don't owe any money to your roommates in this room.
-                </p>
+            {/* Settle Form with Multi-Debt & Full Roommate Support */}
+            <div className="space-y-3.5">
+              {/* Type Switcher Tabs */}
+              <div className="flex rounded-xl bg-slate-100 p-1 gap-1 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettleDebtType('pay');
+                    const myName = selfMember?.name || effectiveUserName || 'You';
+                    setSettlePayer(myName);
+                    const toName = myPayableDebts[0]?.to || members.find((m) => !selfNames.has(m.name.toLowerCase()))?.name || '';
+                    setSettleReceiver(toName);
+                    setSettleAmount(myPayableDebts[0]?.amount ? String(myPayableDebts[0].amount) : '');
+                    setSettleError('');
+                  }}
+                  className={`flex-1 py-1.5 px-2 rounded-lg transition text-center cursor-pointer ${
+                    settleDebtType === 'pay'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  I'm Paying {myPayableDebts.length > 0 ? `(${myPayableDebts.length})` : ''}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettleDebtType('receive');
+                    const myName = selfMember?.name || effectiveUserName || 'You';
+                    setSettleReceiver(myName);
+                    const fromName = myReceivableDebts[0]?.from || members.find((m) => !selfNames.has(m.name.toLowerCase()))?.name || '';
+                    setSettlePayer(fromName);
+                    setSettleAmount(myReceivableDebts[0]?.amount ? String(myReceivableDebts[0].amount) : '');
+                    setSettleError('');
+                  }}
+                  className={`flex-1 py-1.5 px-2 rounded-lg transition text-center cursor-pointer ${
+                    settleDebtType === 'receive'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  I'm Receiving {myReceivableDebts.length > 0 ? `(${myReceivableDebts.length})` : ''}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettleDebtType('all');
+                    setSettleError('');
+                  }}
+                  className={`py-1.5 px-2.5 rounded-lg transition text-center cursor-pointer ${
+                    settleDebtType === 'all'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Custom
+                </button>
               </div>
-            ) : (
-              <div className="space-y-3.5">
-                {/* Debts list if multiple, or simple recipient summary */}
-                {(() => {
-                  const currentSelectedDebt =
-                    myPayableDebts.find((d) => d.to.toLowerCase() === settleReceiver.toLowerCase()) ||
-                    myPayableDebts[0];
 
-                  return (
-                    <form onSubmit={handleConfirmSettlement} className="space-y-3.5">
-                      {/* You Pay To (Receiver) */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          You Pay To *
-                        </label>
-                        {myPayableDebts.length === 1 ? (
-                          <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm flex items-center justify-between text-slate-900">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900">{myPayableDebts[0].to}</span>
-                            </div>
-                            <span className="text-xs font-bold text-rose-600">
-                              Owed: ₹{myPayableDebts[0].amount.toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                        ) : (
-                          <select
-                            value={settleReceiver || currentSelectedDebt?.to || ''}
-                            onChange={(e) => {
-                              const target = myPayableDebts.find((d) => d.to === e.target.value);
-                              setSettleReceiver(e.target.value);
-                              if (target) setSettleAmount(String(target.amount));
-                              setSettleError('');
-                            }}
-                            required
-                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white transition"
-                          >
-                            {myPayableDebts.map((d) => (
-                              <option key={d.to} value={d.to}>
-                                {d.to} (Owed: ₹{d.amount.toLocaleString('en-IN')})
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
+              {/* Informational banner if squared up in current tab */}
+              {settleDebtType === 'pay' && myPayableDebts.length === 0 && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>You don't owe any money. You can still record a payment below if needed.</span>
+                </div>
+              )}
 
-                      {/* Amount & Payment Mode */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="block text-xs font-semibold text-slate-700">
-                              Amount *
-                            </label>
-                            {currentSelectedDebt && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSettleAmount(String(currentSelectedDebt.amount));
-                                  setSettleError('');
-                                }}
-                                className="text-[10px] text-emerald-700 font-semibold hover:underline"
-                              >
-                                Full: ₹{currentSelectedDebt.amount}
-                              </button>
-                            )}
-                          </div>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
-                              ₹
-                            </span>
-                            <input
-                              type="number"
-                              step="1"
-                              min="1"
-                              max={currentSelectedDebt?.amount || 1}
-                              required
-                              placeholder="Amount ₹"
-                              value={settleAmount}
-                              onChange={(e) => {
-                                setSettleAmount(e.target.value);
+              {settleDebtType === 'receive' && myReceivableDebts.length === 0 && (
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span>No roommate owes you money right now. You can still record a payment received below.</span>
+                </div>
+              )}
+
+              <form onSubmit={handleConfirmSettlement} className="space-y-3.5">
+                {/* Debtor (Who is paying) & Creditor (Who is receiving) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* Payer */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Who is Paying (Debtor) *
+                    </label>
+                    <select
+                      value={settlePayer}
+                      onChange={(e) => {
+                        setSettlePayer(e.target.value);
+                        setSettleError('');
+                      }}
+                      required
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white transition"
+                    >
+                      <option value="" disabled>Select Payer</option>
+                      {members.map((m) => {
+                        const isMe = selfNames.has(m.name.toLowerCase());
+                        return (
+                          <option key={m.id || m.name} value={m.name}>
+                            {m.name}{isMe ? ' (You)' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {/* Receiver */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Who is Receiving (Creditor) *
+                    </label>
+                    <select
+                      value={settleReceiver}
+                      onChange={(e) => {
+                        setSettleReceiver(e.target.value);
+                        setSettleError('');
+                      }}
+                      required
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white transition"
+                    >
+                      <option value="" disabled>Select Receiver</option>
+                      {members.map((m) => {
+                        const isMe = selfNames.has(m.name.toLowerCase());
+                        return (
+                          <option key={m.id || m.name} value={m.name}>
+                            {m.name}{isMe ? ' (You)' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Amount & Payment Mode */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        Amount *
+                      </label>
+                      {(() => {
+                        // Find matching debt between settlePayer and settleReceiver
+                        const match = debts.find(
+                          (d) =>
+                            d.from.toLowerCase() === settlePayer.toLowerCase() &&
+                            d.to.toLowerCase() === settleReceiver.toLowerCase()
+                        );
+                        if (match && match.amount > 0) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSettleAmount(String(match.amount));
                                 setSettleError('');
                               }}
-                              className="w-full pl-7 pr-3 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition"
-                            />
-                          </div>
-                          {currentSelectedDebt && (
-                            <span className="text-[10px] text-slate-400 mt-1 block">
-                              Max payable: ₹{currentSelectedDebt.amount.toLocaleString('en-IN')}
-                            </span>
-                          )}
-                        </div>
+                              className="text-[10px] text-emerald-700 font-semibold hover:underline"
+                            >
+                              Full: ₹{match.amount}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        step="any"
+                        min="1"
+                        required
+                        placeholder="Amount ₹"
+                        value={settleAmount}
+                        onChange={(e) => {
+                          setSettleAmount(e.target.value);
+                          setSettleError('');
+                        }}
+                        className="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition"
+                      />
+                    </div>
+                  </div>
 
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Payment Mode *
-                          </label>
-                          <select
-                            value={settleMode}
-                            onChange={(e) => setSettleMode(e.target.value as 'UPI' | 'Cash')}
-                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white transition"
-                          >
-                            <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
-                            <option value="Cash">Cash</option>
-                          </select>
-                        </div>
-                      </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Payment Mode *
+                    </label>
+                    <select
+                      value={settleMode}
+                      onChange={(e) => setSettleMode(e.target.value as 'UPI' | 'Cash')}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white transition"
+                    >
+                      <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                      <option value="Cash">Cash</option>
+                    </select>
+                  </div>
+                </div>
 
-                      {/* Note */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Note (Optional)
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Paid via Google Pay"
-                          value={settleNote}
-                          onChange={(e) => setSettleNote(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition"
-                        />
-                      </div>
+                {/* Note */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Note (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Paid via Google Pay / Cash settled"
+                    value={settleNote}
+                    onChange={(e) => setSettleNote(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition"
+                  />
+                </div>
 
-                      {/* Actions */}
-                      <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsSettleModalOpen(false);
-                            setSettleError('');
-                          }}
-                          className="px-3.5 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={isSubmittingSettle || !settleAmount || parseFloat(settleAmount) <= 0}
-                          className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5 active:scale-[0.98]"
-                        >
-                          {isSubmittingSettle ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              <span>Recording...</span>
-                            </>
-                          ) : (
-                            <span>Confirm Payment</span>
-                          )}
-                        </button>
-                      </div>
-                    </form>
-                  );
-                })()}
-              </div>
-            )}
+                {/* Actions */}
+                <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSettleModalOpen(false);
+                      setSettleError('');
+                    }}
+                    className="px-3.5 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingSettle || !settleAmount || parseFloat(settleAmount) <= 0}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5 active:scale-[0.98]"
+                  >
+                    {isSubmittingSettle ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Recording...</span>
+                      </>
+                    ) : (
+                      <span>Confirm Settlement</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
 
             {/* Shared Settlements History */}
             {settlements.length > 0 && (

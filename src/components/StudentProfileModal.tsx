@@ -2,6 +2,9 @@ import React, { useState, useRef } from 'react';
 import {
   ArrowLeft,
   User,
+  Mail,
+  Copy,
+  Phone,
   GraduationCap,
   Camera,
   LogOut,
@@ -94,26 +97,48 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   onUpdateUser,
   onLogout,
 }) => {
-  // Fields: ONLY Name, College, and UPI ID
+  // Fields: Name, Registered Email, and Registered Phone
   const [name, setName] = useState(user.name || '');
   const [collegeName, setCollegeName] = useState(user.collegeName || '');
   const [upiId, setUpiId] = useState(user.upiId || '');
+  const [phone, setPhone] = useState(user.phone || '');
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(user.photoUrl);
 
-  // Active editing field: 'name' | 'college' | 'upi' | null
-  const [editingField, setEditingField] = useState<'name' | 'college' | 'upi' | null>(null);
+  // Active editing field: 'name' | 'phone' | 'college' | 'upi' | null
+  const [editingField, setEditingField] = useState<'name' | 'phone' | 'college' | 'upi' | null>(null);
   const [tempValue, setTempValue] = useState('');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleCopyEmail = () => {
+    const emailToCopy = user.email || '';
+    if (emailToCopy) {
+      navigator.clipboard.writeText(emailToCopy);
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2000);
+    }
+  };
+
+  const handleCopyPhone = () => {
+    const phoneToCopy = phone || user.phone || '';
+    if (phoneToCopy) {
+      navigator.clipboard.writeText(phoneToCopy);
+      setCopiedPhone(true);
+      setTimeout(() => setCopiedPhone(false), 2000);
+    }
+  };
+
   if (!isOpen) return null;
 
-  const handleStartEdit = (field: 'name' | 'college' | 'upi') => {
+  const handleStartEdit = (field: 'name' | 'phone' | 'college' | 'upi') => {
     setEditingField(field);
     if (field === 'name') setTempValue(name);
+    if (field === 'phone') setTempValue(phone);
     if (field === 'college') setTempValue(collegeName);
     if (field === 'upi') setTempValue(upiId);
   };
@@ -123,16 +148,20 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     setTempValue('');
   };
 
-  const handleSaveField = (field: 'name' | 'college' | 'upi') => {
+  const handleSaveField = (field: 'name' | 'phone' | 'college' | 'upi') => {
     const val = tempValue.trim();
     let updatedName = name;
     let updatedCollege = collegeName;
     let updatedUpi = upiId;
+    let updatedPhone = phone;
 
     if (field === 'name') {
       if (!val) return;
       setName(val);
       updatedName = val;
+    } else if (field === 'phone') {
+      setPhone(val);
+      updatedPhone = val;
     } else if (field === 'college') {
       setCollegeName(val);
       updatedCollege = val;
@@ -147,6 +176,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     const updatedUser: StudentUser = {
       ...user,
       name: updatedName,
+      phone: updatedPhone || undefined,
       collegeName: updatedCollege || undefined,
       upiId: updatedUpi || undefined,
       photoUrl: photoUrl || undefined,
@@ -431,97 +461,74 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               )}
             </div>
 
-            {/* 2. COLLEGE ROW */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center justify-between hover:border-rose-300 transition-colors shadow-xs">
-              <div className="flex items-center gap-3.5 flex-1 min-w-0 pr-2">
+            {/* 2. EMAIL ROW (Replaced College with user's login email) */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center justify-between hover:border-rose-300 transition-colors shadow-xs group">
+              <div
+                className="flex items-center gap-3.5 flex-1 min-w-0 pr-2 cursor-pointer"
+                onClick={handleCopyEmail}
+                title="Click to copy login email"
+              >
                 {/* Red Circular Icon */}
-                <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0">
-                  <GraduationCap className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0 group-hover:scale-105 transition-transform">
+                  <Mail className="w-5 h-5" />
                 </div>
 
-                {editingField === 'college' ? (
-                  <div className="flex-1 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={tempValue}
-                      onChange={(e) => setTempValue(e.target.value)}
-                      placeholder="e.g. ABC College, Gorakhpur"
-                      autoFocus
-                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-rose-300 rounded-lg text-xs sm:text-sm font-semibold text-slate-900 focus:outline-hidden focus:bg-white"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveField('college');
-                        if (e.key === 'Escape') handleCancelEdit();
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleSaveField('college')}
-                      className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer"
-                      title="Save"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="p-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg cursor-pointer"
-                      title="Cancel"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => handleStartEdit('college')}
-                  >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
                     <span className="text-[11px] text-slate-400 font-medium block">
-                      College
+                      Email
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
-                      {collegeName || 'ABC College, Gorakhpur'}
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200/60">
+                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-600" />
+                      Login Email
                     </span>
                   </div>
-                )}
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block select-all" title={user.email}>
+                    {user.email || 'No email associated'}
+                  </span>
+                </div>
               </div>
 
-              {editingField !== 'college' && (
-                <button
-                  type="button"
-                  onClick={() => handleStartEdit('college')}
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
-                  aria-label="Edit College"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleCopyEmail}
+                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
+                title={copiedEmail ? 'Copied to clipboard!' : 'Copy email'}
+                aria-label="Copy email"
+              >
+                {copiedEmail ? (
+                  <Check className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
             </div>
 
-            {/* 3. UPI ID ROW */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center justify-between hover:border-rose-300 transition-colors shadow-xs">
+            {/* 3. REGISTERED PHONE ROW (Replaced UPI ID with registered number) */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center justify-between hover:border-rose-300 transition-colors shadow-xs group">
               <div className="flex items-center gap-3.5 flex-1 min-w-0 pr-2">
-                {/* Red Circular UPI Icon */}
-                <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                  <UpiIcon className="w-5 h-5" />
+                {/* Red Circular Phone Icon */}
+                <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0 group-hover:scale-105 transition-transform">
+                  <Phone className="w-5 h-5" />
                 </div>
 
-                {editingField === 'upi' ? (
+                {editingField === 'phone' ? (
                   <div className="flex-1 flex items-center gap-2">
                     <input
-                      type="text"
+                      type="tel"
                       value={tempValue}
                       onChange={(e) => setTempValue(e.target.value)}
-                      placeholder="e.g. test1@upi"
+                      placeholder="e.g. 9876543210"
                       autoFocus
                       className="w-full px-2.5 py-1.5 bg-slate-50 border border-rose-300 rounded-lg text-xs sm:text-sm font-semibold text-slate-900 focus:outline-hidden focus:bg-white"
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveField('upi');
+                        if (e.key === 'Enter') handleSaveField('phone');
                         if (e.key === 'Escape') handleCancelEdit();
                       }}
                     />
                     <button
                       type="button"
-                      onClick={() => handleSaveField('upi')}
+                      onClick={() => handleSaveField('phone')}
                       className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer"
                       title="Save"
                     >
@@ -539,27 +546,51 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 ) : (
                   <div
                     className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => handleStartEdit('upi')}
+                    onClick={() => handleStartEdit('phone')}
                   >
-                    <span className="text-[11px] text-slate-400 font-medium block">
-                      UPI ID
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
-                      {upiId || 'test1@upi'}
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[11px] text-slate-400 font-medium block">
+                        Mobile Number
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200/60">
+                        <ShieldCheck className="w-2.5 h-2.5 text-emerald-600" />
+                        Registered
+                      </span>
+                    </div>
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block select-all">
+                      {phone || user.phone || 'Add mobile number'}
                     </span>
                   </div>
                 )}
               </div>
 
-              {editingField !== 'upi' && (
-                <button
-                  type="button"
-                  onClick={() => handleStartEdit('upi')}
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
-                  aria-label="Edit UPI ID"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
+              {editingField !== 'phone' && (
+                <div className="flex items-center gap-1 shrink-0">
+                  {(phone || user.phone) && (
+                    <button
+                      type="button"
+                      onClick={handleCopyPhone}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                      title={copiedPhone ? 'Copied to clipboard!' : 'Copy number'}
+                      aria-label="Copy phone number"
+                    >
+                      {copiedPhone ? (
+                        <Check className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleStartEdit('phone')}
+                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                    aria-label="Edit Mobile Number"
+                    title="Edit number"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                </div>
               )}
             </div>
 

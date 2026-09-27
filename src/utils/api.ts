@@ -261,12 +261,30 @@ export function saveUserStoredData(userId: string, data: Partial<UserAppData> & 
       mergedAllowance = existing.monthlyPocketMoney;
     }
 
+    // Preserve room groups if unhydrated empty array is passed and existing had rooms
+    let mergedRoomGroups = data.roomGroups !== undefined ? data.roomGroups : existing.roomGroups;
+    if (
+      (!Array.isArray(data.roomGroups) || data.roomGroups.length === 0) &&
+      Array.isArray(existing.roomGroups) &&
+      existing.roomGroups.length > 0 &&
+      !data.forceReset
+    ) {
+      mergedRoomGroups = existing.roomGroups;
+    }
+
+    let mergedActiveRoomId = data.activeRoomId !== undefined ? data.activeRoomId : existing.activeRoomId;
+    if (!data.activeRoomId && existing.activeRoomId && !data.forceReset) {
+      mergedActiveRoomId = existing.activeRoomId;
+    }
+
     const updated: UserAppData = {
       ...existing,
       ...data,
       monthlyPocketMoney: mergedAllowance,
       wallets: mergedWallets,
       transactions: mergedTransactions,
+      roomGroups: mergedRoomGroups,
+      activeRoomId: mergedActiveRoomId,
     };
 
     localStorage.setItem(`smm_user_data_${userId}`, JSON.stringify(updated));
