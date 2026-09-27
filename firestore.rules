@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: default-deny all unmatched paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-\\.:]+$');
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // User profile: only the authenticated user can read & write their own profile
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || resource.data.id == request.auth.uid);
+      allow list: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow update: if isOwner(userId) && isValidId(userId);
+      allow delete: if false;
+
+      // Private user financial data snapshot
+      match /data/{stateId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Shared Room Groups
+    match /rooms/{roomId} {
+      // Room read: authenticated users can lookup by id or invite code
+      allow get: if isSignedIn() && isValidId(roomId);
+      allow list: if isSignedIn();
+
+      // Room create: creator must be owner
+      allow create: if isSignedIn() && isValidId(roomId) && request.resource.data.ownerId == request.auth.uid;
+
+      // Room update: any authenticated roommate or the owner can sync expenses/members/settlements
+      allow update: if isSignedIn() && isValidId(roomId);
+
+      // Room delete: only owner can delete the room
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+  }
+}

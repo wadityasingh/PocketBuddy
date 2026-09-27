@@ -320,6 +320,13 @@ export function saveUserStoredData(userId: string, data: Partial<UserAppData> & 
     localStorage.setItem('smm_pocket_money', JSON.stringify(updated.monthlyPocketMoney));
     localStorage.setItem('smm_wallets', JSON.stringify(updated.wallets));
     localStorage.setItem('smm_transactions', JSON.stringify(updated.transactions));
+
+    // Seamless background backup to Firestore if online
+    try {
+      import('../lib/firebase').then(({ saveUserDataToFirestore }) => {
+        saveUserDataToFirestore(userId, updated).catch(() => {});
+      }).catch(() => {});
+    } catch (_) {}
   } catch (err) {
     console.warn('Error saving user data locally:', err);
   }

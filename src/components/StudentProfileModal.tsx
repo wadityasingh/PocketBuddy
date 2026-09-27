@@ -612,6 +612,28 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             </button>
           </div>
 
+          {/* Cloud Database Status */}
+          <div className="rounded-2xl bg-amber-50/60 border border-amber-200/70 p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-700">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4.68 18.27L8.74 3.78a.8.8 0 011.52.02l2.36 4.47-7.94 10zM12.56 8.52l1.65-3.15a.8.8 0 011.45.08l4.49 12.82-7.59-9.75zM3.44 19.34l7.65 4.31a1.6 1.6 0 001.58 0l7.65-4.31a.8.8 0 00.12-1.39L4.1 3.52a.8.8 0 00-1.12.98l.46 14.84z" />
+                </svg>
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-800 block leading-tight">
+                  Firebase Cloud Firestore
+                </span>
+                <span className="text-[10px] text-amber-800/80 font-medium">
+                  Free Tier (Spark) • pocketbuddy-872b7
+                </span>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+              Connected
+            </span>
+          </div>
+
           {/* Shield Trust Badge matching screenshot */}
           <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3.5 flex items-center gap-3">
             <ShieldCheck className="w-5 h-5 text-slate-600 shrink-0" />

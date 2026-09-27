@@ -881,6 +881,14 @@ export default function App() {
     localStorage.removeItem('smm_current_user');
     localStorage.removeItem('smm_room_groups');
     localStorage.removeItem('smm_active_room_id');
+
+    // Clean up Firebase Auth session if active
+    try {
+      import('./lib/firebase').then(({ signOutFromFirebase }) => {
+        signOutFromFirebase().catch(() => {});
+      }).catch(() => {});
+    } catch (_) {}
+
     // Clean active personal state so next user or empty state is clean
     setMonthlyPocketMoney(0);
     setWallets({ cash: 0, upi: 0 });

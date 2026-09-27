@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public and account profile of a registered student user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User identifier matching auth uid",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the student",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the student user",
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "description": "Registered contact number",
+          "maxLength": 20
+        },
+        "collegeName": {
+          "type": "string",
+          "description": "College or University name",
+          "maxLength": 150
+        },
+        "upiId": {
+          "type": "string",
+          "description": "Default UPI VPA address for settlements",
+          "maxLength": 80
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Profile picture URL or base64 data",
+          "maxLength": 500000
+        },
+        "monthlyPocketMoney": {
+          "type": "number",
+          "description": "Monthly allowance amount"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Account registration timestamp",
+          "maxLength": 40
+        }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "UserFinancialState": {
+      "title": "UserFinancialState",
+      "description": "Private financial snapshot and tracking collections for an individual student user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the owner user",
+          "maxLength": 128
+        },
+        "wallets": {
+          "type": "object",
+          "description": "Current cash and UPI wallet balances"
+        },
+        "monthlyPocketMoney": {
+          "type": "number",
+          "description": "Monthly pocket money allowance"
+        },
+        "transactions": {
+          "type": "array",
+          "description": "User expense and income transactions"
+        },
+        "meals": {
+          "type": "array",
+          "description": "Daily mess attendance and meal rebate logs"
+        },
+        "messConfig": {
+          "type": "object",
+          "description": "Mess fee and rebate configuration"
+        },
+        "udhaar": {
+          "type": "array",
+          "description": "Personal lent and borrowed records"
+        },
+        "notes": {
+          "type": "array",
+          "description": "Personal student scratchpad and budgeting notes"
+        },
+        "bills": {
+          "type": "array",
+          "description": "Recurring utility, rent, and subscription reminders"
+        },
+        "goals": {
+          "type": "array",
+          "description": "Targeted savings goals"
+        },
+        "activeRoomId": {
+          "type": "string",
+          "description": "Currently selected active room group ID",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last synchronised ISO timestamp",
+          "maxLength": 40
+        }
+      },
+      "required": ["userId"]
+    },
+    "RoomGroup": {
+      "title": "RoomGroup",
+      "description": "Shared room group for hostel or flat roommates to split expenses and settle dues.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique room group identifier",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of room or flat",
+          "maxLength": 100
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of housing (Hostel, Flat, PG, Apartment)",
+          "maxLength": 50
+        },
+        "inviteCode": {
+          "type": "string",
+          "description": "6-character unique join code",
+          "maxLength": 12
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the room creator or admin",
+          "maxLength": 128
+        },
+        "members": {
+          "type": "array",
+          "description": "List of room roommates and participants"
+        },
+        "expenses": {
+          "type": "array",
+          "description": "Shared room expenses and splits"
+        },
+        "settlements": {
+          "type": "array",
+          "description": "Settled payments between roommates"
+        },
+        "activities": {
+          "type": "array",
+          "description": "Timeline log of room group actions"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp",
+          "maxLength": 40
+        }
+      },
+      "required": ["id", "name", "inviteCode", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document containing account info and settings."
+    },
+    "/users/{userId}/data/state": {
+      "schema": "UserFinancialState",
+      "description": "Private student financial state including wallets, logs, and personal ledger."
+    },
+    "/rooms/{roomId}": {
+      "schema": "RoomGroup",
+      "description": "Shared flat or hostel room expenses, members, and settlement records."
+    }
+  }
+}

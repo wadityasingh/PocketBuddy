@@ -26,6 +26,7 @@ import {
 import { StudentUser, UserAppData } from '../types';
 import { BrandLogo } from './BrandLogo';
 import { RadialLoader } from './RadialLoader';
+import { signInWithGoogle, loadUserDataFromFirestore } from '../lib/firebase';
 import {
   safeFetchJson,
   localRegisterUser,
@@ -83,6 +84,51 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   // Snappy real-touch login loading transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionUser, setTransitionUser] = useState<StudentUser | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      setErrorMessage(null);
+      const { studentUser } = await signInWithGoogle();
+
+      // Check if there is data already in Firestore or local
+      let existingData = await loadUserDataFromFirestore(studentUser.id);
+      if (!existingData) {
+        existingData = getUserStoredData(studentUser.id);
+      } else {
+        saveUserStoredData(studentUser.id, existingData);
+      }
+
+      // Sync account to local memory so other sessions can recognize it
+      syncAccountToLocal({
+        id: studentUser.id,
+        name: studentUser.name,
+        email: studentUser.email,
+        phone: studentUser.phone,
+        collegeName: studentUser.collegeName,
+        course: studentUser.course,
+        branch: studentUser.branch,
+        yearOfStudy: studentUser.yearOfStudy,
+        upiId: studentUser.upiId,
+        roomSplit: studentUser.roomSplit,
+        photoUrl: studentUser.photoUrl,
+        monthlyPocketMoney: studentUser.monthlyPocketMoney,
+        hasCompletedTour: studentUser.hasCompletedTour,
+        createdAt: studentUser.createdAt,
+      });
+
+      const token = `fb_token_${Date.now()}`;
+      triggerSuccessTransition(studentUser, existingData, token, false);
+    } catch (err: any) {
+      console.error('Google Sign-In failed:', err);
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        setErrorMessage(err?.message || 'Google sign-in failed. Please try again.');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const switchMode = (newMode: 'login' | 'register' | 'forgot') => {
     setMode(newMode);
@@ -745,6 +791,51 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 )}
               </button>
 
+              {/* Or Divider */}
+              <div className="relative my-3">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2.5 text-slate-400 font-semibold tracking-wider text-[10px]">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+
+              {/* Google Sign In with Firebase */}
+              <button
+                id="firebase-google-login-btn"
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading || googleLoading}
+                className="w-full py-3 px-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2.5 cursor-pointer shadow-xs disabled:opacity-60"
+              >
+                {googleLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                ) : (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.15C3.25 21.32 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.27C.46 8.2.005 10.05.005 12s.46 3.8 1.27 5.42l4.005-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.25 2.68 1.27 6.58l4.01 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                )}
+                <span>{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+              </button>
+
               {/* Switch to Register */}
               <div className="text-center pt-3 border-t border-slate-100">
                 <p className="text-xs text-slate-600 font-medium">
@@ -1006,6 +1097,51 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
+              </button>
+
+              {/* Or Divider */}
+              <div className="relative my-3">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2.5 text-slate-400 font-semibold tracking-wider text-[10px]">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+
+              {/* Google Sign In with Firebase */}
+              <button
+                id="firebase-google-reg-btn"
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading || googleLoading}
+                className="w-full py-3 px-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2.5 cursor-pointer shadow-xs disabled:opacity-60"
+              >
+                {googleLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                ) : (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.15C3.25 21.32 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.27C.46 8.2.005 10.05.005 12s.46 3.8 1.27 5.42l4.005-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.25 2.68 1.27 6.58l4.01 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                )}
+                <span>{googleLoading ? 'Connecting to Google...' : 'Sign up with Google'}</span>
               </button>
 
               {/* Switch to Sign In */}
