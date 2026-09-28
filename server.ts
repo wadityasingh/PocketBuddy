@@ -34,6 +34,26 @@ if (!fs.existsSync(DATA_DIR)) {
 
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const ROOMS_FILE = path.join(DATA_DIR, "rooms.json");
+const DELETED_ROOMS_FILE = path.join(DATA_DIR, "deleted_rooms.json");
+
+function loadDeletedRoomIds(): Set<string> {
+  try {
+    if (fs.existsSync(DELETED_ROOMS_FILE)) {
+      const content = fs.readFileSync(DELETED_ROOMS_FILE, "utf-8");
+      const list = JSON.parse(content);
+      if (Array.isArray(list)) return new Set(list);
+    }
+  } catch (_) {}
+  return new Set();
+}
+
+function recordDeletedRoomId(roomId: string) {
+  try {
+    const deleted = loadDeletedRoomIds();
+    deleted.add(roomId);
+    fs.writeFileSync(DELETED_ROOMS_FILE, JSON.stringify(Array.from(deleted), null, 2), "utf-8");
+  } catch (_) {}
+}
 
 interface ServerRoomActivity {
   id: string;
@@ -116,6 +136,7 @@ interface ServerRoomGroup {
 
 function loadRooms(): ServerRoomGroup[] {
   let rooms: ServerRoomGroup[] = [];
+  const deletedIds = loadDeletedRoomIds();
   try {
     if (fs.existsSync(ROOMS_FILE)) {
       const content = fs.readFileSync(ROOMS_FILE, "utf-8");
@@ -125,88 +146,17 @@ function loadRooms(): ServerRoomGroup[] {
     console.error("Error reading rooms file:", err);
   }
 
-  // Cross-pollinate and recover any rooms stored in individual user_data files
-  try {
-    if (fs.existsSync(DATA_DIR)) {
-      const files = fs.readdirSync(DATA_DIR);
-      let recoveredAny = false;
-      for (const file of files) {
-        if (file.startsWith("user_data_") && file.endsWith(".json") && !file.includes(".backup.")) {
-          try {
-            const uData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf-8"));
-            if (Array.isArray(uData.roomGroups)) {
-              for (const rg of uData.roomGroups) {
-                if (rg && rg.id) {
-                  const existingIdx = rooms.findIndex((r) => r.id === rg.id);
-                  if (existingIdx === -1) {
-                    rooms.unshift(rg);
-                    recoveredAny = true;
-                  } else {
-                    // Merge any members or expenses that might be newer
-                    const existing = rooms[existingIdx];
-                    if (Array.isArray(rg.members) && rg.members.length > (existing.members?.length || 0)) {
-                      existing.members = rg.members;
-                      recoveredAny = true;
-                    }
-                    if (Array.isArray(rg.expenses) && rg.expenses.length > (existing.expenses?.length || 0)) {
-                      existing.expenses = rg.expenses;
-                      recoveredAny = true;
-                    }
-                    if (Array.isArray(rg.settlements) && rg.settlements.length > (existing.settlements?.length || 0)) {
-                      existing.settlements = rg.settlements;
-                      recoveredAny = true;
-                    }
-                  }
-                }
-              }
-            }
-          } catch (_) {}
-        }
-      }
-      if (recoveredAny) {
-        try {
-          fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2), "utf-8");
-        } catch (_) {}
-      }
-    }
-  } catch (recoverErr) {
-    console.warn("Could not check user_data files for room recovery:", recoverErr);
-  }
-
+  // Filter out any rooms that have been deleted
+  rooms = (rooms || []).filter((r) => r && r.id && !deletedIds.has(r.id));
   return rooms;
 }
 
 function saveRooms(rooms: ServerRoomGroup[]) {
   try {
-    fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2), "utf-8");
+    const deletedIds = loadDeletedRoomIds();
+    const cleanRooms = (rooms || []).filter((r) => r && r.id && !deletedIds.has(r.id));
+    fs.writeFileSync(ROOMS_FILE, JSON.stringify(cleanRooms, null, 2), "utf-8");
     try { fs.chmodSync(ROOMS_FILE, 0o666); } catch (_) {}
-
-    // Synchronize saved rooms to owner and member user_data files for redundancy
-    rooms.forEach((room) => {
-      if (!room || !room.id) return;
-      const targetUserIds = new Set<string>();
-      if (room.ownerId && room.ownerId !== "guest") targetUserIds.add(room.ownerId);
-      (room.members || []).forEach((m) => {
-        if (m && m.userId && m.userId !== "guest") targetUserIds.add(m.userId);
-      });
-
-      targetUserIds.forEach((uid) => {
-        try {
-          const uData = loadUserData(uid);
-          if (uData) {
-            if (!Array.isArray(uData.roomGroups)) uData.roomGroups = [];
-            const idx = uData.roomGroups.findIndex((r: any) => r && r.id === room.id);
-            if (idx >= 0) {
-              uData.roomGroups[idx] = room;
-            } else {
-              uData.roomGroups.unshift(room);
-            }
-            if (!uData.activeRoomId) uData.activeRoomId = room.id;
-            saveUserData(uid, uData);
-          }
-        } catch (_) {}
-      });
-    });
   } catch (err) {
     console.error("Error saving rooms file:", err);
   }
@@ -258,10 +208,21 @@ function loadUsers(): ServerUser[] {
     console.error("Error reading users file:", err);
   }
 
-  // Remove any remaining dummy users
+  // Remove any remaining dummy or test users
   const DUMMY_EMAILS = ["aditya@campus.edu", "rahul@campus.edu", "aman@campus.edu", "aarav.sharma@example.edu"];
   const initialLength = users.length;
-  users = users.filter((u) => !DUMMY_EMAILS.includes(u.email?.toLowerCase()));
+  users = users.filter((u) => {
+    if (!u) return false;
+    const em = (u.email || "").toLowerCase();
+    if (DUMMY_EMAILS.includes(em)) return false;
+    if (u.id.includes("test_") || em.includes("test1") || em.includes("test2") || em.includes("test3") || u.name?.toUpperCase().startsWith("TEST")) {
+      return false;
+    }
+    return true;
+  });
+  if (users.length !== initialLength) {
+    saveUsers(users);
+  }
 
   // Auto-restore any real registered members from rooms.json if missing from users.json
   try {
@@ -915,13 +876,7 @@ const handleSaveUserData = (req: any, res: any) => {
       payload.monthlyPocketMoney = existingData.monthlyPocketMoney;
     }
 
-    // Preserve room groups, activeRoomId, udhaar, bills, goals, meals if incoming sent empty but existing had data
-    if ((!Array.isArray(payload.roomGroups) || payload.roomGroups.length === 0) && Array.isArray(existingData.roomGroups) && existingData.roomGroups.length > 0) {
-      payload.roomGroups = existingData.roomGroups;
-    }
-    if (!payload.activeRoomId && existingData.activeRoomId && !req.body.forceReset) {
-      payload.activeRoomId = existingData.activeRoomId;
-    }
+    // Preserve udhaar, bills, goals if incoming sent empty but existing had data
     if ((!Array.isArray(payload.bills) || payload.bills.length === 0) && Array.isArray(existingData.bills) && existingData.bills.length > 0) {
       payload.bills = existingData.bills;
     }
@@ -933,13 +888,23 @@ const handleSaveUserData = (req: any, res: any) => {
     }
   }
 
-  // If payload has roomGroups, sync to master rooms storage
+  // Filter out any deleted rooms from payload.roomGroups
+  if (Array.isArray(payload.roomGroups)) {
+    const deletedIds = loadDeletedRoomIds();
+    payload.roomGroups = payload.roomGroups.filter((pr: any) => pr && pr.id && !deletedIds.has(pr.id));
+    if (payload.activeRoomId && deletedIds.has(payload.activeRoomId)) {
+      payload.activeRoomId = payload.roomGroups[0]?.id || null;
+    }
+  }
+
+  // If payload has roomGroups, sync non-deleted rooms to master rooms storage
   if (Array.isArray(payload.roomGroups) && payload.roomGroups.length > 0) {
     try {
       const allMasterRooms = loadRooms();
+      const deletedIds = loadDeletedRoomIds();
       let hasNewOrUpdated = false;
       payload.roomGroups.forEach((pr: any) => {
-        if (pr && pr.id) {
+        if (pr && pr.id && !deletedIds.has(pr.id)) {
           const idx = allMasterRooms.findIndex((r) => r.id === pr.id);
           if (idx >= 0) {
             allMasterRooms[idx] = pr;
@@ -1318,22 +1283,6 @@ app.get("/api/rooms", (req, res) => {
 
     return isMember;
   });
-
-  // Also check user personal data file for any created/joined rooms
-  try {
-    const uData = loadUserData(user.id);
-    if (uData && Array.isArray(uData.roomGroups)) {
-      uData.roomGroups.forEach((ur: any) => {
-        if (ur && ur.id && !userRooms.some((r) => r.id === ur.id)) {
-          userRooms.unshift(ur);
-          if (!rooms.some((r) => r.id === ur.id)) {
-            rooms.unshift(ur);
-            hasMutatedRooms = true;
-          }
-        }
-      });
-    }
-  } catch (_) {}
 
   if (hasMutatedRooms) {
     saveRooms(rooms);
@@ -1922,12 +1871,13 @@ app.post("/api/rooms/:roomId/expenses", (req, res) => {
 
     if (existingIdx >= 0) {
       const existingExpense = room.expenses[existingIdx];
-      // STRICT OWNERSHIP RULE: Only the roommate who created this expense can edit it.
+      // Room owner or creator of expense can edit
       const creatorId = existingExpense.createdByUserId || existingExpense.paidByUserId;
-      if (creatorId && creatorId !== user.id) {
+      const isRoomAdmin = room.ownerId === user.id || (room.members || []).some(m => (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id) && m.role === 'owner');
+      if (!isRoomAdmin && creatorId && creatorId !== user.id) {
         return res.status(403).json({
           success: false,
-          error: "Forbidden: You can only edit expenses that you created.",
+          error: "Forbidden: You can only edit expenses that you created or manage.",
         });
       }
     } else {
@@ -2040,12 +1990,13 @@ app.delete("/api/rooms/:roomId/expenses/:expenseId", (req, res) => {
       return res.status(404).json({ success: false, error: "Expense not found" });
     }
 
-    // STRICT OWNERSHIP RULE: Only the roommate who created this expense can delete it.
+    // Room owner or creator of expense can delete
     const creatorId = exp.createdByUserId || exp.paidByUserId;
-    if (creatorId && creatorId !== user.id) {
+    const isRoomAdmin = room.ownerId === user.id || (room.members || []).some(m => (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id) && m.role === 'owner');
+    if (!isRoomAdmin && creatorId && creatorId !== user.id) {
       return res.status(403).json({
         success: false,
-        error: "Forbidden: You can only delete expenses that you created.",
+        error: "Forbidden: You can only delete expenses that you created or manage.",
       });
     }
 
@@ -2513,8 +2464,32 @@ app.delete("/api/rooms/:roomId", (req, res) => {
     });
   }
 
+  recordDeletedRoomId(roomId);
   rooms = rooms.filter((r) => r.id !== roomId);
   saveRooms(rooms);
+
+  // Thoroughly purge deleted room from all stored user files
+  try {
+    if (fs.existsSync(DATA_DIR)) {
+      const files = fs.readdirSync(DATA_DIR);
+      for (const f of files) {
+        if (f.startsWith("user_data_") && f.endsWith(".json")) {
+          const filePath = path.join(DATA_DIR, f);
+          try {
+            const uData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+            if (Array.isArray(uData.roomGroups)) {
+              uData.roomGroups = uData.roomGroups.filter((rg: any) => rg && rg.id !== roomId);
+              if (uData.activeRoomId === roomId) {
+                uData.activeRoomId = uData.roomGroups[0]?.id || null;
+              }
+              fs.writeFileSync(filePath, JSON.stringify(uData, null, 2), "utf-8");
+            }
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (_) {}
+
   return res.json({ success: true, message: `Room "${room.name}" deleted successfully` });
 });
 
@@ -2548,8 +2523,29 @@ app.post("/api/rooms/:roomId/leave", (req, res) => {
 
   // If this was the last remaining member, delete the room
   if (room.members.length <= 1) {
+    recordDeletedRoomId(roomId);
     rooms = rooms.filter((r) => r.id !== roomId);
     saveRooms(rooms);
+    try {
+      if (fs.existsSync(DATA_DIR)) {
+        const files = fs.readdirSync(DATA_DIR);
+        for (const f of files) {
+          if (f.startsWith("user_data_") && f.endsWith(".json")) {
+            const filePath = path.join(DATA_DIR, f);
+            try {
+              const uData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+              if (Array.isArray(uData.roomGroups)) {
+                uData.roomGroups = uData.roomGroups.filter((rg: any) => rg && rg.id !== roomId);
+                if (uData.activeRoomId === roomId) {
+                  uData.activeRoomId = uData.roomGroups[0]?.id || null;
+                }
+                fs.writeFileSync(filePath, JSON.stringify(uData, null, 2), "utf-8");
+              }
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {}
     return res.json({ success: true, message: `Left and closed room "${room.name}"` });
   }
 

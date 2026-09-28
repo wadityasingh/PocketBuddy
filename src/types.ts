@@ -242,6 +242,7 @@ export interface UserAppData {
   udhaarRecords: UdhaarRecord[];
   bills: BillReminder[];
   goals: SavingsGoal[];
+  notes?: PersonalNote[];
   hasCompletedTour: boolean;
 }
 

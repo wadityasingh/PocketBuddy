@@ -486,9 +486,10 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
   const pendingExpenseIdRef = React.useRef<string>('');
 
-  // Permission check: strictly only the creator of the expense can edit/delete
+  // Permission check: strictly only the creator of the expense or room owner can edit/delete
   const canModifyExpense = (exp: RoomExpense): boolean => {
     if (!currentUser?.id) return false;
+    if (isRoomOwner) return true;
     const creatorId = exp.createdByUserId || exp.paidByUserId;
     if (creatorId) {
       return creatorId === currentUser.id;
@@ -1525,11 +1526,19 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                                 </div>
                               </div>
 
-                              {/* Row 2: Kisne pay kiya • Date and Time */}
+                              {/* Row 2: Kisne pay kiya & kisne add kiya • Date and Time */}
                               <div className="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
                                 <span>
                                   Paid by <strong className="font-semibold text-slate-800">{exp.paidBy}{isPaidBySelf ? ' (You)' : ''}</strong>
                                 </span>
+                                {exp.createdBy && exp.createdBy.toLowerCase() !== exp.paidBy.toLowerCase() && (
+                                  <>
+                                    <span className="text-slate-300">•</span>
+                                    <span>
+                                      Added by <strong className="font-semibold text-slate-700">{exp.createdBy}</strong>
+                                    </span>
+                                  </>
+                                )}
                                 <span className="text-slate-300">•</span>
                                 <span>{formatDateTime(exp.createdAt || exp.date)}</span>
                               </div>

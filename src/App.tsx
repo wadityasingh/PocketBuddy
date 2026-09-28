@@ -61,9 +61,7 @@ import {
   initialBillReminders,
   initialSavingsGoals,
   INITIAL_PERSONAL_NOTES,
-  SAMPLE_PERSONAL_NOTES,
   getCleanUserData,
-  getSampleUserData,
 } from './data/initialData';
 
 import { formatINR, generateId } from './utils/formatters';
@@ -251,13 +249,6 @@ export default function App() {
     return [];
   });
 
-  const [isSampleMode, setIsSampleMode] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('smm_is_sample_mode') === 'true';
-    } catch {}
-    return false;
-  });
-
   const [personalNotes, setPersonalNotes] = useState<PersonalNote[]>(() => {
     try {
       const storedUser = localStorage.getItem('smm_current_user');
@@ -374,22 +365,27 @@ export default function App() {
               if (userPrefixedRoomsRaw) userPrefixedRooms = JSON.parse(userPrefixedRoomsRaw);
             } catch {}
 
-            const mergedRooms = serverRooms.length > 0 ? serverRooms : (localRooms.length > 0 ? localRooms : userPrefixedRooms);
-            if (mergedRooms.length > 0) {
-              setRoomGroups(mergedRooms);
-              localStorage.setItem('smm_room_groups', JSON.stringify(mergedRooms));
-              localStorage.setItem(`smm_${targetUser.id}_room_groups`, JSON.stringify(mergedRooms));
-              const targetActiveId =
-                serverData?.activeRoomId ||
-                localData?.activeRoomId ||
-                localStorage.getItem(`smm_${targetUser.id}_active_room_id`) ||
-                mergedRooms[0]?.id ||
-                null;
-              if (targetActiveId) {
-                setActiveRoomId(targetActiveId);
-                localStorage.setItem('smm_active_room_id', targetActiveId);
-                localStorage.setItem(`smm_${targetUser.id}_active_room_id`, targetActiveId);
-              }
+            // Reconcile room groups and active room ID
+            const authoritativeRooms = serverData && Array.isArray(serverData.roomGroups)
+              ? serverData.roomGroups
+              : (localRooms.length > 0 ? localRooms : userPrefixedRooms);
+
+            setRoomGroups(authoritativeRooms);
+            localStorage.setItem('smm_room_groups', JSON.stringify(authoritativeRooms));
+            localStorage.setItem(`smm_${targetUser.id}_room_groups`, JSON.stringify(authoritativeRooms));
+
+            const targetActiveId =
+              (authoritativeRooms.some((r: any) => r && r.id === serverData?.activeRoomId) ? serverData?.activeRoomId : null) ||
+              authoritativeRooms[0]?.id ||
+              null;
+
+            setActiveRoomId(targetActiveId);
+            if (targetActiveId) {
+              localStorage.setItem('smm_active_room_id', targetActiveId);
+              localStorage.setItem(`smm_${targetUser.id}_active_room_id`, targetActiveId);
+            } else {
+              localStorage.removeItem('smm_active_room_id');
+              localStorage.removeItem(`smm_${targetUser.id}_active_room_id`);
             }
 
             // Hydrate private user personal notes strictly for targetUser
@@ -495,7 +491,6 @@ export default function App() {
     localStorage.setItem('smm_bills', JSON.stringify(bills));
     localStorage.setItem('smm_goals', JSON.stringify(goals));
     localStorage.setItem('smm_personal_notes', JSON.stringify(personalNotes));
-    localStorage.setItem('smm_is_sample_mode', String(isSampleMode));
 
     localStorage.setItem(`${userPrefix}pocket_money`, JSON.stringify(monthlyPocketMoney));
     localStorage.setItem(`${userPrefix}wallets`, JSON.stringify(wallets));
@@ -517,7 +512,6 @@ export default function App() {
     bills,
     goals,
     personalNotes,
-    isSampleMode,
   ]);
 
   const roomGroupsRef = useRef<RoomGroup[]>(roomGroups);
@@ -543,29 +537,26 @@ export default function App() {
       if (result.ok && result.data) {
         const roomsList = result.data.rooms || result.data.data;
         if (Array.isArray(roomsList)) {
-          // Merge server rooms with any local-only rooms
           const currentLocal = roomGroupsRef.current || [];
-          const localOnlyRooms = currentLocal.filter(
-            (lr) => lr && !roomsList.some((sr) => sr && (sr.id === lr.id || (lr.inviteCode && sr.inviteCode === lr.inviteCode)))
-          );
-          const mergedRooms = [...roomsList, ...localOnlyRooms];
-
           const currentJson = JSON.stringify(currentLocal);
-          const mergedJson = JSON.stringify(mergedRooms);
+          const serverJson = JSON.stringify(roomsList);
 
           // Deep equality check before calling setRoomGroups to eliminate unnecessary re-renders
-          if (currentJson !== mergedJson || (currentLocal.length === 0 && mergedRooms.length > 0)) {
-            setRoomGroups(mergedRooms);
-            localStorage.setItem('smm_room_groups', mergedJson);
-            localStorage.setItem(`smm_${uid}_room_groups`, mergedJson);
+          if (currentJson !== serverJson) {
+            setRoomGroups(roomsList);
+            localStorage.setItem('smm_room_groups', serverJson);
+            localStorage.setItem(`smm_${uid}_room_groups`, serverJson);
             setActiveRoomId((prevActive) => {
-              if (prevActive && mergedRooms.some((r) => r && r.id === prevActive)) {
+              if (prevActive && roomsList.some((r) => r && r.id === prevActive)) {
                 return prevActive;
               }
-              const fallback = mergedRooms[0]?.id || null;
+              const fallback = roomsList[0]?.id || null;
               if (fallback) {
                 localStorage.setItem('smm_active_room_id', fallback);
                 localStorage.setItem(`smm_${uid}_active_room_id`, fallback);
+              } else {
+                localStorage.removeItem('smm_active_room_id');
+                localStorage.removeItem(`smm_${uid}_active_room_id`);
               }
               return fallback;
             });
@@ -722,26 +713,24 @@ export default function App() {
       if (userPrefixedRoomsRaw) userPrefixedRooms = JSON.parse(userPrefixedRoomsRaw);
     } catch {}
 
-    const roomsToUse = serverRooms.length > 0 ? serverRooms : (localRooms.length > 0 ? localRooms : userPrefixedRooms);
-    if (roomsToUse.length > 0) {
-      setRoomGroups(roomsToUse);
-      localStorage.setItem('smm_room_groups', JSON.stringify(roomsToUse));
-      localStorage.setItem(`smm_${user.id}_room_groups`, JSON.stringify(roomsToUse));
-    }
+    const roomsToUse = serverRooms !== null ? serverRooms : (localRooms.length > 0 ? localRooms : userPrefixedRooms);
+    setRoomGroups(roomsToUse);
+    localStorage.setItem('smm_room_groups', JSON.stringify(roomsToUse));
+    localStorage.setItem(`smm_${user.id}_room_groups`, JSON.stringify(roomsToUse));
+
     const targetActiveRoom =
-      data?.activeRoomId ||
-      localStored?.activeRoomId ||
-      localStorage.getItem(`smm_${user.id}_active_room_id`) ||
+      (roomsToUse.some((r: any) => r && r.id === data?.activeRoomId) ? data?.activeRoomId : null) ||
       roomsToUse[0]?.id ||
       null;
+
+    setActiveRoomId(targetActiveRoom);
     if (targetActiveRoom) {
-      setActiveRoomId(targetActiveRoom);
       localStorage.setItem('smm_active_room_id', targetActiveRoom);
       localStorage.setItem(`smm_${user.id}_active_room_id`, targetActiveRoom);
+    } else {
+      localStorage.removeItem('smm_active_room_id');
+      localStorage.removeItem(`smm_${user.id}_active_room_id`);
     }
-
-    setIsSampleMode(false);
-    localStorage.setItem('smm_is_sample_mode', 'false');
 
     // Mark hydration as done so auto-sync effects can safely run
     setIsDataHydrated(true);
@@ -881,6 +870,16 @@ export default function App() {
     localStorage.removeItem('smm_current_user');
     localStorage.removeItem('smm_room_groups');
     localStorage.removeItem('smm_active_room_id');
+    localStorage.removeItem('smm_transactions');
+    localStorage.removeItem('smm_wallets');
+    localStorage.removeItem('smm_pocket_money');
+    localStorage.removeItem('smm_meals');
+    localStorage.removeItem('smm_mess_config');
+    localStorage.removeItem('smm_udhaar');
+    localStorage.removeItem('smm_bills');
+    localStorage.removeItem('smm_goals');
+    localStorage.removeItem('smm_personal_notes');
+    localStorage.removeItem('smm_is_sample_mode');
 
     // Clean up Firebase Auth session if active
     try {
@@ -1945,17 +1944,39 @@ export default function App() {
       console.warn('Network issue deleting room from server:', err);
     }
 
-    setRoomGroups((prev) => {
-      const remaining = (prev || []).filter((r) => r && r.id !== roomId);
-      if (activeRoomId === roomId) {
-        const nextId = remaining.length > 0 ? remaining[0].id : null;
-        setActiveRoomId(nextId);
-        if (nextId) localStorage.setItem('smm_active_room_id', nextId);
-        else localStorage.removeItem('smm_active_room_id');
-      }
-      localStorage.setItem('smm_room_groups', JSON.stringify(remaining));
-      return remaining;
-    });
+    const remaining = (roomGroups || []).filter((r) => r && r.id !== roomId);
+    const nextId = remaining.length > 0 ? remaining[0].id : null;
+
+    setRoomGroups(remaining);
+    setActiveRoomId(nextId);
+
+    localStorage.setItem('smm_room_groups', JSON.stringify(remaining));
+    if (nextId) localStorage.setItem('smm_active_room_id', nextId);
+    else localStorage.removeItem('smm_active_room_id');
+
+    if (currentUser?.id) {
+      localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(remaining));
+      if (nextId) localStorage.setItem(`smm_${currentUser.id}_active_room_id`, nextId);
+      else localStorage.removeItem(`smm_${currentUser.id}_active_room_id`);
+
+      saveUserStoredData(currentUser.id, {
+        roomGroups: remaining,
+        activeRoomId: nextId || undefined,
+        forceReset: true,
+      });
+
+      fetch('/api/user/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser.id },
+        body: JSON.stringify({
+          data: {
+            roomGroups: remaining,
+            activeRoomId: nextId,
+          },
+          forceReset: true,
+        }),
+      }).catch(() => {});
+    }
 
     return { success: true };
   };
@@ -1980,17 +2001,39 @@ export default function App() {
       console.warn('Network issue leaving room on server:', err);
     }
 
-    setRoomGroups((prev) => {
-      const remaining = (prev || []).filter((r) => r && r.id !== roomId);
-      if (activeRoomId === roomId) {
-        const nextId = remaining.length > 0 ? remaining[0].id : null;
-        setActiveRoomId(nextId);
-        if (nextId) localStorage.setItem('smm_active_room_id', nextId);
-        else localStorage.removeItem('smm_active_room_id');
-      }
-      localStorage.setItem('smm_room_groups', JSON.stringify(remaining));
-      return remaining;
-    });
+    const remaining = (roomGroups || []).filter((r) => r && r.id !== roomId);
+    const nextId = remaining.length > 0 ? remaining[0].id : null;
+
+    setRoomGroups(remaining);
+    setActiveRoomId(nextId);
+
+    localStorage.setItem('smm_room_groups', JSON.stringify(remaining));
+    if (nextId) localStorage.setItem('smm_active_room_id', nextId);
+    else localStorage.removeItem('smm_active_room_id');
+
+    if (currentUser?.id) {
+      localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(remaining));
+      if (nextId) localStorage.setItem(`smm_${currentUser.id}_active_room_id`, nextId);
+      else localStorage.removeItem(`smm_${currentUser.id}_active_room_id`);
+
+      saveUserStoredData(currentUser.id, {
+        roomGroups: remaining,
+        activeRoomId: nextId || undefined,
+        forceReset: true,
+      });
+
+      fetch('/api/user/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser.id },
+        body: JSON.stringify({
+          data: {
+            roomGroups: remaining,
+            activeRoomId: nextId,
+          },
+          forceReset: true,
+        }),
+      }).catch(() => {});
+    }
 
     return { success: true };
   };
@@ -2191,9 +2234,6 @@ export default function App() {
     setUdhaarRecords([]);
     setBills([]);
     setGoals([]);
-    setIsSampleMode(false);
-    localStorage.setItem('smm_is_sample_mode', 'false');
-
     if (currentUser?.id) {
       try {
         await fetch('/api/user/reset', {
@@ -2206,38 +2246,6 @@ export default function App() {
         });
       } catch (err) {
         console.error('Server clean reset error:', err);
-      }
-    }
-  };
-
-  // Optional Load Sample Data for demo preview
-  const handleLoadSampleData = async () => {
-    const sample = getSampleUserData();
-    setMonthlyPocketMoney(sample.monthlyPocketMoney);
-    setWallets(sample.wallets);
-    setTransactions(sample.transactions);
-    setRoomGroups(sample.roomGroups);
-    if (sample.roomGroups.length > 0) setActiveRoomId(sample.roomGroups[0].id);
-    setMeals(sample.meals);
-    setMessConfig(sample.messConfig);
-    setUdhaarRecords(sample.udhaarRecords);
-    setBills(sample.bills);
-    setGoals(sample.goals);
-    setIsSampleMode(true);
-    localStorage.setItem('smm_is_sample_mode', 'true');
-
-    if (currentUser?.id) {
-      try {
-        await fetch('/api/user/reset', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': currentUser.id,
-          },
-          body: JSON.stringify({ mode: 'sample' }),
-        });
-      } catch (err) {
-        console.error('Server sample load error:', err);
       }
     }
   };
@@ -2347,32 +2355,32 @@ export default function App() {
           </div>
         </div>
 
-        {/* Navigation Bar - Only shown on Tablet/Desktop (hidden on mobile to prevent duplicate 'My Money' nav) */}
-        <div className="hidden md:block max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-zinc-100">
-          <div className="flex items-center gap-1.5 sm:gap-2 py-2 overflow-x-auto no-scrollbar">
+        {/* Navigation Bar - Styled to match PocketBuddy Brand Logo */}
+        <nav aria-label="Main Navigation" className="hidden md:block max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-rose-100/70">
+          <div className="flex items-center gap-2 py-2 overflow-x-auto no-scrollbar">
             <button
               id="tab-overview"
               onClick={() => setCurrentTab('overview')}
-              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 currentTab === 'overview'
-                  ? 'bg-zinc-950 text-white shadow-xs ring-1 ring-zinc-950'
-                  : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+                  ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_2px_10px_-1px_rgba(220,38,38,0.35)]'
+                  : 'text-slate-600 hover:text-red-600 hover:bg-rose-50/70 font-semibold'
               }`}
             >
-              <Layers className={`w-4 h-4 ${currentTab === 'overview' ? 'text-red-400' : 'text-zinc-500'}`} />
+              <Layers className={`w-4 h-4 ${currentTab === 'overview' ? 'text-white' : 'text-slate-500'}`} />
               <span>My Money</span>
             </button>
 
             <button
               id="tab-room"
               onClick={() => setCurrentTab('room')}
-              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 currentTab === 'room'
-                  ? 'bg-zinc-950 text-white shadow-xs ring-1 ring-zinc-950'
-                  : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+                  ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_2px_10px_-1px_rgba(220,38,38,0.35)]'
+                  : 'text-slate-600 hover:text-red-600 hover:bg-rose-50/70 font-semibold'
               }`}
             >
-              <Home className={`w-4 h-4 ${currentTab === 'room' ? 'text-red-400' : 'text-zinc-500'}`} />
+              <Home className={`w-4 h-4 ${currentTab === 'room' ? 'text-white' : 'text-slate-500'}`} />
               <span>
                 My Room
                 {currentActiveRoom ? ` (${currentActiveRoom.name})` : ''}
@@ -2382,30 +2390,30 @@ export default function App() {
             <button
               id="tab-udhaar"
               onClick={() => setCurrentTab('udhaar')}
-              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 currentTab === 'udhaar'
-                  ? 'bg-zinc-950 text-white shadow-xs ring-1 ring-zinc-950'
-                  : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+                  ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_2px_10px_-1px_rgba(220,38,38,0.35)]'
+                  : 'text-slate-600 hover:text-red-600 hover:bg-rose-50/70 font-semibold'
               }`}
             >
-              <BookOpen className={`w-4 h-4 ${currentTab === 'udhaar' ? 'text-red-400' : 'text-zinc-500'}`} />
+              <BookOpen className={`w-4 h-4 ${currentTab === 'udhaar' ? 'text-white' : 'text-slate-500'}`} />
               <span>Your Notes</span>
             </button>
 
             <button
               id="tab-history"
               onClick={() => setCurrentTab('history')}
-              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                 currentTab === 'history'
-                  ? 'bg-zinc-950 text-white shadow-xs ring-1 ring-zinc-950'
-                  : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+                  ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_2px_10px_-1px_rgba(220,38,38,0.35)]'
+                  : 'text-slate-600 hover:text-red-600 hover:bg-rose-50/70 font-semibold'
               }`}
             >
-              <History className={`w-4 h-4 ${currentTab === 'history' ? 'text-red-400' : 'text-zinc-500'}`} />
+              <History className={`w-4 h-4 ${currentTab === 'history' ? 'text-white' : 'text-slate-500'}`} />
               <span>History</span>
             </button>
           </div>
-        </div>
+        </nav>
       </header>
 
       {/* Main Container */}
@@ -2669,35 +2677,44 @@ export default function App() {
       </footer>
 
       {/* Mobile Bottom Navigation Bar (Splitwise/Tricount inspired product UX) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-zinc-200 md:hidden flex items-center justify-around py-1.5 px-1 shadow-lg pb-[max(0.375rem,env(safe-area-inset-bottom))]">
+      {/* Mobile Bottom Navigation Bar (Matched to PocketBuddy Brand Logo) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-rose-100 md:hidden flex items-center justify-around py-2 px-1 shadow-[0_-4px_20px_-2px_rgba(220,38,38,0.09)] pb-[max(0.45rem,env(safe-area-inset-bottom))]">
         <button
           id="mobile-nav-overview"
           type="button"
           onClick={() => setCurrentTab('overview')}
-          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${
-            currentTab === 'overview' ? 'text-red-600 font-bold' : 'text-zinc-500 font-medium'
+          className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all duration-150 cursor-pointer ${
+            currentTab === 'overview'
+              ? 'text-red-600 font-bold scale-[1.04]'
+              : 'text-slate-500 hover:text-slate-800 font-medium'
           }`}
         >
-          <Layers className="w-4 h-4" />
-          <span className="text-[10px]">My Money</span>
+          <div className={`p-1 rounded-lg transition-colors ${currentTab === 'overview' ? 'bg-red-600 text-white shadow-xs shadow-red-600/30' : 'text-slate-500'}`}>
+            <Layers className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] tracking-tight">My Money</span>
         </button>
 
         <button
           id="mobile-nav-room"
           type="button"
           onClick={() => setCurrentTab('room')}
-          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition relative ${
-            currentTab === 'room' ? 'text-red-600 font-bold' : 'text-zinc-500 font-medium'
+          className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all duration-150 cursor-pointer relative ${
+            currentTab === 'room'
+              ? 'text-red-600 font-bold scale-[1.04]'
+              : 'text-slate-500 hover:text-slate-800 font-medium'
           }`}
         >
-          <Home className="w-4 h-4" />
-          <span className="text-[10px]">My Room</span>
-          {safeRoomGroups.length > 0 && (
-            <span className="absolute top-0 right-1.5 w-1.5 h-1.5 bg-red-600 rounded-full" />
-          )}
+          <div className={`p-1 rounded-lg transition-colors relative ${currentTab === 'room' ? 'bg-red-600 text-white shadow-xs shadow-red-600/30' : 'text-slate-500'}`}>
+            <Home className="w-4 h-4" />
+            {safeRoomGroups.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-amber-400 border border-white rounded-full" />
+            )}
+          </div>
+          <span className="text-[10px] tracking-tight">My Room</span>
         </button>
 
-        {/* Central Quick Add Action */}
+        {/* Central Quick Add Action - Matching PocketBuddy Logo gradient & gold accent */}
         <button
           id="mobile-nav-quick-add"
           type="button"
@@ -2705,34 +2722,43 @@ export default function App() {
             setEditingTransaction(null);
             setIsManualOpen(true);
           }}
-          className="w-11 h-11 -mt-4 rounded-full bg-red-600 text-white shadow-md shadow-red-600/30 flex items-center justify-center hover:bg-red-700 active:scale-95 transition cursor-pointer"
+          className="relative w-12 h-12 -mt-5 rounded-2xl bg-gradient-to-br from-red-500 via-red-600 to-rose-700 text-white shadow-[0_4px_16px_rgba(220,38,38,0.45)] ring-4 ring-white flex items-center justify-center hover:from-red-600 hover:to-rose-800 active:scale-95 transition-all duration-150 cursor-pointer group"
           title="Add Expense"
         >
-          <Plus className="w-6 h-6 stroke-[2.5]" />
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 to-white/20 pointer-events-none" />
+          <Plus className="w-6 h-6 stroke-[2.75] relative z-10 transition-transform group-hover:rotate-90 duration-200" />
         </button>
 
         <button
           id="mobile-nav-udhaar"
           type="button"
           onClick={() => setCurrentTab('udhaar')}
-          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition relative ${
-            currentTab === 'udhaar' ? 'text-red-600 font-bold' : 'text-zinc-500 font-medium'
+          className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all duration-150 cursor-pointer relative ${
+            currentTab === 'udhaar'
+              ? 'text-red-600 font-bold scale-[1.04]'
+              : 'text-slate-500 hover:text-slate-800 font-medium'
           }`}
         >
-          <BookOpen className="w-4 h-4" />
-          <span className="text-[10px]">Notes</span>
+          <div className={`p-1 rounded-lg transition-colors ${currentTab === 'udhaar' ? 'bg-red-600 text-white shadow-xs shadow-red-600/30' : 'text-slate-500'}`}>
+            <BookOpen className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] tracking-tight">Notes</span>
         </button>
 
         <button
           id="mobile-nav-history"
           type="button"
           onClick={() => setCurrentTab('history')}
-          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition relative ${
-            currentTab === 'history' ? 'text-red-600 font-bold' : 'text-zinc-500 font-medium'
+          className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition-all duration-150 cursor-pointer relative ${
+            currentTab === 'history'
+              ? 'text-red-600 font-bold scale-[1.04]'
+              : 'text-slate-500 hover:text-slate-800 font-medium'
           }`}
         >
-          <History className="w-4 h-4" />
-          <span className="text-[10px]">History</span>
+          <div className={`p-1 rounded-lg transition-colors ${currentTab === 'history' ? 'bg-red-600 text-white shadow-xs shadow-red-600/30' : 'text-slate-500'}`}>
+            <History className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] tracking-tight">History</span>
         </button>
       </nav>
     </div>

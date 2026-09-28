@@ -192,25 +192,8 @@ export function getUserStoredData(userId: string): UserAppData {
       };
     }
 
-    // Fallback 2: check generic device keys if user-scoped data was not yet partitioned
-    const globalTxRaw = localStorage.getItem('smm_transactions');
-    const globalWalletsRaw = localStorage.getItem('smm_wallets');
-    const globalPocketMoneyRaw = localStorage.getItem('smm_pocket_money');
-    if (globalTxRaw || globalWalletsRaw || globalPocketMoneyRaw) {
-      try {
-        const parsedTx = globalTxRaw ? JSON.parse(globalTxRaw) : [];
-        const parsedWallets = globalWalletsRaw ? JSON.parse(globalWalletsRaw) : { cash: 0, upi: 0 };
-        const parsedPM = globalPocketMoneyRaw ? Number(JSON.parse(globalPocketMoneyRaw)) : 0;
-        if (parsedTx.length > 0 || parsedWallets.cash > 0 || parsedWallets.upi > 0 || parsedPM > 0) {
-          return {
-            ...fallbackClean,
-            monthlyPocketMoney: parsedPM,
-            wallets: parsedWallets,
-            transactions: parsedTx,
-          };
-        }
-      } catch (_) {}
-    }
+    // Return clean fallback if no user-specific data exists yet
+    return fallbackClean;
   } catch (err) {
     console.warn('Error reading stored user data:', err);
   }
@@ -261,21 +244,9 @@ export function saveUserStoredData(userId: string, data: Partial<UserAppData> & 
       mergedAllowance = existing.monthlyPocketMoney;
     }
 
-    // Preserve room groups if unhydrated empty array is passed and existing had rooms
-    let mergedRoomGroups = data.roomGroups !== undefined ? data.roomGroups : existing.roomGroups;
-    if (
-      (!Array.isArray(data.roomGroups) || data.roomGroups.length === 0) &&
-      Array.isArray(existing.roomGroups) &&
-      existing.roomGroups.length > 0 &&
-      !data.forceReset
-    ) {
-      mergedRoomGroups = existing.roomGroups;
-    }
-
-    let mergedActiveRoomId = data.activeRoomId !== undefined ? data.activeRoomId : existing.activeRoomId;
-    if (!data.activeRoomId && existing.activeRoomId && !data.forceReset) {
-      mergedActiveRoomId = existing.activeRoomId;
-    }
+    // Respect explicit roomGroups array and activeRoomId
+    const mergedRoomGroups = data.roomGroups !== undefined ? data.roomGroups : existing.roomGroups;
+    const mergedActiveRoomId = data.activeRoomId !== undefined ? data.activeRoomId : existing.activeRoomId;
 
     const updated: UserAppData = {
       ...existing,
