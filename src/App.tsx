@@ -1631,14 +1631,25 @@ export default function App() {
   const handleDeleteRoomExpense = async (expenseId: string) => {
     if (!activeRoomId) return;
 
-    // Strict client-side ownership check before network request
+    // Strict client-side check: Only the roommate who added the expense can delete it
     const room = roomGroups.find((r) => r.id === activeRoomId);
     const targetExp = (room?.expenses || []).find((e) => e && e.id === expenseId);
     if (targetExp) {
-      const ownerId = targetExp.createdByUserId || targetExp.paidByUserId;
-      if (ownerId && currentUser?.id && ownerId !== currentUser.id) {
-        console.warn('Unauthorized delete attempt: User does not own this expense');
-        alert('Only the member who created this expense can delete it.');
+      const creatorId = targetExp.createdByUserId;
+      const isCreatorById = Boolean(creatorId && currentUser?.id && creatorId === currentUser.id);
+      const isCreatorByName = Boolean(
+        targetExp.createdBy && (
+          targetExp.createdBy.toLowerCase().trim() === (currentUser?.name || '').toLowerCase().trim()
+        )
+      );
+      const isLegacyPayer = Boolean(
+        !targetExp.createdBy && !targetExp.createdByUserId && (
+          (targetExp.paidByUserId && currentUser?.id && targetExp.paidByUserId === currentUser.id) ||
+          (targetExp.paidBy && targetExp.paidBy.toLowerCase().trim() === (currentUser?.name || '').toLowerCase().trim())
+        )
+      );
+      if (!isCreatorById && !isCreatorByName && !isLegacyPayer) {
+        alert('Sirf wahi roommate is expense ko delete kar sakta hai jisne ise add kiya hai.');
         return;
       }
     }
@@ -1905,6 +1916,75 @@ export default function App() {
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       const errorMsg = errData.error || `Failed to delete settlement (HTTP ${res.status})`;
+      alert(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    const data = await res.json();
+    const updatedRoom = data.room || data.data;
+    if (updatedRoom) {
+      setRoomGroups((prev) => {
+        const next = (prev || []).map((r) => (r && r.id === activeRoomId ? updatedRoom : r));
+        localStorage.setItem('smm_room_groups', JSON.stringify(next));
+        if (currentUser?.id) {
+          localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+          saveUserStoredData(currentUser.id, { roomGroups: next });
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleAcceptRoomSettlement = async (settleId: string) => {
+    if (!activeRoomId) return;
+    const token = localStorage.getItem('smm_auth_token') || '';
+    const headers: Record<string, string> = { 'x-user-id': currentUser?.id || 'guest' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`/api/rooms/${activeRoomId}/settlements/${settleId}/accept`, {
+      method: 'POST',
+      headers,
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const errorMsg = errData.error || `Failed to accept settlement (HTTP ${res.status})`;
+      alert(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    const data = await res.json();
+    const updatedRoom = data.room || data.data;
+    if (updatedRoom) {
+      setRoomGroups((prev) => {
+        const next = (prev || []).map((r) => (r && r.id === activeRoomId ? updatedRoom : r));
+        localStorage.setItem('smm_room_groups', JSON.stringify(next));
+        if (currentUser?.id) {
+          localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+          saveUserStoredData(currentUser.id, { roomGroups: next });
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleRejectRoomSettlement = async (settleId: string) => {
+    if (!activeRoomId) return;
+    const token = localStorage.getItem('smm_auth_token') || '';
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-user-id': currentUser?.id || 'guest',
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`/api/rooms/${activeRoomId}/settlements/${settleId}/reject`, {
+      method: 'POST',
+      headers,
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const errorMsg = errData.error || `Failed to decline settlement (HTTP ${res.status})`;
       alert(errorMsg);
       throw new Error(errorMsg);
     }
@@ -2499,6 +2579,8 @@ export default function App() {
             onAddRoommate={handleAddRoommateToRoom}
             onRemoveRoommate={handleRemoveRoommateFromRoom}
             onSettleDebt={handleSettleRoomDebt}
+            onAcceptSettlement={handleAcceptRoomSettlement}
+            onRejectSettlement={handleRejectRoomSettlement}
             onDeleteSettlement={handleDeleteRoomSettlement}
             onDeleteRoom={handleDeleteRoomGroup}
             onLeaveRoom={handleLeaveRoom}

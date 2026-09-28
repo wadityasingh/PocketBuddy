@@ -658,6 +658,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   Create new account now <ArrowRight className="w-3 h-3" />
                 </button>
               )}
+              {(errorMessage.includes('already exists') || errorMessage.includes('already registered')) && mode === 'register' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (regEmail) setLoginIdentifier(regEmail);
+                    else if (regPhone) setLoginIdentifier(regPhone);
+                    switchMode('login');
+                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition cursor-pointer shadow-xs shadow-red-600/20"
+                >
+                  <span>Go to Sign In</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
         )}

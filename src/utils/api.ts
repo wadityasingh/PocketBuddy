@@ -383,12 +383,12 @@ export function localRegisterUser(params: {
 
   const registered = getLocalRegisteredUsers();
 
-  // Check duplicate
+  // Check duplicate: strictly one account per email or phone
   const duplicate = registered.find((a) => {
     if (a.user.email && a.user.email.toLowerCase() === cleanEmail) return true;
     if (cleanPhone.length >= 7 && a.user.phone) {
       const uPhone = normalizePhone(a.user.phone);
-      if (uPhone === cleanPhone || uPhone.endsWith(cleanPhone) || cleanPhone.endsWith(uPhone)) return true;
+      if (uPhone === cleanPhone || (uPhone.length >= 7 && cleanPhone.endsWith(uPhone)) || (cleanPhone.length >= 7 && uPhone.endsWith(cleanPhone))) return true;
     }
     return false;
   });
@@ -396,7 +396,7 @@ export function localRegisterUser(params: {
   if (duplicate) {
     return {
       success: false,
-      error: 'An account with this email or mobile number already exists. Please Sign In.',
+      error: 'An account with this email or mobile number already exists. Please Sign In to access your account and room data.',
     };
   }
 

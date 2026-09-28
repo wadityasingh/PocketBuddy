@@ -115,10 +115,12 @@ interface ServerRoomSettlement {
   amount: number;
   date: string;
   mode?: 'UPI' | 'Cash';
-  status?: 'completed' | 'pending' | 'cancelled';
+  status?: 'completed' | 'pending' | 'cancelled' | 'rejected';
   note?: string;
   createdAt: string;
   updatedAt?: string;
+  confirmedAt?: string;
+  confirmedBy?: string;
 }
 
 interface ServerRoomGroup {
@@ -609,12 +611,34 @@ app.post("/api/auth/register", (req, res) => {
     const normPhone = normalizePhone(cleanPhone);
     const users = loadUsers();
 
-    if (users.some((u) => u.email && u.email.toLowerCase() === cleanEmail)) {
-      return res.status(400).json({ success: false, error: "An account with this email already exists." });
+    // 1. Strict Email Check: Ek email se sirf ek hi account register ho sakta hai
+    const existingUserByEmail = users.find(
+      (u) =>
+        (u.email && u.email.toLowerCase().trim() === cleanEmail) ||
+        (u.email && cleanEmail.includes("@") && u.email.toLowerCase().trim() === cleanEmail.split("@")[0] + "@student.pocketbuddy")
+    );
+    if (existingUserByEmail) {
+      return res.status(400).json({
+        success: false,
+        error: "This email address is already registered. Please Sign In to access your account and room data.",
+        isRegistered: true,
+      });
     }
 
-    if (normPhone.length >= 7 && users.some((u) => u.phone && normalizePhone(u.phone) === normPhone)) {
-      return res.status(400).json({ success: false, error: "This mobile number is already registered." });
+    // 2. Strict Mobile Number Check: Ek mobile number se sirf ek hi account register ho sakta hai
+    if (normPhone.length >= 7) {
+      const existingUserByPhone = users.find((u) => {
+        if (!u.phone) return false;
+        const uNorm = normalizePhone(u.phone);
+        return uNorm === normPhone || (uNorm.length >= 7 && normPhone.endsWith(uNorm)) || (normPhone.length >= 7 && uNorm.endsWith(normPhone));
+      });
+      if (existingUserByPhone) {
+        return res.status(400).json({
+          success: false,
+          error: "This mobile number is already registered. Please Sign In to access your account and room data.",
+          isRegistered: true,
+        });
+      }
     }
 
     const newUserId = "stu_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
@@ -1990,13 +2014,38 @@ app.delete("/api/rooms/:roomId/expenses/:expenseId", (req, res) => {
       return res.status(404).json({ success: false, error: "Expense not found" });
     }
 
-    // Room owner or creator of expense can delete
-    const creatorId = exp.createdByUserId || exp.paidByUserId;
-    const isRoomAdmin = room.ownerId === user.id || (room.members || []).some(m => (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id) && m.role === 'owner');
-    if (!isRoomAdmin && creatorId && creatorId !== user.id) {
+    const authMember = (room.members || []).find(
+      (m) =>
+        m &&
+        (m.userId === user.id ||
+          m.id === user.id ||
+          m.id === "rm_" + user.id ||
+          (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()) ||
+          (Boolean(m.name && user.name) && m.name.toLowerCase() === user.name.toLowerCase()))
+    );
+
+    // Strictly only the roommate who created/added the expense can delete it
+    const creatorId = exp.createdByUserId;
+    const isCreatorById = Boolean(creatorId && creatorId === user.id);
+    const isCreatorByName = Boolean(
+      exp.createdBy && (
+        exp.createdBy.toLowerCase().trim() === (user.name || '').toLowerCase().trim() ||
+        (authMember && exp.createdBy.toLowerCase().trim() === authMember.name.toLowerCase().trim())
+      )
+    );
+    // Backward compatibility for older records where createdBy was not stored separately
+    const isLegacyPayer = Boolean(
+      !exp.createdBy && !exp.createdByUserId && (
+        (exp.paidByUserId && exp.paidByUserId === user.id) ||
+        (exp.paidBy && exp.paidBy.toLowerCase().trim() === (user.name || '').toLowerCase().trim()) ||
+        (authMember && exp.paidBy && exp.paidBy.toLowerCase().trim() === authMember.name.toLowerCase().trim())
+      )
+    );
+
+    if (!isCreatorById && !isCreatorByName && !isLegacyPayer) {
       return res.status(403).json({
         success: false,
-        error: "Forbidden: You can only delete expenses that you created or manage.",
+        error: "Sirf wahi roommate is expense ko delete kar sakta hai jisne ise add kiya hai.",
       });
     }
 
@@ -2100,7 +2149,7 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
   });
 
   settlements.forEach((s) => {
-    if (!s || s.status === "cancelled" || s.status === "pending") return;
+    if (!s || s.status === "cancelled" || s.status === "pending" || s.status === "rejected") return;
     const debtorMem = findMember(s.from, s.debtorId || s.fromUserId);
     const creditorMem = findMember(s.to, s.creditorId || s.toUserId);
     const fromKey = debtorMem ? debtorMem.name.toLowerCase() : (s.from || "").toLowerCase();
@@ -2296,7 +2345,7 @@ const handleRecordSettlement = (req: express.Request, res: express.Response) => 
       amount: Math.round(settleAmount * 100) / 100,
       date: now.split("T")[0],
       mode: mode === "Cash" ? "Cash" : "UPI",
-      status: "completed",
+      status: "pending", // Pending receiver confirmation: Cannot be settled without receiver acceptance!
       note: note ? String(note).trim() : `${debtorMember.name} settled ₹${settleAmount} with ${creditorMember.name}`,
       createdAt: now,
       updatedAt: now,
@@ -2309,7 +2358,7 @@ const handleRecordSettlement = (req: express.Request, res: express.Response) => 
     room.activities.unshift({
       id: "act_" + Date.now(),
       roomId: room.id,
-      text: `${debtorMember.name} settled ₹${settlement.amount} with ${creditorMember.name} (${settlement.mode})`,
+      text: `🔔 Settlement request: ${debtorMember.name} recorded ₹${settlement.amount} via ${settlement.mode} to ${creditorMember.name}. Waiting for ${creditorMember.name} to Accept.`,
       time: now,
       type: "settlement",
     });
@@ -2337,8 +2386,197 @@ const handleRecordSettlement = (req: express.Request, res: express.Response) => 
   }
 };
 
+// Accept settlement - STRICTLY ONLY RECEIVER CAN ACCEPT
+const handleAcceptSettlement = (req: express.Request, res: express.Response) => {
+  try {
+    const user = getAuthUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
+
+    const { roomId, settleId } = req.params;
+    const rooms = loadRooms();
+    const room = rooms.find((r) => r.id === roomId);
+    if (!room) {
+      return res.status(404).json({ success: false, error: "Room not found" });
+    }
+
+    const authMember = (room.members || []).find(
+      (m) =>
+        m &&
+        (m.userId === user.id ||
+          m.id === user.id ||
+          m.id === "rm_" + user.id ||
+          (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()) ||
+          (Boolean(m.name && user.name) && m.name.toLowerCase() === user.name.toLowerCase()))
+    );
+
+    const sett = (room.settlements || []).find((s) => s && s.id === settleId);
+    if (!sett) {
+      return res.status(404).json({ success: false, error: "Settlement record not found" });
+    }
+
+    if (sett.status === "completed") {
+      return res.json({ success: true, data: room, room, message: "Settlement already accepted" });
+    }
+
+    // STRICTLY ONLY THE RECEIVER (Creditor) CAN ACCEPT
+    const isReceiverById = Boolean(
+      (sett.creditorId && (sett.creditorId === user.id || sett.creditorId === authMember?.id)) ||
+      (sett.toUserId && (sett.toUserId === user.id || sett.toUserId === authMember?.id))
+    );
+    const isReceiverByName = Boolean(
+      sett.to && (
+        sett.to.toLowerCase().trim() === (user.name || '').toLowerCase().trim() ||
+        (authMember && sett.to.toLowerCase().trim() === authMember.name.toLowerCase().trim())
+      )
+    );
+
+    if (!isReceiverById && !isReceiverByName) {
+      return res.status(403).json({
+        success: false,
+        error: `Forbidden: Sirf receiver (${sett.to}) hi is settlement ko confirm/accept kar sakta hai.`,
+      });
+    }
+
+    const now = new Date().toISOString();
+    sett.status = "completed";
+    sett.confirmedAt = now;
+    sett.confirmedBy = user.name || user.id;
+    sett.updatedAt = now;
+
+    room.activities = room.activities || [];
+    room.activities.unshift({
+      id: "act_" + Date.now(),
+      roomId: room.id,
+      text: `✅ ${sett.to} verified & accepted settlement of ₹${sett.amount} from ${sett.from} (${sett.mode || "UPI"})`,
+      time: now,
+      type: "settlement",
+    });
+
+    saveRooms(rooms);
+
+    const enrichedRoom = {
+      ...room,
+      members: (room.members || []).map((m) => ({
+        ...m,
+        isSelf:
+          m &&
+          (m.userId === user.id ||
+            m.id === user.id ||
+            m.id === "rm_" + user.id ||
+            (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()) ||
+            (Boolean(m.name && user.name) && m.name.toLowerCase() === user.name.toLowerCase())),
+      })),
+    };
+
+    return res.json({ success: true, data: enrichedRoom, room: enrichedRoom });
+  } catch (err: any) {
+    console.error("Server error accepting settlement:", err);
+    return res.status(500).json({ success: false, error: err?.message || "Failed to accept settlement" });
+  }
+};
+
+// Reject / Decline settlement (Receiver or Payer cancel)
+const handleRejectSettlement = (req: express.Request, res: express.Response) => {
+  try {
+    const user = getAuthUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
+
+    const { roomId, settleId } = req.params;
+    const rooms = loadRooms();
+    const room = rooms.find((r) => r.id === roomId);
+    if (!room) {
+      return res.status(404).json({ success: false, error: "Room not found" });
+    }
+
+    const authMember = (room.members || []).find(
+      (m) =>
+        m &&
+        (m.userId === user.id ||
+          m.id === user.id ||
+          m.id === "rm_" + user.id ||
+          (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()) ||
+          (Boolean(m.name && user.name) && m.name.toLowerCase() === user.name.toLowerCase()))
+    );
+
+    const sett = (room.settlements || []).find((s) => s && s.id === settleId);
+    if (!sett) {
+      return res.status(404).json({ success: false, error: "Settlement record not found" });
+    }
+
+    const isReceiver =
+      (sett.creditorId && (sett.creditorId === user.id || sett.creditorId === authMember?.id)) ||
+      (sett.toUserId && (sett.toUserId === user.id || sett.toUserId === authMember?.id)) ||
+      (Boolean(sett.to) && (
+        sett.to.toLowerCase().trim() === (user.name || '').toLowerCase().trim() ||
+        (Boolean(authMember?.name) && sett.to.toLowerCase().trim() === authMember.name.toLowerCase().trim())
+      ));
+
+    const isPayer =
+      sett.createdBy === user.id ||
+      (sett.debtorId && (sett.debtorId === user.id || sett.debtorId === authMember?.id)) ||
+      (sett.fromUserId && (sett.fromUserId === user.id || sett.fromUserId === authMember?.id)) ||
+      (Boolean(sett.from) && (
+        sett.from.toLowerCase().trim() === (user.name || '').toLowerCase().trim() ||
+        (Boolean(authMember?.name) && sett.from.toLowerCase().trim() === authMember.name.toLowerCase().trim())
+      ));
+
+    const isAdmin = room.ownerId === user.id;
+
+    if (!isReceiver && !isPayer && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: "Forbidden: You do not have permission to decline or cancel this settlement.",
+      });
+    }
+
+    const now = new Date().toISOString();
+    sett.status = "rejected";
+    sett.updatedAt = now;
+
+    room.activities = room.activities || [];
+    room.activities.unshift({
+      id: "act_" + Date.now(),
+      roomId: room.id,
+      text: isReceiver
+        ? `❌ ${sett.to} marked payment of ₹${sett.amount} from ${sett.from} as Not Received`
+        : `❌ Settlement of ₹${sett.amount} between ${sett.from} and ${sett.to} was cancelled`,
+      time: now,
+      type: "settlement",
+    });
+
+    saveRooms(rooms);
+
+    const enrichedRoom = {
+      ...room,
+      members: (room.members || []).map((m) => ({
+        ...m,
+        isSelf:
+          m &&
+          (m.userId === user.id ||
+            m.id === user.id ||
+            m.id === "rm_" + user.id ||
+            (Boolean(m.email && user.email) && m.email.toLowerCase() === user.email.toLowerCase()) ||
+            (Boolean(m.name && user.name) && m.name.toLowerCase() === user.name.toLowerCase())),
+      })),
+    };
+
+    return res.json({ success: true, data: enrichedRoom, room: enrichedRoom });
+  } catch (err: any) {
+    console.error("Server error rejecting settlement:", err);
+    return res.status(500).json({ success: false, error: err?.message || "Failed to reject settlement" });
+  }
+};
+
 app.post("/api/rooms/:roomId/settle", handleRecordSettlement);
 app.post("/api/rooms/:roomId/settlements", handleRecordSettlement);
+app.post("/api/rooms/:roomId/settlements/:settleId/accept", handleAcceptSettlement);
+app.post("/api/rooms/:roomId/settle/:settleId/accept", handleAcceptSettlement);
+app.post("/api/rooms/:roomId/settlements/:settleId/reject", handleRejectSettlement);
+app.post("/api/rooms/:roomId/settle/:settleId/reject", handleRejectSettlement);
 
 // Delete / undo a settlement (supports /settle and /settlements)
 const handleDeleteSettlement = (req: express.Request, res: express.Response) => {

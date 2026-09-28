@@ -40,6 +40,7 @@ import {
   Lock,
   Info,
   Wallet,
+  Bell,
 } from 'lucide-react';
 import {
   RoomGroup,
@@ -74,6 +75,8 @@ interface RoomExpenseManagerProps {
     note?: string,
     mode?: 'UPI' | 'Cash'
   ) => Promise<void>;
+  onAcceptSettlement?: (settleId: string) => Promise<void>;
+  onRejectSettlement?: (settleId: string) => Promise<void>;
   onDeleteSettlement: (settleId: string) => Promise<void>;
   onDeleteRoom: (roomId: string) => Promise<any>;
   onLeaveRoom?: (roomId: string) => Promise<any>;
@@ -96,6 +99,8 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   onAddRoommate,
   onRemoveRoommate,
   onSettleDebt,
+  onAcceptSettlement,
+  onRejectSettlement,
   onDeleteSettlement,
   onDeleteRoom,
   onLeaveRoom,
@@ -334,6 +339,9 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
     });
 
     settlements.forEach((s) => {
+      // Settle Up Confirmation: Only completed settlements count towards balances!
+      // Pending, cancelled, or rejected settlements MUST NOT clear/reduce debts until accepted!
+      if (!s || s.status === 'pending' || s.status === 'cancelled' || s.status === 'rejected') return;
       const fromKey = findMemberKey(s.from, s.fromUserId);
       const toKey = findMemberKey(s.to, s.toUserId);
       if (!balances[fromKey]) {
@@ -486,7 +494,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
   const pendingExpenseIdRef = React.useRef<string>('');
 
-  // Permission check: strictly only the creator of the expense or room owner can edit/delete
+  // Permission check: strictly only the creator of the expense or room owner can edit
   const canModifyExpense = (exp: RoomExpense): boolean => {
     if (!currentUser?.id) return false;
     if (isRoomOwner) return true;
@@ -501,6 +509,88 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       return exp.paidBy.toLowerCase() === effectiveUserName.toLowerCase();
     }
     return false;
+  };
+
+  // Permission check: Expense Delete Permission
+  // STRICTLY only the roommate who ADDED the expense can delete it.
+  // Other roommates and room owners CANNOT delete it if they did not add it.
+  const canDeleteExpense = (exp: RoomExpense): boolean => {
+    if (!currentUser?.id) return false;
+    // 1. Direct createdByUserId check
+    if (exp.createdByUserId) {
+      return exp.createdByUserId === currentUser.id;
+    }
+    // 2. CreatedBy name match
+    if (exp.createdBy) {
+      const c = exp.createdBy.toLowerCase().trim();
+      if (c === (currentUser.name || '').toLowerCase().trim()) return true;
+      if (c === effectiveUserName.toLowerCase().trim()) return true;
+      if (selfNames.has(c)) return true;
+    }
+    // 3. Fallback for older expenses where createdBy was not stored separately
+    if (!exp.createdBy && !exp.createdByUserId) {
+      if (exp.paidByUserId) return exp.paidByUserId === currentUser.id;
+      if (exp.paidBy) {
+        const p = exp.paidBy.toLowerCase().trim();
+        return (
+          p === (currentUser.name || '').toLowerCase().trim() ||
+          p === effectiveUserName.toLowerCase().trim() ||
+          selfNames.has(p)
+        );
+      }
+    }
+    return false;
+  };
+
+  // Pending settlements where current user is receiver (creditor)
+  const pendingIncomingSettlements = useMemo(() => {
+    return settlements.filter((s) => {
+      if (s.status !== 'pending') return false;
+      const isReceiver =
+        (s.creditorId && s.creditorId === currentUser?.id) ||
+        (s.toUserId && s.toUserId === currentUser?.id) ||
+        selfNames.has(s.to.toLowerCase());
+      return isReceiver;
+    });
+  }, [settlements, currentUser, selfNames]);
+
+  // Pending settlements where current user is the payer (debtor)
+  const pendingOutgoingSettlements = useMemo(() => {
+    return settlements.filter((s) => {
+      if (s.status !== 'pending') return false;
+      const isPayer =
+        s.createdBy === currentUser?.id ||
+        (s.debtorId && s.debtorId === currentUser?.id) ||
+        (s.fromUserId && s.fromUserId === currentUser?.id) ||
+        selfNames.has(s.from.toLowerCase());
+      return isPayer;
+    });
+  }, [settlements, currentUser, selfNames]);
+
+  const [processingSettleId, setProcessingSettleId] = useState<string | null>(null);
+
+  const handleAcceptClick = async (settleId: string) => {
+    if (!onAcceptSettlement) return;
+    setProcessingSettleId(settleId);
+    try {
+      await onAcceptSettlement(settleId);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to accept settlement');
+    } finally {
+      setProcessingSettleId(null);
+    }
+  };
+
+  const handleRejectClick = async (settleId: string) => {
+    if (!onRejectSettlement) return;
+    setProcessingSettleId(settleId);
+    try {
+      await onRejectSettlement(settleId);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to decline settlement');
+    } finally {
+      setProcessingSettleId(null);
+    }
   };
 
   // Handlers for expense modal
@@ -1219,6 +1309,104 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
         </div>
       </div>
 
+      {/* Settle Up Confirmation Request for Receiver */}
+      {pendingIncomingSettlements.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-emerald-500/10 border-2 border-amber-300 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Bell className="w-4 h-4 animate-bounce" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-900 leading-tight">
+                  Settlement Confirmation Required
+                </h4>
+                <p className="text-[11px] text-amber-900/80 font-medium">
+                  📱 SMS / Notification Alert: Roommate marked payment to you. Please confirm below once received.
+                </p>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold shrink-0">
+              {pendingIncomingSettlements.length} Pending
+            </span>
+          </div>
+
+          <div className="space-y-2.5">
+            {pendingIncomingSettlements.map((s) => (
+              <div
+                key={s.id}
+                className="bg-white rounded-xl sm:rounded-2xl p-3.5 border border-amber-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              >
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <strong className="text-slate-900 text-xs sm:text-sm font-extrabold">{s.from}</strong>
+                    <span className="text-slate-500 text-xs">marked</span>
+                    <strong className="text-emerald-600 text-xs sm:text-sm font-black">₹{s.amount}</strong>
+                    <span className="text-slate-500 text-xs">as paid via</span>
+                    <span className="px-2 py-0.5 rounded-md bg-slate-100 font-bold text-slate-800 text-[10px] border border-slate-200">
+                      {s.mode || 'UPI'}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 block mt-0.5">
+                    {formatDate(s.date)} {s.note ? `• "${s.note}"` : ''}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    disabled={processingSettleId === s.id}
+                    onClick={() => handleAcceptClick(s.id)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+                  >
+                    {processingSettleId === s.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    )}
+                    <span>Accept & Settle</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={processingSettleId === s.id}
+                    onClick={() => handleRejectClick(s.id)}
+                    className="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 text-xs font-semibold transition cursor-pointer disabled:opacity-50 active:scale-95"
+                  >
+                    <span>Not Received</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Payer Pending Banner */}
+      {pendingOutgoingSettlements.length > 0 && pendingIncomingSettlements.length === 0 && (
+        <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+            <div className="min-w-0">
+              <span className="font-bold text-amber-900 block truncate">
+                Pending Confirmation: You marked ₹{pendingOutgoingSettlements[0].amount} paid to {pendingOutgoingSettlements[0].to}
+              </span>
+              <span className="text-[11px] text-amber-700 block truncate">
+                Waiting for {pendingOutgoingSettlements[0].to} to accept. Settlement will complete only after they confirm.
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onDeleteSettlement(pendingOutgoingSettlements[0].id)}
+            className="text-[11px] text-slate-500 hover:text-rose-600 font-semibold underline shrink-0 cursor-pointer"
+            title="Cancel this pending settlement request"
+          >
+            Cancel Request
+          </button>
+        </div>
+      )}
+
       {/* D. DASHBOARD SUMMARY (Total Expenses, To Pay, To Receive) */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3.5">
         {/* 1. Total Expenses */}
@@ -1508,24 +1696,24 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                                     </button>
 
                                     {isAllowed && (
-                                      <>
-                                        <button
-                                          onClick={() => openEditExpenseModal(exp)}
-                                          className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-slate-100 transition cursor-pointer"
-                                          title="Edit expense"
-                                          aria-label="Edit expense"
-                                        >
-                                          <Edit2 className="w-3.5 h-3.5" />
-                                        </button>
-                                        <button
-                                          onClick={() => setDeleteConfirmExpense(exp)}
-                                          className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                                          title="Delete expense"
-                                          aria-label="Delete expense"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                      </>
+                                      <button
+                                        onClick={() => openEditExpenseModal(exp)}
+                                        className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-slate-100 transition cursor-pointer"
+                                        title="Edit expense"
+                                        aria-label="Edit expense"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                    {canDeleteExpense(exp) && (
+                                      <button
+                                        onClick={() => setDeleteConfirmExpense(exp)}
+                                        className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                                        title="Delete expense"
+                                        aria-label="Delete expense"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
                                     )}
                                   </div>
                                 </div>
@@ -1909,28 +2097,32 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
 
             {/* Action Buttons */}
             <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-              {canModifyExpense(viewingExpense) ? (
+              {canModifyExpense(viewingExpense) || canDeleteExpense(viewingExpense) ? (
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const exp = viewingExpense;
-                      setViewingExpense(null);
-                      openEditExpenseModal(exp);
-                    }}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      const exp = viewingExpense;
-                      setViewingExpense(null);
-                      setDeleteConfirmExpense(exp);
-                    }}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200"
-                  >
-                    Delete
-                  </button>
+                  {canModifyExpense(viewingExpense) && (
+                    <button
+                      onClick={() => {
+                        const exp = viewingExpense;
+                        setViewingExpense(null);
+                        openEditExpenseModal(exp);
+                      }}
+                      className="px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {canDeleteExpense(viewingExpense) && (
+                    <button
+                      onClick={() => {
+                        const exp = viewingExpense;
+                        setViewingExpense(null);
+                        setDeleteConfirmExpense(exp);
+                      }}
+                      className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               ) : (
                 <span className="text-[11px] text-slate-400">View only</span>
@@ -2207,6 +2399,14 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                   />
                 </div>
 
+                {/* Settle Up Confirmation notice */}
+                <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/90 text-amber-900 text-[11px] flex items-start gap-2">
+                  <Bell className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Settlement Confirmation:</strong> Recording this will send a confirmation notification to <strong>{settleReceiver || 'the receiver'}</strong>. The debt will be cleared only after they <strong>Accept</strong> it.
+                  </span>
+                </div>
+
                 {/* Actions */}
                 <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                   <button
@@ -2227,10 +2427,10 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                     {isSubmittingSettle ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Recording...</span>
+                        <span>Sending Request...</span>
                       </>
                     ) : (
-                      <span>Confirm Settlement</span>
+                      <span>Send Settlement Request</span>
                     )}
                   </button>
                 </div>
@@ -2250,43 +2450,101 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 </div>
                 <div className="space-y-1.5 max-h-36 overflow-y-auto pr-0.5">
                   {settlements.map((s) => {
-                    const canDelete =
+                    const isReceiver =
+                      (s.creditorId && s.creditorId === currentUser?.id) ||
+                      (s.toUserId && s.toUserId === currentUser?.id) ||
+                      selfNames.has(s.to.toLowerCase());
+
+                    const isPayer =
                       s.createdBy === currentUser?.id ||
-                      s.ownerId === currentUser?.id ||
-                      s.debtorId === currentUser?.id ||
-                      s.fromUserId === currentUser?.id ||
+                      (s.debtorId && s.debtorId === currentUser?.id) ||
+                      (s.fromUserId && s.fromUserId === currentUser?.id) ||
                       selfNames.has(s.from.toLowerCase());
+
+                    const canDelete =
+                      s.status === 'pending'
+                        ? isPayer
+                        : (s.createdBy === currentUser?.id || s.ownerId === currentUser?.id || isPayer);
+
+                    const isPending = s.status === 'pending';
+                    const isRejected = s.status === 'rejected';
 
                     return (
                       <div
                         key={s.id}
-                        className="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]"
+                        className={`p-2.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] ${
+                          isPending ? 'bg-amber-50/70 border-amber-200' : isRejected ? 'bg-rose-50/50 border-rose-200' : 'bg-slate-50 border-slate-200'
+                        }`}
                       >
                         <div className="flex-1 min-w-0 pr-2">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-bold text-slate-800">{s.from}</span>
-                            <span className="text-slate-500">settled</span>
+                            <span className="text-slate-500">{isPending ? 'marked' : 'settled'}</span>
                             <span className="font-bold text-emerald-600">₹{s.amount}</span>
-                            <span className="text-slate-500">with</span>
+                            <span className="text-slate-500">to</span>
                             <span className="font-bold text-slate-800">{s.to}</span>
-                            <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-semibold text-[9px]">
-                              {s.status === 'completed' ? 'Completed' : s.status || 'Completed'}
-                            </span>
+                            
+                            {isPending && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[9px] border border-amber-200 flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5" />
+                                Awaiting {s.to}'s Acceptance
+                              </span>
+                            )}
+                            {s.status === 'completed' && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-bold text-[9px] border border-emerald-200 flex items-center gap-1">
+                                <Check className="w-2.5 h-2.5" />
+                                Completed
+                              </span>
+                            )}
+                            {isRejected && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 font-bold text-[9px] border border-rose-200">
+                                Not Received
+                              </span>
+                            )}
                           </div>
                           <span className="text-slate-400 block text-[10px] mt-0.5">
                             {formatDate(s.date)} • {s.mode || 'UPI'}
                             {s.note ? ` • ${s.note}` : ''}
                           </span>
                         </div>
-                        {canDelete && (
-                          <button
-                            onClick={() => onDeleteSettlement(s.id)}
-                            className="text-slate-400 hover:text-rose-600 p-1 rounded transition shrink-0"
-                            title="Undo / delete your settlement"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                          {isPending && isReceiver && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={processingSettleId === s.id}
+                                onClick={() => handleAcceptClick(s.id)}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition cursor-pointer flex items-center gap-1"
+                              >
+                                {processingSettleId === s.id ? (
+                                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                ) : (
+                                  <Check className="w-2.5 h-2.5" />
+                                )}
+                                <span>Accept</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={processingSettleId === s.id}
+                                onClick={() => handleRejectClick(s.id)}
+                                className="px-2 py-1 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 font-semibold text-[10px] transition cursor-pointer"
+                              >
+                                Decline
+                              </button>
+                            </>
+                          )}
+
+                          {canDelete && (
+                            <button
+                              onClick={() => onDeleteSettlement(s.id)}
+                              className="text-slate-400 hover:text-rose-600 p-1 rounded transition shrink-0"
+                              title="Delete/cancel settlement record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -2456,8 +2714,8 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
 
               {/* Action buttons inside modal */}
               <div className="pt-2 flex items-center justify-between border-t border-slate-100 gap-2">
-                {isAllowed ? (
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  {isAllowed && (
                     <button
                       type="button"
                       onClick={() => {
@@ -2465,11 +2723,13 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                         setSelectedDetailExpense(null);
                         openEditExpenseModal(target);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 transition flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 transition flex items-center gap-1 cursor-pointer"
                     >
                       <Edit2 className="w-3 h-3" />
                       <span>Edit</span>
                     </button>
+                  )}
+                  {canDeleteExpense(exp) && (
                     <button
                       type="button"
                       onClick={() => {
@@ -2477,15 +2737,13 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                         setSelectedDetailExpense(null);
                         setDeleteConfirmExpense(target);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 transition flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 transition flex items-center gap-1 cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
                       <span>Delete</span>
                     </button>
-                  </div>
-                ) : (
-                  <div />
-                )}
+                  )}
+                </div>
 
                 <button
                   type="button"

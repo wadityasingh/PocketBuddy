@@ -86,10 +86,12 @@ export interface RoomSettlement {
   amount: number;
   date: string;
   mode?: 'UPI' | 'Cash';
-  status?: 'completed' | 'pending' | 'cancelled';
+  status?: 'completed' | 'pending' | 'cancelled' | 'rejected';
   note?: string;
   createdAt?: string;
   updatedAt?: string;
+  confirmedAt?: string;
+  confirmedBy?: string;
 }
 
 export interface RoomActivity {
