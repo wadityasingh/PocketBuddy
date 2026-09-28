@@ -262,18 +262,18 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
   return (
     <div
       id="smart-money-hub"
-      className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-3.5 sm:p-5 transition-all space-y-3 sm:space-y-3.5"
+      className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-rose-100/90 shadow-[0_8px_30px_rgb(220,38,38,0.04)] p-4 sm:p-6 transition-all space-y-4"
     >
       {/* 1. Top Section: Available In-Hand Balance & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-rose-100/60">
         <div className="min-w-0">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block whitespace-nowrap">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block whitespace-nowrap">
             Available In-Hand Balance
           </span>
-          <div className="flex items-baseline gap-2 sm:gap-3 mt-0.5 flex-wrap">
+          <div className="flex items-baseline gap-2 sm:gap-3 mt-1 flex-wrap">
             <span
               id="hub-total-liquidity-value"
-              className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight whitespace-nowrap"
+              className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight whitespace-nowrap"
             >
               {formatINR(availableInHandBalance)}
             </span>
@@ -285,7 +285,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                   setTempUpi(fixedUpi.toString());
                   setActiveWalletModal(activeWalletModal === 'edit' ? 'none' : 'edit');
                 }}
-                className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-semibold hover:bg-emerald-100 transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs"
+                className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100/70 text-emerald-800 border border-emerald-200/90 font-bold hover:bg-emerald-100 transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs shadow-2xs"
                 title="Available Cash in Hand (Click to adjust fixed wallet)"
               >
                 <Banknote className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -299,7 +299,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
                   setTempUpi(fixedUpi.toString());
                   setActiveWalletModal(activeWalletModal === 'edit' ? 'none' : 'edit');
                 }}
-                className="px-2 py-1 rounded-lg bg-zinc-950 text-white border border-zinc-950 font-semibold hover:bg-black transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs shadow-2xs"
+                className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-slate-900 via-zinc-900 to-slate-950 text-white border border-slate-800 font-bold hover:shadow-xs transition cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] sm:text-xs shadow-2xs"
                 title="Available UPI Balance (Click to adjust fixed wallet)"
               >
                 <Smartphone className="w-3.5 h-3.5 text-red-400 shrink-0" />
@@ -315,7 +315,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
             id="btn-wallet-add"
             type="button"
             onClick={() => setActiveWalletModal(activeWalletModal === 'add' ? 'none' : 'add')}
-            className="flex-1 sm:flex-initial h-9 px-3.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition cursor-pointer shadow-xs shadow-red-600/30 inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+            className="flex-1 sm:flex-initial h-9 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 active:scale-95 transition cursor-pointer shadow-[0_2px_12px_rgba(220,38,38,0.3)] inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
             <span>Add Money</span>
@@ -325,10 +325,10 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
             id="btn-wallet-transfer"
             type="button"
             onClick={() => setActiveWalletModal(activeWalletModal === 'transfer' ? 'none' : 'transfer')}
-            className="flex-1 sm:flex-initial h-9 px-3 rounded-xl text-xs font-semibold text-zinc-900 bg-white hover:bg-zinc-100 border border-zinc-300 transition cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
+            className="flex-1 sm:flex-initial h-9 px-3 rounded-xl text-xs font-semibold text-slate-800 bg-white hover:bg-rose-50/60 border border-slate-200/90 hover:border-rose-300 transition cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
             title="Transfer between Cash & UPI"
           >
-            <ArrowRightLeft className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+            <ArrowRightLeft className="w-3.5 h-3.5 text-slate-600 shrink-0" />
             <span>Transfer</span>
           </button>
 
@@ -340,7 +340,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
               setTempUpi(fixedUpi.toString());
               setActiveWalletModal(activeWalletModal === 'edit' ? 'none' : 'edit');
             }}
-            className="h-9 w-9 rounded-xl text-zinc-600 hover:text-zinc-950 bg-white hover:bg-zinc-100 border border-zinc-300 transition inline-flex items-center justify-center cursor-pointer shrink-0 shadow-2xs"
+            className="h-9 w-9 rounded-xl text-slate-600 hover:text-red-600 bg-white hover:bg-rose-50/60 border border-slate-200/90 hover:border-rose-300 transition inline-flex items-center justify-center cursor-pointer shrink-0 shadow-2xs"
             title="Edit Fixed Wallet Balances"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -349,14 +349,14 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
       </div>
 
       {/* 2. Budget Summary: 3-column clean grid (UPI & Cash Budget, Spent, Daily Limit) */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3.5">
         {/* Metric 1: UPI & Fixed Cash Budget */}
         <div
           id="card-monthly-budget"
-          className="bg-slate-50/70 rounded-xl p-2 sm:p-3.5 border border-slate-200/80 flex flex-col justify-between min-w-0"
+          className="bg-gradient-to-br from-rose-50/40 via-white to-rose-50/20 rounded-2xl p-2.5 sm:p-4 border border-rose-100/90 flex flex-col justify-between min-w-0 shadow-2xs"
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-slate-600 mb-1">
-            <span className="truncate text-slate-700">Budget</span>
+            <span className="truncate text-slate-800">Budget</span>
             {!isEditingAllowance && (
               <button
                 id="edit-allowance-btn"
@@ -457,7 +457,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
         {/* Metric 2: Spent */}
         <div
           id="card-total-spent"
-          className="bg-slate-50/70 rounded-xl p-2 sm:p-3.5 border border-slate-200/80 flex flex-col justify-between min-w-0"
+          className="bg-gradient-to-br from-orange-50/40 via-white to-red-50/20 rounded-2xl p-2.5 sm:p-4 border border-rose-100/90 flex flex-col justify-between min-w-0 shadow-2xs"
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs font-semibold text-slate-500">
             <span className="truncate">Total Spent</span>
@@ -477,7 +477,7 @@ export const SmartMoneyHub: React.FC<SmartMoneyHubProps> = ({
         {/* Metric 3: Safe Daily Budget */}
         <div
           id="card-remaining-balance"
-          className="bg-slate-50/70 rounded-xl p-2 sm:p-3.5 border border-slate-200/80 flex flex-col justify-between min-w-0"
+          className="bg-gradient-to-br from-blue-50/35 via-white to-indigo-50/20 rounded-2xl p-2.5 sm:p-4 border border-slate-200/90 flex flex-col justify-between min-w-0 shadow-2xs"
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs font-semibold text-slate-500">
             <span className="truncate" title="Safe Daily Spending Limit">Daily Safe</span>

@@ -2279,9 +2279,13 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f4f5]/80 text-zinc-900 flex flex-col font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#fdfbfb] via-[#faf7f7] to-[#f5f2f2] text-slate-900 flex flex-col font-sans overflow-x-hidden relative selection:bg-rose-100 selection:text-rose-900">
+      {/* Decorative ambient brand glows */}
+      <div className="fixed top-0 right-0 w-96 h-96 bg-gradient-to-b from-rose-200/20 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="fixed top-32 left-0 w-80 h-80 bg-gradient-to-b from-amber-100/25 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200">
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-rose-100/90 shadow-[0_2px_20px_-4px_rgba(220,38,38,0.06)]">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-1.5 sm:gap-2.5">
           {/* Brand Logo & Name */}
           <div className="flex items-center gap-2 shrink-0 min-w-0">
@@ -2294,10 +2298,10 @@ export default function App() {
             <button
               id="header-scan-slip-btn"
               onClick={() => setIsScannerOpen(true)}
-              className="h-9 px-2.5 sm:px-3 rounded-xl bg-white hover:bg-red-50 text-zinc-700 hover:text-red-600 border border-zinc-200 hover:border-red-200 text-xs font-semibold transition inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
+              className="h-9 px-2.5 sm:px-3 rounded-xl bg-white hover:bg-rose-50/70 text-slate-700 hover:text-red-600 border border-slate-200/90 hover:border-rose-300 text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
               title="Verify & add expense from UPI payment receipt"
             >
-              <Camera className="w-3.5 h-3.5 text-zinc-600" />
+              <Camera className="w-3.5 h-3.5 text-slate-600" />
               <span className="hidden md:inline">Scan Receipt</span>
             </button>
 
@@ -2305,7 +2309,7 @@ export default function App() {
             <button
               id="header-voice-btn"
               onClick={() => setIsVoiceOpen(true)}
-              className="h-9 px-2.5 sm:px-3 rounded-xl bg-white hover:bg-red-50 text-zinc-700 hover:text-red-600 border border-zinc-200 hover:border-red-200 text-xs font-semibold transition inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
+              className="h-9 px-2.5 sm:px-3 rounded-xl bg-white hover:bg-rose-50/70 text-slate-700 hover:text-red-600 border border-slate-200/90 hover:border-rose-300 text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
               title="Record expense by voice"
             >
               <Mic className="w-3.5 h-3.5 text-red-600" />
@@ -2319,7 +2323,7 @@ export default function App() {
                 setEditingTransaction(null);
                 setIsManualOpen(true);
               }}
-              className="hidden sm:inline-flex h-9 px-3.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold transition shadow-xs shadow-red-600/30 items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="hidden sm:inline-flex h-9 px-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 active:scale-95 text-white text-xs font-bold transition-all shadow-[0_2px_12px_rgba(220,38,38,0.35)] items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>+ Add Expense</span>
@@ -2329,25 +2333,25 @@ export default function App() {
             <button
               id="header-student-profile-btn"
               onClick={() => setIsProfileOpen(true)}
-              className="h-9 px-2 sm:px-2.5 rounded-xl bg-white hover:bg-zinc-100 border border-zinc-200 transition inline-flex items-center gap-2 cursor-pointer text-left shadow-2xs"
+              className="h-9 px-2 sm:px-2.5 rounded-xl bg-white hover:bg-rose-50/50 border border-rose-200/80 transition-all inline-flex items-center gap-2 cursor-pointer text-left shadow-2xs group"
               title="Student Profile & Settings"
             >
               {currentUser.photoUrl ? (
                 <img
                   src={currentUser.photoUrl}
                   alt={currentUser.name}
-                  className="w-6 h-6 rounded-lg object-cover shrink-0 border border-zinc-200"
+                  className="w-6 h-6 rounded-lg object-cover shrink-0 border border-rose-200"
                 />
               ) : (
-                <div className="w-6 h-6 rounded-lg bg-red-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 text-white font-bold text-[11px] flex items-center justify-center shrink-0 shadow-2xs">
                   {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'S'}
                 </div>
               )}
               <div className="hidden md:block">
-                <div className="text-xs font-bold text-zinc-900 leading-tight truncate max-w-[130px]">
+                <div className="text-xs font-bold text-slate-900 group-hover:text-red-600 transition-colors leading-tight truncate max-w-[130px]">
                   {currentUser.name}
                 </div>
-                <div className="text-[10px] text-zinc-500 leading-none truncate max-w-[130px]">
+                <div className="text-[10px] text-slate-500 leading-none truncate max-w-[130px]">
                   {currentUser.collegeName || 'Settings & Profile'}
                 </div>
               </div>
@@ -2618,21 +2622,21 @@ export default function App() {
         initialPrompt={initialAiPrompt}
       />
 
-      {/* Compact Clean Footer */}
-      <footer id="app-footer" className="mt-auto bg-zinc-950 text-zinc-400 py-2.5 px-4 border-t border-zinc-900 pb-16 md:pb-2.5 transition-colors">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+      {/* Brand Aligned Footer */}
+      <footer id="app-footer" className="mt-auto bg-[#130408] text-rose-200/70 py-3.5 px-4 border-t border-rose-950/70 pb-20 md:pb-3.5 transition-colors">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div className="flex items-center gap-2">
             <BrandLogo size="xs" showWordmark={true} tagline={false} variant="dark" />
-            <span className="text-[10px] sm:text-[11px] text-zinc-400">&copy; {new Date().getFullYear()} PocketBuddy, Inc.</span>
+            <span className="text-[10px] sm:text-[11px] text-rose-300/60">&copy; {new Date().getFullYear()} PocketBuddy, Inc.</span>
           </div>
 
-          <div className="footer-socials flex items-center gap-3 text-zinc-400">
+          <div className="footer-socials flex items-center gap-3 text-rose-300/70">
             <a
               href="https://www.facebook.com/wadityasingh"
               target="_blank"
               rel="noopener noreferrer"
               title="Facebook"
-              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-rose-900/40 text-rose-300/70 hover:text-white transition cursor-pointer"
             >
               <Facebook className="w-3.5 h-3.5" />
             </a>
@@ -2641,7 +2645,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="Instagram"
-              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-rose-900/40 text-rose-300/70 hover:text-white transition cursor-pointer"
             >
               <Instagram className="w-3.5 h-3.5" />
             </a>
@@ -2650,7 +2654,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="GitHub"
-              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-rose-900/40 text-rose-300/70 hover:text-white transition cursor-pointer"
             >
               <Github className="w-3.5 h-3.5" />
             </a>
@@ -2659,7 +2663,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="WhatsApp"
-              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-rose-900/40 text-rose-300/70 hover:text-white transition cursor-pointer"
             >
               <MessageCircle className="w-3.5 h-3.5" />
             </a>
@@ -2668,7 +2672,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title="LinkedIn"
-              className="p-1 text-zinc-400 hover:text-red-500 transition cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-rose-900/40 text-rose-300/70 hover:text-white transition cursor-pointer"
             >
               <Linkedin className="w-3.5 h-3.5" />
             </a>

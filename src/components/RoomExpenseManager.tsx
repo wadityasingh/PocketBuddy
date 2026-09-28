@@ -968,38 +968,43 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   if (!currentRoom) {
     return (
       <div className="w-full max-w-xl mx-auto py-8 px-4 text-center">
-        <div className="bg-white rounded-2xl border border-zinc-200 p-6 sm:p-8 shadow-sm">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-zinc-950 text-red-500 flex items-center justify-center mb-4 shadow-sm">
-            <Home className="w-7 h-7" />
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-zinc-950">Room &amp; Flatmate Expenses</h2>
-          <p className="text-sm text-zinc-600 mt-2 max-w-md mx-auto leading-relaxed">
-            Split rent, utilities, milk, groceries, and daily flat kharcha with your roommates. PocketBuddy calculates
-            who owes whom automatically.
-          </p>
+        <div className="bg-gradient-to-b from-white via-rose-50/20 to-white rounded-3xl border border-rose-100/90 p-8 sm:p-10 shadow-[0_12px_40px_rgba(220,38,38,0.06)] text-center relative overflow-hidden">
+          {/* Subtle background glow */}
+          <div className="absolute -top-12 -right-12 w-40 h-40 bg-gradient-to-br from-rose-200/30 to-amber-100/30 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={() => {
-                setCreateRoomError('');
-                setIsCreateRoomOpen(true);
-              }}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition shadow-xs shadow-red-600/30 min-h-[44px] cursor-pointer"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              Create a Room
-            </button>
-            <button
-              onClick={() => {
-                setJoinError('');
-                setJoinCode('');
-                setIsJoinRoomOpen(true);
-              }}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 font-semibold text-sm transition min-h-[44px] cursor-pointer shadow-2xs"
-            >
-              <Users className="w-4 h-4" />
-              Join with Room Code
-            </button>
+          <div className="relative z-10">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-red-500 via-red-600 to-rose-700 text-white flex items-center justify-center mb-5 shadow-lg shadow-red-600/30 ring-4 ring-rose-50/80">
+              <Home className="w-8 h-8" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Room &amp; Flatmate Expenses</h2>
+            <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto leading-relaxed font-normal">
+              Split rent, utilities, milk, groceries, and daily flat kharcha with your roommates. PocketBuddy calculates
+              who owes whom automatically.
+            </p>
+
+            <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => {
+                  setCreateRoomError('');
+                  setIsCreateRoomOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-extrabold text-sm transition-all shadow-[0_4px_16px_rgba(220,38,38,0.35)] min-h-[48px] cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                Create a Room
+              </button>
+              <button
+                onClick={() => {
+                  setJoinError('');
+                  setJoinCode('');
+                  setIsJoinRoomOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white hover:bg-rose-50/70 text-slate-800 border border-slate-200/90 hover:border-rose-300 font-bold text-sm transition-all min-h-[48px] cursor-pointer shadow-2xs"
+              >
+                <Users className="w-4 h-4" />
+                Join with Room Code
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1013,11 +1018,11 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto space-y-3 sm:space-y-4">
       {/* A. ROOM HEADER (Compact & Responsive) */}
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-sm">
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-rose-100/90 p-3.5 sm:p-5 shadow-[0_6px_24px_rgba(220,38,38,0.04)]">
         <div className="flex items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100">
-              <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-rose-50 to-red-100 text-red-600 flex items-center justify-center shrink-0 border border-rose-200/80 shadow-2xs">
+              <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -1025,25 +1030,25 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                   {currentRoom.name}
                 </h1>
                 {currentRoom.type && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] sm:text-[11px] font-medium border border-slate-200">
+                  <span className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 text-[10px] sm:text-[11px] font-semibold border border-rose-200/60">
                     {currentRoom.type}
                   </span>
                 )}
                 {isRoomOwner && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[10px] sm:text-[11px] font-bold border border-amber-200 flex items-center gap-1">
+                  <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 text-[10px] sm:text-[11px] font-bold border border-amber-200 flex items-center gap-1">
                     <Shield className="w-2.5 h-2.5" />
                     Admin
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] sm:text-xs text-slate-500 flex-wrap">
+              <div className="flex items-center gap-2 mt-0.5 text-[11px] sm:text-xs text-slate-500 flex-wrap">
                 <span>
                   {members.length} {members.length === 1 ? 'member' : 'members'}
                 </span>
                 <span>•</span>
                 <button
                   onClick={handleCopyInviteCode}
-                  className="inline-flex items-center gap-1 font-mono font-semibold text-red-600 hover:text-red-700 bg-red-50 px-1.5 py-0.5 rounded transition"
+                  className="inline-flex items-center gap-1 font-mono font-semibold text-red-600 hover:text-red-700 bg-rose-50 px-2 py-0.5 rounded-md transition border border-rose-100"
                   title="Click to copy invite code"
                 >
                   <span>Code: {currentRoom.inviteCode}</span>
@@ -1054,11 +1059,11 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
           </div>
 
           {/* Header Action Buttons */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={handleManualRefresh}
               disabled={isRefreshing}
-              className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-60"
+              className="p-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-rose-50/60 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-60 shadow-2xs"
               title="Refresh and sync shared room data"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-red-600 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -1066,7 +1071,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
             </button>
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="p-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-rose-50/60 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
               title="Share Room Invite Code"
             >
               <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
@@ -1074,20 +1079,20 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
             </button>
             <button
               onClick={() => setIsSettingsModalOpen(true)}
-              className="p-1.5 rounded-lg sm:rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-rose-50/60 transition cursor-pointer shadow-2xs"
               title="Room Settings & Menu"
             >
-              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
+              <Settings className="w-4 h-4 text-slate-600" />
             </button>
           </div>
         </div>
       </div>
 
       {/* B. MAIN ROOM ACTIONS (Consolidated in ONE place) */}
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-2.5 sm:p-4 shadow-xs space-y-2">
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-rose-100/90 p-3 sm:p-4 shadow-[0_6px_24px_rgba(220,38,38,0.04)] space-y-2">
         <button
           onClick={openAddExpenseModal}
-          className="w-full min-h-[42px] sm:min-h-[46px] py-2.5 sm:py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm shadow-red-600/20 transition active:scale-[0.99] cursor-pointer"
+          className="w-full min-h-[44px] sm:min-h-[48px] py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(220,38,38,0.3)] transition active:scale-[0.99] cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           Add Expense
@@ -1099,7 +1104,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               setAddMemberError('');
               setIsAddRoommateOpen(true);
             }}
-            className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+            className="py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-rose-50/60 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
           >
             <UserPlus className="w-3.5 h-3.5 text-red-600 shrink-0" />
             <span className="truncate">Add Roommate</span>
@@ -1117,7 +1122,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 setIsSettleModalOpen(true);
               }
             }}
-            className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+            className="py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-emerald-50/60 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
           >
             <Handshake className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span className="truncate">
@@ -1215,18 +1220,18 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       </div>
 
       {/* D. DASHBOARD SUMMARY (Total Expenses, To Pay, To Receive) */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3.5">
         {/* 1. Total Expenses */}
-        <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-2.5 sm:p-4 shadow-xs">
+        <div className="bg-gradient-to-br from-slate-50/60 via-white to-rose-50/20 rounded-2xl border border-rose-100/90 p-3 sm:p-4 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 truncate">
               Total
             </span>
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-              <Receipt className="w-3 h-3 sm:w-4 sm:h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+              <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <span className="text-sm sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2 block truncate">
+          <span className="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2 block truncate">
             ₹{totalRoomExpenses.toLocaleString('en-IN')}
           </span>
           <span className="text-[10px] sm:text-xs text-slate-400 mt-0.5 hidden sm:block">
@@ -1235,46 +1240,46 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
         </div>
 
         {/* 2. To Pay */}
-        <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-2.5 sm:p-4 shadow-xs">
+        <div className="bg-gradient-to-br from-rose-50/50 via-white to-red-50/20 rounded-2xl border border-rose-200/80 p-3 sm:p-4 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-rose-600 truncate">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-red-600 truncate">
               To Pay
             </span>
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
           <span
-            className={`text-sm sm:text-2xl font-black mt-1 sm:mt-2 block truncate ${
-              userOwesTotal > 0 ? 'text-rose-600' : 'text-slate-800'
+            className={`text-base sm:text-2xl font-black mt-1 sm:mt-2 block truncate ${
+              userOwesTotal > 0 ? 'text-red-600' : 'text-slate-800'
             }`}
           >
             ₹{userOwesTotal.toLocaleString('en-IN')}
           </span>
           <span className="text-[10px] sm:text-xs text-slate-400 mt-0.5 hidden sm:block">
-            {userOwesTotal > 0 ? 'To Pay' : 'All settled'}
+            {userOwesTotal > 0 ? 'You owe roommates' : 'All settled'}
           </span>
         </div>
 
         {/* 3. To Receive */}
-        <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-2.5 sm:p-4 shadow-xs">
+        <div className="bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/20 rounded-2xl border border-emerald-200/80 p-3 sm:p-4 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-600 truncate">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-700 truncate">
               To Receive
             </span>
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <ArrowDownLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <ArrowDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
           <span
-            className={`text-sm sm:text-2xl font-black mt-1 sm:mt-2 block truncate ${
-              userIsOwedTotal > 0 ? 'text-emerald-600' : 'text-slate-800'
+            className={`text-base sm:text-2xl font-black mt-1 sm:mt-2 block truncate ${
+              userIsOwedTotal > 0 ? 'text-emerald-700' : 'text-slate-800'
             }`}
           >
             ₹{userIsOwedTotal.toLocaleString('en-IN')}
           </span>
           <span className="text-[10px] sm:text-xs text-slate-400 mt-0.5 hidden sm:block">
-            {userIsOwedTotal > 0 ? 'To Receive' : 'All settled'}
+            {userIsOwedTotal > 0 ? 'Roommates owe you' : 'All settled'}
           </span>
         </div>
       </div>

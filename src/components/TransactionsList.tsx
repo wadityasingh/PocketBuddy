@@ -140,14 +140,15 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
   return (
     <div
       id="transactions-list-container"
-      className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-3.5 sm:p-5 space-y-3.5 sm:space-y-4"
+      className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-rose-100/90 shadow-[0_8px_30px_rgb(220,38,38,0.04)] p-4 sm:p-6 space-y-4"
     >
       {/* 1. Header: Title + Small Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rose-100/60">
         <div>
-          <h3 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight whitespace-nowrap">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight whitespace-nowrap">
             Transaction History
           </h3>
+          <p className="text-[11px] text-slate-400 font-medium">Your personal ledger and daily spendings</p>
         </div>
 
         {/* Small, clean search input */}
@@ -159,7 +160,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
             placeholder="Search description, note..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-8.5 text-xs pl-8.5 pr-7 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 text-slate-900 transition placeholder:text-slate-400 font-medium"
+            className="w-full h-9 text-xs pl-8.5 pr-7 bg-rose-50/30 border border-rose-100/90 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-600/20 focus:border-red-400 text-slate-900 transition placeholder:text-slate-400 font-medium"
           />
           {search && (
             <button
@@ -179,13 +180,13 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
         {safeTransactions.length === 0 ? (
           <div
             id="transactions-empty-state"
-            className="text-center py-10 px-4 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200"
+            className="text-center py-12 px-4 bg-gradient-to-b from-rose-50/30 via-white to-rose-50/20 rounded-2xl border border-dashed border-rose-200/80"
           >
-            <div className="w-11 h-11 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-2.5">
-              <Wallet className="w-5 h-5" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-50 to-rose-100 text-red-600 border border-rose-200/90 flex items-center justify-center mx-auto mb-3 shadow-xs">
+              <Wallet className="w-6 h-6" />
             </div>
-            <h4 className="text-sm font-bold text-slate-800">No Transactions Yet</h4>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-3.5 leading-relaxed">
+            <h4 className="text-base font-bold text-slate-900">No Transactions Yet</h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4 leading-relaxed">
               Add your daily expenses or record money added to start tracking.
             </p>
             {onAddExpense && (
@@ -193,7 +194,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                 id="empty-add-first-expense-btn"
                 type="button"
                 onClick={onAddExpense}
-                className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs shadow-red-600/30 cursor-pointer inline-flex items-center gap-1.5"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white text-xs font-bold transition shadow-[0_2px_12px_rgba(220,38,38,0.3)] cursor-pointer inline-flex items-center gap-1.5"
               >
                 + Record Expense
               </button>
