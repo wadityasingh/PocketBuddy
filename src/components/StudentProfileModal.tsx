@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft,
   User,
@@ -14,14 +14,21 @@ import {
   ShieldCheck,
   Crown,
   Trash2,
+  Wallet,
+  Smartphone,
+  Banknote,
 } from 'lucide-react';
-import { StudentUser } from '../types';
+import { StudentUser, WalletBalances } from '../types';
+import { formatINR } from '../utils/formatters';
 
 interface StudentProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: StudentUser;
+  monthlyPocketMoney?: number;
+  wallets?: WalletBalances;
   onUpdateUser?: (updated: StudentUser) => void;
+  onUpdateMoney?: (pocketMoney: number, wallets: WalletBalances) => void;
   onLogout: () => void;
   onOpenGuide?: () => void;
   onOpenSetupWizard?: () => void;
@@ -94,7 +101,10 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   isOpen,
   onClose,
   user,
+  monthlyPocketMoney = 0,
+  wallets = { cash: 0, upi: 0 },
   onUpdateUser,
+  onUpdateMoney,
   onLogout,
 }) => {
   // Fields: Name, Registered Email, and Registered Phone
@@ -104,8 +114,13 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   const [phone, setPhone] = useState(user.phone || '');
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(user.photoUrl);
 
-  // Active editing field: 'name' | 'phone' | 'college' | 'upi' | null
-  const [editingField, setEditingField] = useState<'name' | 'phone' | 'college' | 'upi' | null>(null);
+  // Financial fields
+  const [pocketMoney, setPocketMoney] = useState<number>(monthlyPocketMoney || user.monthlyPocketMoney || 0);
+  const [cashBalance, setCashBalance] = useState<number>(wallets?.cash || 0);
+  const [upiBalance, setUpiBalance] = useState<number>(wallets?.upi || 0);
+
+  // Active editing field: 'name' | 'phone' | 'college' | 'upi' | 'pocketMoney' | 'cash' | 'upiBalance' | null
+  const [editingField, setEditingField] = useState<'name' | 'phone' | 'college' | 'upi' | 'pocketMoney' | 'cash' | 'upiBalance' | null>(null);
   const [tempValue, setTempValue] = useState('');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -114,6 +129,22 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   const [copiedPhone, setCopiedPhone] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Synchronize internal state whenever modal opens or props change
+  useEffect(() => {
+    if (isOpen) {
+      setName(user.name || '');
+      setCollegeName(user.collegeName || '');
+      setUpiId(user.upiId || '');
+      setPhone(user.phone || '');
+      setPhotoUrl(user.photoUrl);
+      setPocketMoney(monthlyPocketMoney || user.monthlyPocketMoney || 0);
+      setCashBalance(wallets?.cash || 0);
+      setUpiBalance(wallets?.upi || 0);
+      setEditingField(null);
+      setTempValue('');
+    }
+  }, [isOpen, user, monthlyPocketMoney, wallets]);
 
   const handleCopyEmail = () => {
     const emailToCopy = user.email || '';
@@ -135,12 +166,15 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleStartEdit = (field: 'name' | 'phone' | 'college' | 'upi') => {
+  const handleStartEdit = (field: 'name' | 'phone' | 'college' | 'upi' | 'pocketMoney' | 'cash' | 'upiBalance') => {
     setEditingField(field);
     if (field === 'name') setTempValue(name);
     if (field === 'phone') setTempValue(phone);
     if (field === 'college') setTempValue(collegeName);
     if (field === 'upi') setTempValue(upiId);
+    if (field === 'pocketMoney') setTempValue(String(pocketMoney));
+    if (field === 'cash') setTempValue(String(cashBalance));
+    if (field === 'upiBalance') setTempValue(String(upiBalance));
   };
 
   const handleCancelEdit = () => {
@@ -148,12 +182,15 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     setTempValue('');
   };
 
-  const handleSaveField = (field: 'name' | 'phone' | 'college' | 'upi') => {
+  const handleSaveField = (field: 'name' | 'phone' | 'college' | 'upi' | 'pocketMoney' | 'cash' | 'upiBalance') => {
     const val = tempValue.trim();
     let updatedName = name;
     let updatedCollege = collegeName;
     let updatedUpi = upiId;
     let updatedPhone = phone;
+    let updatedPocketMoney = pocketMoney;
+    let updatedCash = cashBalance;
+    let updatedUpiBalance = upiBalance;
 
     if (field === 'name') {
       if (!val) return;
@@ -168,6 +205,27 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     } else if (field === 'upi') {
       setUpiId(val);
       updatedUpi = val;
+    } else if (field === 'pocketMoney') {
+      const num = Math.max(0, parseFloat(val) || 0);
+      setPocketMoney(num);
+      updatedPocketMoney = num;
+      if (onUpdateMoney) {
+        onUpdateMoney(num, { cash: updatedCash, upi: updatedUpiBalance });
+      }
+    } else if (field === 'cash') {
+      const num = Math.max(0, parseFloat(val) || 0);
+      setCashBalance(num);
+      updatedCash = num;
+      if (onUpdateMoney) {
+        onUpdateMoney(updatedPocketMoney, { cash: num, upi: updatedUpiBalance });
+      }
+    } else if (field === 'upiBalance') {
+      const num = Math.max(0, parseFloat(val) || 0);
+      setUpiBalance(num);
+      updatedUpiBalance = num;
+      if (onUpdateMoney) {
+        onUpdateMoney(updatedPocketMoney, { cash: updatedCash, upi: num });
+      }
     }
 
     setEditingField(null);
@@ -180,6 +238,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
       collegeName: updatedCollege || undefined,
       upiId: updatedUpi || undefined,
       photoUrl: photoUrl || undefined,
+      monthlyPocketMoney: updatedPocketMoney,
     };
 
     if (onUpdateUser) {
@@ -594,6 +653,219 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               )}
             </div>
 
+          </div>
+
+          {/* Financial Settings Section Header */}
+          <div className="pt-2">
+            <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+              Financial Settings
+            </h4>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Monthly pocket money &amp; initial balances
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {/* 1. Monthly Pocket Money */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center justify-between hover:border-rose-300 transition-colors shadow-xs">
+              <div className="flex items-center gap-3.5 flex-1 min-w-0 pr-2">
+                <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0">
+                  <Wallet className="w-5 h-5" />
+                </div>
+
+                {editingField === 'pocketMoney' ? (
+                  <div className="flex-1 flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      value={tempValue}
+                      onChange={(e) => setTempValue(e.target.value)}
+                      placeholder="Enter monthly pocket money"
+                      autoFocus
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-rose-300 rounded-lg text-xs sm:text-sm font-semibold text-slate-900 focus:outline-hidden focus:bg-white"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveField('pocketMoney');
+                        if (e.key === 'Escape') handleCancelEdit();
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSaveField('pocketMoney')}
+                      className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer"
+                      title="Save"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="p-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg cursor-pointer"
+                      title="Cancel"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => handleStartEdit('pocketMoney')}
+                  >
+                    <span className="text-[11px] text-slate-400 font-medium block">
+                      Monthly Pocket Money
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                      {formatINR(pocketMoney)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {editingField !== 'pocketMoney' && (
+                <button
+                  type="button"
+                  onClick={() => handleStartEdit('pocketMoney')}
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
+                  aria-label="Edit Monthly Pocket Money"
+                  title="Edit pocket money"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* 2. Fixed UPI Balance */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center justify-between hover:border-rose-300 transition-colors shadow-xs">
+              <div className="flex items-center gap-3.5 flex-1 min-w-0 pr-2">
+                <div className="w-10 h-10 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-600 shrink-0">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+
+                {editingField === 'upiBalance' ? (
+                  <div className="flex-1 flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      value={tempValue}
+                      onChange={(e) => setTempValue(e.target.value)}
+                      placeholder="Enter UPI balance"
+                      autoFocus
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-rose-300 rounded-lg text-xs sm:text-sm font-semibold text-slate-900 focus:outline-hidden focus:bg-white"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveField('upiBalance');
+                        if (e.key === 'Escape') handleCancelEdit();
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSaveField('upiBalance')}
+                      className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer"
+                      title="Save"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="p-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg cursor-pointer"
+                      title="Cancel"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => handleStartEdit('upiBalance')}
+                  >
+                    <span className="text-[11px] text-slate-400 font-medium block">
+                      Fixed UPI Balance
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                      {formatINR(upiBalance)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {editingField !== 'upiBalance' && (
+                <button
+                  type="button"
+                  onClick={() => handleStartEdit('upiBalance')}
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
+                  aria-label="Edit UPI Balance"
+                  title="Edit UPI balance"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* 3. Fixed Cash Balance */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center justify-between hover:border-rose-300 transition-colors shadow-xs">
+              <div className="flex items-center gap-3.5 flex-1 min-w-0 pr-2">
+                <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                  <Banknote className="w-5 h-5" />
+                </div>
+
+                {editingField === 'cash' ? (
+                  <div className="flex-1 flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      value={tempValue}
+                      onChange={(e) => setTempValue(e.target.value)}
+                      placeholder="Enter Cash balance"
+                      autoFocus
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-rose-300 rounded-lg text-xs sm:text-sm font-semibold text-slate-900 focus:outline-hidden focus:bg-white"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveField('cash');
+                        if (e.key === 'Escape') handleCancelEdit();
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSaveField('cash')}
+                      className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer"
+                      title="Save"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="p-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg cursor-pointer"
+                      title="Cancel"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => handleStartEdit('cash')}
+                  >
+                    <span className="text-[11px] text-slate-400 font-medium block">
+                      Fixed Cash Balance
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                      {formatINR(cashBalance)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {editingField !== 'cash' && (
+                <button
+                  type="button"
+                  onClick={() => handleStartEdit('cash')}
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
+                  aria-label="Edit Cash Balance"
+                  title="Edit cash balance"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Log Out Button matching screenshot */}

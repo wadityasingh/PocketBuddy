@@ -73,6 +73,7 @@ interface ServerRoomMember {
   role: 'owner' | 'member';
   joinedAt: string;
   isSelf?: boolean;
+  photoUrl?: string;
 }
 
 interface ServerExpenseParticipant {
@@ -332,22 +333,15 @@ function reconcileUserRooms(userId: string, data: any): any {
           );
         });
 
-        if (!Array.isArray(data.roomGroups)) data.roomGroups = [];
-        userRooms.forEach((ur) => {
-          const idx = data.roomGroups.findIndex((r: any) => r && r.id === ur.id);
-          if (idx >= 0) {
-            // Keep the newer/more complete one
-            if ((ur.members?.length || 0) >= (data.roomGroups[idx].members?.length || 0)) {
-              data.roomGroups[idx] = ur;
-            }
-          } else {
-            data.roomGroups.unshift(ur);
-          }
-        });
-        if (!data.activeRoomId && data.roomGroups.length > 0) {
-          data.activeRoomId = data.roomGroups[0].id;
+        // Strictly isolate: A user's data must ONLY contain rooms where they are owner or verified member
+        data.roomGroups = userRooms;
+        if (!data.activeRoomId || !userRooms.some((r: any) => r.id === data.activeRoomId)) {
+          data.activeRoomId = userRooms[0]?.id || null;
         }
       }
+    } else {
+      data.roomGroups = [];
+      data.activeRoomId = null;
     }
   } catch (_) {}
   return data;
@@ -516,51 +510,7 @@ function getAuthUser(req: express.Request): ServerUser | null {
   if (identifiedUserId && identifiedUserId !== "guest") {
     const existing = findUserById(identifiedUserId);
     if (existing) return existing;
-
-    // Auto-restore / synthesize user on ephemeral platforms (Render cold restarts, localStorage users)
-    const rawName = (req.headers["x-user-name"] as string) || (req.body?.creatorName as string) || (req.body?.memberName as string) || (req.body?.name as string) || "Student";
-    let cleanName = "Student";
-    try {
-      cleanName = decodeURIComponent(rawName).trim() || "Student";
-    } catch {
-      cleanName = rawName.trim() || "Student";
-    }
-
-    const rawEmail = (req.headers["x-user-email"] as string) || (req.body?.email as string) || `${identifiedUserId}@student.pocketbuddy`;
-    let cleanEmail = "";
-    try {
-      cleanEmail = decodeURIComponent(rawEmail).trim().toLowerCase();
-    } catch {
-      cleanEmail = rawEmail.trim().toLowerCase();
-    }
-
-    const rawPhone = (req.headers["x-user-phone"] as string) || (req.body?.creatorPhone as string) || (req.body?.phone as string) || "";
-    const rawUpi = (req.headers["x-user-upi"] as string) || (req.body?.upiId as string) || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}@upi`;
-
-    const autoUser: ServerUser = {
-      id: identifiedUserId,
-      name: cleanName,
-      email: cleanEmail || `${identifiedUserId}@student.pocketbuddy`,
-      phone: rawPhone || undefined,
-      passwordHash: hashPassword("password123"),
-      collegeName: "College",
-      course: "Student",
-      yearOfStudy: "",
-      upiId: rawUpi,
-      monthlyPocketMoney: 0,
-      hasCompletedTour: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(autoUser);
-    saveUsers(users);
-
-    const existingData = loadUserData(identifiedUserId);
-    if (!existingData) {
-      saveUserData(identifiedUserId, createInitialUserData(autoUser, true));
-    }
-
-    return autoUser;
+    return null;
   }
 
   return null;
@@ -758,6 +708,88 @@ app.post("/api/auth/login", (req, res) => {
   }
 });
 
+// Google Authentication (Sign In & Sign Up)
+app.post("/api/auth/google", (req, res) => {
+  try {
+    const { id, name, email, phone, photoUrl } = req.body || {};
+    if (!email && !id) {
+      return res.status(400).json({ success: false, error: "Valid Google account details required." });
+    }
+
+    const cleanEmail = email ? String(email).trim().toLowerCase() : "";
+    const cleanName = name ? String(name).trim() : "Student";
+    const cleanPhone = phone ? String(phone).trim() : undefined;
+    const cleanPhoto = photoUrl ? String(photoUrl).trim() : undefined;
+    const users = loadUsers();
+
+    let user = users.find(
+      (u) =>
+        (id && u.id === id) ||
+        (cleanEmail && u.email && u.email.toLowerCase().trim() === cleanEmail)
+    );
+
+    let isNewUser = false;
+    if (!user) {
+      isNewUser = true;
+      const newUserId = id || ("stu_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36));
+      user = {
+        id: newUserId,
+        name: cleanName,
+        email: cleanEmail || `${newUserId}@student.pocketbuddy`,
+        phone: cleanPhone,
+        passwordHash: hashPassword(crypto.randomBytes(16).toString("hex")),
+        collegeName: "College",
+        course: "Student",
+        yearOfStudy: "",
+        upiId: `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}@upi`,
+        photoUrl: cleanPhoto,
+        monthlyPocketMoney: 0,
+        hasCompletedTour: false,
+        createdAt: new Date().toISOString(),
+      };
+      users.push(user);
+      saveUsers(users);
+
+      const initialData = createInitialUserData(user, true);
+      saveUserData(user.id, initialData);
+    } else {
+      let hasChanges = false;
+      if (cleanPhoto && user.photoUrl !== cleanPhoto) {
+        user.photoUrl = cleanPhoto;
+        hasChanges = true;
+      }
+      if (cleanName && cleanName !== "Student" && user.name === "Student") {
+        user.name = cleanName;
+        hasChanges = true;
+      }
+      if (hasChanges) {
+        saveUsers(users);
+      }
+    }
+
+    let userData = loadUserData(user.id);
+    if (!userData) {
+      userData = createInitialUserData(user, true);
+      saveUserData(user.id, userData);
+    }
+
+    const token = `token_${user.id}_${Date.now()}`;
+    const userSafe = { ...user };
+    delete (userSafe as any).passwordHash;
+
+    return res.json({
+      success: true,
+      user: userSafe,
+      token,
+      data: userData,
+      isNewUser,
+    });
+  } catch (err: any) {
+    console.error("Google auth route error:", err);
+    return res.status(500).json({ success: false, error: err?.message || "Google auth failed" });
+  }
+});
+
 // Forgot Password / Password Reset
 app.post("/api/auth/forgot-password", (req, res) => {
   try {
@@ -912,37 +944,19 @@ const handleSaveUserData = (req: any, res: any) => {
     }
   }
 
-  // Filter out any deleted rooms from payload.roomGroups
-  if (Array.isArray(payload.roomGroups)) {
-    const deletedIds = loadDeletedRoomIds();
-    payload.roomGroups = payload.roomGroups.filter((pr: any) => pr && pr.id && !deletedIds.has(pr.id));
-    if (payload.activeRoomId && deletedIds.has(payload.activeRoomId)) {
-      payload.activeRoomId = payload.roomGroups[0]?.id || null;
-    }
-  }
-
-  // If payload has roomGroups, sync non-deleted rooms to master rooms storage
-  if (Array.isArray(payload.roomGroups) && payload.roomGroups.length > 0) {
-    try {
-      const allMasterRooms = loadRooms();
-      const deletedIds = loadDeletedRoomIds();
-      let hasNewOrUpdated = false;
-      payload.roomGroups.forEach((pr: any) => {
-        if (pr && pr.id && !deletedIds.has(pr.id)) {
-          const idx = allMasterRooms.findIndex((r) => r.id === pr.id);
-          if (idx >= 0) {
-            allMasterRooms[idx] = pr;
-            hasNewOrUpdated = true;
-          } else {
-            allMasterRooms.unshift(pr);
-            hasNewOrUpdated = true;
-          }
-        }
-      });
-      if (hasNewOrUpdated) {
-        saveRooms(allMasterRooms);
-      }
-    } catch (_) {}
+  // Strict Room Isolation: A user's saved data must only contain rooms where they are owner or verified member
+  const allMasterRooms = loadRooms();
+  const deletedIds = loadDeletedRoomIds();
+  const validUserRooms = allMasterRooms.filter((r) => {
+    if (!r || !r.id || deletedIds.has(r.id)) return false;
+    if (r.ownerId === user.id) return true;
+    return (r.members || []).some(
+      (m) => m && (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id)
+    );
+  });
+  payload.roomGroups = validUserRooms;
+  if (!validUserRooms.some((r) => r.id === payload.activeRoomId)) {
+    payload.activeRoomId = validUserRooms[0]?.id || null;
   }
 
   saveUserData(user.id, payload);
@@ -959,7 +973,20 @@ const handleUpdateUserProfile = (req: any, res: any) => {
     return res.status(401).json({ success: false, error: "Not logged in" });
   }
 
-  const { name, phone, collegeName, course, branch, upiId, roomSplit, photoUrl } = req.body || {};
+  const body = req.body || {};
+  const bodyUser = body.user || {};
+  const name = body.name !== undefined ? body.name : bodyUser.name;
+  const phone = body.phone !== undefined ? body.phone : bodyUser.phone;
+  const collegeName = body.collegeName !== undefined ? body.collegeName : bodyUser.collegeName;
+  const course = body.course !== undefined ? body.course : bodyUser.course;
+  const branch = body.branch !== undefined ? body.branch : bodyUser.branch;
+  const upiId = body.upiId !== undefined ? body.upiId : bodyUser.upiId;
+  const roomSplit = body.roomSplit !== undefined ? body.roomSplit : bodyUser.roomSplit;
+  const photoUrl = body.photoUrl !== undefined ? body.photoUrl : bodyUser.photoUrl;
+  const monthlyPocketMoney = body.monthlyPocketMoney !== undefined ? body.monthlyPocketMoney : bodyUser.monthlyPocketMoney;
+  const hasCompletedTour = body.hasCompletedTour !== undefined ? body.hasCompletedTour : bodyUser.hasCompletedTour;
+  const wallets = body.wallets || bodyUser.wallets;
+
   const users = loadUsers();
   const idx = users.findIndex((u) => u.id === user.id);
 
@@ -973,17 +1000,71 @@ const handleUpdateUserProfile = (req: any, res: any) => {
     if (roomSplit !== undefined) (users[idx] as any).roomSplit = String(roomSplit).trim();
     if (photoUrl !== undefined) users[idx].photoUrl = String(photoUrl).trim();
 
+    if (monthlyPocketMoney !== undefined && Number(monthlyPocketMoney) >= 0) {
+      users[idx].monthlyPocketMoney = Number(monthlyPocketMoney);
+    }
+
+    if (hasCompletedTour !== undefined) {
+      users[idx].hasCompletedTour = Boolean(hasCompletedTour);
+    }
+
     saveUsers(users);
 
     // Sync with user's stored data
     const currentData = loadUserData(user.id);
     if (currentData) {
       if (name) currentData.userName = String(name).trim();
+      if (monthlyPocketMoney !== undefined && Number(monthlyPocketMoney) >= 0) {
+        currentData.monthlyPocketMoney = Number(monthlyPocketMoney);
+      }
+      if (hasCompletedTour !== undefined) {
+        currentData.hasCompletedTour = Boolean(hasCompletedTour);
+      }
+      const incomingWallets = wallets;
+      if (incomingWallets && typeof incomingWallets === 'object') {
+        currentData.wallets = {
+          cash: Number(incomingWallets.cash) >= 0 ? Number(incomingWallets.cash) : (currentData.wallets?.cash || 0),
+          upi: Number(incomingWallets.upi) >= 0 ? Number(incomingWallets.upi) : (currentData.wallets?.upi || 0),
+        };
+      }
       saveUserData(user.id, currentData);
     }
 
+    // Synchronize room members with updated profile (name, photoUrl, phone, upiId)
+    try {
+      const rooms = loadRooms();
+      let roomsModified = false;
+      rooms.forEach((r) => {
+        (r.members || []).forEach((m) => {
+          if (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id) {
+            if (name && m.name !== String(name).trim()) {
+              m.name = String(name).trim();
+              roomsModified = true;
+            }
+            if (photoUrl !== undefined && m.photoUrl !== String(photoUrl).trim()) {
+              m.photoUrl = String(photoUrl).trim();
+              roomsModified = true;
+            }
+            if (phone !== undefined && m.phone !== String(phone).trim()) {
+              m.phone = String(phone).trim();
+              roomsModified = true;
+            }
+            if (upiId !== undefined && m.upiId !== String(upiId).trim()) {
+              m.upiId = String(upiId).trim();
+              roomsModified = true;
+            }
+          }
+        });
+      });
+      if (roomsModified) {
+        saveRooms(rooms);
+      }
+    } catch (err) {
+      console.error("Error updating room members with profile changes:", err);
+    }
+
     const { passwordHash, ...safeUser } = users[idx];
-    return res.json({ success: true, user: safeUser });
+    return res.json({ success: true, user: safeUser, data: currentData });
   }
 
   return res.status(404).json({ success: false, error: "User not found" });
@@ -1267,52 +1348,20 @@ app.get("/api/rooms", (req, res) => {
   const userCleanName = user.name ? user.name.toLowerCase().trim() : "";
   const userCleanUpi = user.upiId ? user.upiId.toLowerCase().trim() : "";
 
-  let hasMutatedRooms = false;
-  // Filter rooms where currentUser is owner or a member
+  // Filter rooms where currentUser is strictly owner or an explicit verified member
   const userRooms = rooms.filter((r) => {
     if (!r) return false;
     if (r.ownerId === user.id) return true;
 
     const isMember = (r.members || []).some((m) => {
       if (!m) return false;
-      if (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id) return true;
-      if (userCleanEmail && m.email && m.email.toLowerCase().trim() === userCleanEmail) {
-        if (!m.userId || !m.userId.startsWith("stu_")) {
-          m.userId = user.id;
-          m.id = "rm_" + user.id;
-          hasMutatedRooms = true;
-        }
-        return true;
-      }
-      if (userNormPhone && m.phone && normalizePhone(m.phone) === userNormPhone) {
-        if (!m.userId || !m.userId.startsWith("stu_")) {
-          m.userId = user.id;
-          m.id = "rm_" + user.id;
-          if (!m.email && user.email) m.email = user.email;
-          hasMutatedRooms = true;
-        }
-        return true;
-      }
-      if (userCleanUpi && m.upiId && m.upiId.toLowerCase().trim() === userCleanUpi) {
-        if (!m.userId || !m.userId.startsWith("stu_")) {
-          m.userId = user.id;
-          m.id = "rm_" + user.id;
-          if (!m.email && user.email) m.email = user.email;
-          hasMutatedRooms = true;
-        }
-        return true;
-      }
-      return false;
+      return m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id;
     });
 
     return isMember;
   });
 
-  if (hasMutatedRooms) {
-    saveRooms(rooms);
-  }
-
-  // Annotate isSelf for the current user
+  // Annotate isSelf and photoUrl for members
   const enrichedRooms = userRooms.map((r) => ({
     ...r,
     members: (r.members || []).map((m) => {
@@ -1320,13 +1369,10 @@ app.get("/api/rooms", (req, res) => {
         Boolean(m) &&
         (m.userId === user.id ||
           m.id === user.id ||
-          m.id === "rm_" + user.id ||
-          (Boolean(m.email && userCleanEmail) && m.email.toLowerCase().trim() === userCleanEmail) ||
-          (Boolean(m.phone && userNormPhone) && normalizePhone(m.phone) === userNormPhone) ||
-          (Boolean(m.upiId && userCleanUpi) && m.upiId.toLowerCase().trim() === userCleanUpi) ||
-          (Boolean(m.name && userCleanName) && m.name.toLowerCase().trim() === userCleanName && m.userId === user.id));
+          m.id === "rm_" + user.id);
       return {
         ...m,
+        photoUrl: (isSelf && user.photoUrl) ? user.photoUrl : m.photoUrl,
         isSelf,
       };
     }),
@@ -1334,6 +1380,12 @@ app.get("/api/rooms", (req, res) => {
 
   return res.json({ success: true, data: enrichedRooms, rooms: enrichedRooms });
 });
+
+// Helper to prevent generic domain collisions
+function cleanEmailIsGeneric(email: string): boolean {
+  if (!email) return true;
+  return email.endsWith("@student.pocketbuddy") || email === "student@campus.edu";
+}
 
 // Get a specific room
 app.get("/api/rooms/:roomId", (req, res) => {
@@ -1351,7 +1403,6 @@ app.get("/api/rooms/:roomId", (req, res) => {
 
   const userNormPhone = user.phone ? normalizePhone(user.phone) : "";
   const userCleanEmail = user.email ? user.email.toLowerCase().trim() : "";
-  const userCleanUpi = user.upiId ? user.upiId.toLowerCase().trim() : "";
 
   const isMember =
     room.ownerId === user.id ||
@@ -1362,9 +1413,8 @@ app.get("/api/rooms/:roomId", (req, res) => {
           (m.userId === user.id ||
             m.id === user.id ||
             m.id === "rm_" + user.id ||
-            (Boolean(m.email && userCleanEmail) && m.email.toLowerCase().trim() === userCleanEmail) ||
-            (Boolean(m.phone && userNormPhone) && normalizePhone(m.phone) === userNormPhone) ||
-            (Boolean(m.upiId && userCleanUpi) && m.upiId.toLowerCase().trim() === userCleanUpi))
+            (Boolean(m.email && userCleanEmail) && !cleanEmailIsGeneric(userCleanEmail) && m.email.toLowerCase().trim() === userCleanEmail) ||
+            (Boolean(m.phone && userNormPhone) && userNormPhone.length >= 10 && normalizePhone(m.phone) === userNormPhone))
       ));
   if (!isMember) {
     return res.status(403).json({ success: false, error: "You are not a member of this room" });
@@ -1377,10 +1427,7 @@ app.get("/api/rooms/:roomId", (req, res) => {
         Boolean(m) &&
         (m.userId === user.id ||
           m.id === user.id ||
-          m.id === "rm_" + user.id ||
-          (Boolean(m.email && userCleanEmail) && m.email.toLowerCase().trim() === userCleanEmail) ||
-          (Boolean(m.phone && userNormPhone) && normalizePhone(m.phone) === userNormPhone) ||
-          (Boolean(m.upiId && userCleanUpi) && m.upiId.toLowerCase().trim() === userCleanUpi));
+          m.id === "rm_" + user.id);
       return {
         ...m,
         isSelf,
@@ -1447,6 +1494,7 @@ app.post("/api/rooms", (req, res) => {
         role: "owner",
         joinedAt: today,
         isSelf: true,
+        photoUrl: user.photoUrl,
       },
     ],
     expenses: [],
@@ -1564,6 +1612,7 @@ app.post("/api/rooms/join", (req, res) => {
       role: "member",
       joinedAt: today,
       isSelf: true,
+      photoUrl: user.photoUrl,
     });
 
     room.activities = room.activities || [];
@@ -1765,28 +1814,16 @@ app.post("/api/rooms/:roomId/expenses", (req, res) => {
       return res.status(404).json({ success: false, error: "Room not found" });
     }
 
-    // Check membership or auto-join if user has valid access
+    // Strict membership check: user MUST be an existing member of this room
     room.members = room.members || [];
-    let isMember =
+    const isMember =
       room.ownerId === user.id ||
       room.members.some(
         (m) => m && (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id)
       );
 
     if (!isMember) {
-      const newMember: ServerRoomMember = {
-        id: "rm_" + user.id,
-        userId: user.id,
-        name: user.name || "Roommate",
-        email: user.email,
-        upiId: user.upiId,
-        phone: user.phone,
-        role: "member",
-        joinedAt: new Date().toISOString().split("T")[0],
-        isSelf: true,
-      };
-      room.members.push(newMember);
-      isMember = true;
+      return res.status(403).json({ success: false, error: "Forbidden: You are not a member of this room. Please join using the room invite code." });
     }
 
     const expense = req.body?.expense || req.body;
@@ -1895,13 +1932,25 @@ app.post("/api/rooms/:roomId/expenses", (req, res) => {
 
     if (existingIdx >= 0) {
       const existingExpense = room.expenses[existingIdx];
-      // Room owner or creator of expense can edit
-      const creatorId = existingExpense.createdByUserId || existingExpense.paidByUserId;
-      const isRoomAdmin = room.ownerId === user.id || (room.members || []).some(m => (m.userId === user.id || m.id === user.id || m.id === "rm_" + user.id) && m.role === 'owner');
-      if (!isRoomAdmin && creatorId && creatorId !== user.id) {
+      // Strictly only the creator of the expense can edit it
+      const creatorId = existingExpense.createdByUserId;
+      const isCreatorById = Boolean(creatorId && creatorId === user.id);
+      const isCreatorByName = Boolean(
+        existingExpense.createdBy && (
+          existingExpense.createdBy.toLowerCase().trim() === (user.name || '').toLowerCase().trim()
+        )
+      );
+      const isLegacyPayer = Boolean(
+        !existingExpense.createdBy && !existingExpense.createdByUserId && (
+          (existingExpense.paidByUserId && existingExpense.paidByUserId === user.id) ||
+          (existingExpense.paidBy && existingExpense.paidBy.toLowerCase().trim() === (user.name || '').toLowerCase().trim())
+        )
+      );
+
+      if (!isCreatorById && !isCreatorByName && !isLegacyPayer) {
         return res.status(403).json({
           success: false,
-          error: "Forbidden: You can only edit expenses that you created or manage.",
+          error: "Forbidden: Only the member who created this expense can edit it.",
         });
       }
     } else {

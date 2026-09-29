@@ -150,14 +150,27 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
   return (
     <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-150">
       {/* 1. Header Greeting & Date */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Financial Dashboard
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Real-time student liquidity, spending pacing, and roommate settlements.
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-1">
+        <div className="flex items-center gap-3">
+          {currentUser.photoUrl ? (
+            <img
+              src={currentUser.photoUrl}
+              alt={currentUser.name}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover shrink-0 border border-slate-200 shadow-2xs"
+            />
+          ) : (
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 text-white font-black text-sm sm:text-base flex items-center justify-center shrink-0 shadow-2xs">
+              {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'S'}
+            </div>
+          )}
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Hi, {currentUser.name ? currentUser.name.split(' ')[0] : 'Student'} 👋
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Real-time student liquidity, spending pacing, and roommate settlements.
+            </p>
+          </div>
         </div>
 
         <div className="text-xs font-semibold text-slate-500 self-start sm:self-auto flex items-center gap-1.5">

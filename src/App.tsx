@@ -118,14 +118,17 @@ export default function App() {
   const isHydratedRef = useRef<boolean>(false);
   isHydratedRef.current = isDataHydrated;
 
-  // Persistent State (Initialize from localStorage if available, else clean defaults)
+  // Persistent State (Strictly isolated to authenticated user ID - No global bleed)
   const [monthlyPocketMoney, setMonthlyPocketMoney] = useState<number>(() => {
     try {
       const savedUser = localStorage.getItem('smm_current_user');
       const u = savedUser ? JSON.parse(savedUser) : null;
-      const userPrefix = u?.id ? `smm_${u.id}_` : '';
-      const saved = (userPrefix && localStorage.getItem(`${userPrefix}pocket_money`)) || localStorage.getItem('smm_pocket_money');
-      if (saved !== null) return JSON.parse(saved);
+      if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_pocket_money`);
+        if (saved !== null) return JSON.parse(saved);
+        const uStored = getUserStoredData(u.id);
+        if (typeof uStored?.monthlyPocketMoney === 'number') return uStored.monthlyPocketMoney;
+      }
     } catch {}
     return 0;
   });
@@ -134,9 +137,12 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem('smm_current_user');
       const u = savedUser ? JSON.parse(savedUser) : null;
-      const userPrefix = u?.id ? `smm_${u.id}_` : '';
-      const saved = (userPrefix && localStorage.getItem(`${userPrefix}wallets`)) || localStorage.getItem('smm_wallets');
-      if (saved) return JSON.parse(saved);
+      if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_wallets`);
+        if (saved) return JSON.parse(saved);
+        const uStored = getUserStoredData(u.id);
+        if (uStored?.wallets) return uStored.wallets;
+      }
     } catch {}
     return { cash: 0, upi: 0 };
   });
@@ -145,11 +151,14 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem('smm_current_user');
       const u = savedUser ? JSON.parse(savedUser) : null;
-      const userPrefix = u?.id ? `smm_${u.id}_` : '';
-      const saved = (userPrefix && localStorage.getItem(`${userPrefix}transactions`)) || localStorage.getItem('smm_transactions');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+      if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_transactions`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+        const uStored = getUserStoredData(u.id);
+        if (Array.isArray(uStored?.transactions)) return uStored.transactions;
       }
     } catch {}
     return [];
@@ -159,21 +168,14 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem('smm_current_user');
       const u = savedUser ? JSON.parse(savedUser) : null;
-      const userPrefix = u?.id ? `smm_${u.id}_` : '';
-      const saved = (userPrefix && localStorage.getItem(`${userPrefix}room_groups`)) || localStorage.getItem('smm_room_groups');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
       if (u?.id) {
-        const uStored = getUserStoredData(u.id);
-        if (Array.isArray(uStored?.roomGroups) && uStored.roomGroups.length > 0) {
-          return uStored.roomGroups;
+        const saved = localStorage.getItem(`smm_${u.id}_room_groups`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
         }
-      }
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        const uStored = getUserStoredData(u.id);
+        if (Array.isArray(uStored?.roomGroups)) return uStored.roomGroups;
       }
     } catch {}
     return [];
@@ -183,10 +185,9 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem('smm_current_user');
       const u = savedUser ? JSON.parse(savedUser) : null;
-      const userPrefix = u?.id ? `smm_${u.id}_` : '';
-      const saved = (userPrefix && localStorage.getItem(`${userPrefix}active_room_id`)) || localStorage.getItem('smm_active_room_id');
-      if (saved) return saved;
       if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_active_room_id`);
+        if (saved) return saved;
         const uStored = getUserStoredData(u.id);
         if (uStored?.activeRoomId) return uStored.activeRoomId;
         if (Array.isArray(uStored?.roomGroups) && uStored.roomGroups[0]?.id) {
@@ -199,10 +200,16 @@ export default function App() {
 
   const [meals, setMeals] = useState<DailyMealEntry[]>(() => {
     try {
-      const saved = localStorage.getItem('smm_meals');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+      const savedUser = localStorage.getItem('smm_current_user');
+      const u = savedUser ? JSON.parse(savedUser) : null;
+      if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_meals`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+        const uStored = getUserStoredData(u.id);
+        if (Array.isArray(uStored?.meals)) return uStored.meals;
       }
     } catch {}
     return [];
@@ -210,18 +217,30 @@ export default function App() {
 
   const [messConfig, setMessConfig] = useState<MessConfig>(() => {
     try {
-      const saved = localStorage.getItem('smm_mess_config');
-      if (saved) return JSON.parse(saved);
+      const savedUser = localStorage.getItem('smm_current_user');
+      const u = savedUser ? JSON.parse(savedUser) : null;
+      if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_mess_config`);
+        if (saved) return JSON.parse(saved);
+        const uStored = getUserStoredData(u.id);
+        if (uStored?.messConfig) return uStored.messConfig;
+      }
     } catch {}
     return initialMessConfig;
   });
 
   const [udhaarRecords, setUdhaarRecords] = useState<UdhaarRecord[]>(() => {
     try {
-      const saved = localStorage.getItem('smm_udhaar');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+      const savedUser = localStorage.getItem('smm_current_user');
+      const u = savedUser ? JSON.parse(savedUser) : null;
+      if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_udhaar`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+        const uStored = getUserStoredData(u.id);
+        if (Array.isArray(uStored?.udhaarRecords)) return uStored.udhaarRecords;
       }
     } catch {}
     return [];
@@ -229,10 +248,16 @@ export default function App() {
 
   const [bills, setBills] = useState<BillReminder[]>(() => {
     try {
-      const saved = localStorage.getItem('smm_bills');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+      const savedUser = localStorage.getItem('smm_current_user');
+      const u = savedUser ? JSON.parse(savedUser) : null;
+      if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_bills`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+        const uStored = getUserStoredData(u.id);
+        if (Array.isArray(uStored?.bills)) return uStored.bills;
       }
     } catch {}
     return [];
@@ -240,10 +265,16 @@ export default function App() {
 
   const [goals, setGoals] = useState<SavingsGoal[]>(() => {
     try {
-      const saved = localStorage.getItem('smm_goals');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+      const savedUser = localStorage.getItem('smm_current_user');
+      const u = savedUser ? JSON.parse(savedUser) : null;
+      if (u?.id) {
+        const saved = localStorage.getItem(`smm_${u.id}_goals`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+        const uStored = getUserStoredData(u.id);
+        if (Array.isArray(uStored?.goals)) return uStored.goals;
       }
     } catch {}
     return [];
@@ -296,6 +327,10 @@ export default function App() {
           let targetUser: StudentUser | null = parsedUser;
           if (authRes.ok && authRes.data?.success && authRes.data.user) {
             targetUser = authRes.data.user;
+          } else if (authRes.status === 401) {
+            targetUser = null;
+            localStorage.removeItem('smm_auth_token');
+            localStorage.removeItem('smm_current_user');
           }
 
           if (targetUser && isMounted) {
@@ -356,22 +391,19 @@ export default function App() {
             if (Array.isArray(serverData?.goals) && serverData.goals.length > 0) setGoals(serverData.goals);
             else if (Array.isArray(localData?.goals)) setGoals(localData.goals);
 
-            // Reconcile room groups and active room ID
+            // Reconcile room groups strictly scoped to targetUser
             const serverRooms = Array.isArray(serverData?.roomGroups) ? serverData.roomGroups : [];
-            const localRooms = Array.isArray(localData?.roomGroups) ? localData.roomGroups : [];
             const userPrefixedRoomsRaw = localStorage.getItem(`smm_${targetUser.id}_room_groups`);
             let userPrefixedRooms: RoomGroup[] = [];
             try {
               if (userPrefixedRoomsRaw) userPrefixedRooms = JSON.parse(userPrefixedRoomsRaw);
             } catch {}
 
-            // Reconcile room groups and active room ID
             const authoritativeRooms = serverData && Array.isArray(serverData.roomGroups)
               ? serverData.roomGroups
-              : (localRooms.length > 0 ? localRooms : userPrefixedRooms);
+              : (userPrefixedRooms.length > 0 ? userPrefixedRooms : (Array.isArray(localData?.roomGroups) ? localData.roomGroups : []));
 
             setRoomGroups(authoritativeRooms);
-            localStorage.setItem('smm_room_groups', JSON.stringify(authoritativeRooms));
             localStorage.setItem(`smm_${targetUser.id}_room_groups`, JSON.stringify(authoritativeRooms));
 
             const targetActiveId =
@@ -381,11 +413,19 @@ export default function App() {
 
             setActiveRoomId(targetActiveId);
             if (targetActiveId) {
-              localStorage.setItem('smm_active_room_id', targetActiveId);
               localStorage.setItem(`smm_${targetUser.id}_active_room_id`, targetActiveId);
             } else {
-              localStorage.removeItem('smm_active_room_id');
               localStorage.removeItem(`smm_${targetUser.id}_active_room_id`);
+            }
+
+            // Check if First-Time Money Setup has not been completed
+            const isMoneySetupDone =
+              targetUser.hasCompletedTour === true ||
+              localStorage.getItem(`smm_${targetUser.id}_money_setup_done`) === 'true' ||
+              (mergedAllowance > 0 || (mergedWallets.cash > 0 || mergedWallets.upi > 0));
+
+            if (!isMoneySetupDone) {
+              setIsSetupWizardOpen(true);
             }
 
             // Hydrate private user personal notes strictly for targetUser
@@ -479,25 +519,31 @@ export default function App() {
   useEffect(() => {
     if (!isDataHydrated || !currentUser?.id) return;
 
-    const userPrefix = `smm_${currentUser.id}_`;
-    localStorage.setItem('smm_pocket_money', JSON.stringify(monthlyPocketMoney));
-    localStorage.setItem('smm_wallets', JSON.stringify(wallets));
-    localStorage.setItem('smm_transactions', JSON.stringify(transactions));
-    localStorage.setItem('smm_room_groups', JSON.stringify(roomGroups));
-    if (activeRoomId) localStorage.setItem('smm_active_room_id', activeRoomId);
-    localStorage.setItem('smm_meals', JSON.stringify(meals));
-    localStorage.setItem('smm_mess_config', JSON.stringify(messConfig));
-    localStorage.setItem('smm_udhaar', JSON.stringify(udhaarRecords));
-    localStorage.setItem('smm_bills', JSON.stringify(bills));
-    localStorage.setItem('smm_goals', JSON.stringify(goals));
-    localStorage.setItem('smm_personal_notes', JSON.stringify(personalNotes));
+    // Purge any stale un-scoped global keys from browser storage to ensure strict user isolation
+    localStorage.removeItem('smm_pocket_money');
+    localStorage.removeItem('smm_wallets');
+    localStorage.removeItem('smm_transactions');
+    localStorage.removeItem('smm_room_groups');
+    localStorage.removeItem('smm_active_room_id');
+    localStorage.removeItem('smm_meals');
+    localStorage.removeItem('smm_mess_config');
+    localStorage.removeItem('smm_udhaar');
+    localStorage.removeItem('smm_bills');
+    localStorage.removeItem('smm_goals');
+    localStorage.removeItem('smm_personal_notes');
 
+    const userPrefix = `smm_${currentUser.id}_`;
     localStorage.setItem(`${userPrefix}pocket_money`, JSON.stringify(monthlyPocketMoney));
     localStorage.setItem(`${userPrefix}wallets`, JSON.stringify(wallets));
     localStorage.setItem(`${userPrefix}transactions`, JSON.stringify(transactions));
     localStorage.setItem(`${userPrefix}personal_notes`, JSON.stringify(personalNotes));
     localStorage.setItem(`${userPrefix}room_groups`, JSON.stringify(roomGroups));
     if (activeRoomId) localStorage.setItem(`${userPrefix}active_room_id`, activeRoomId);
+    localStorage.setItem(`${userPrefix}meals`, JSON.stringify(meals));
+    localStorage.setItem(`${userPrefix}mess_config`, JSON.stringify(messConfig));
+    localStorage.setItem(`${userPrefix}udhaar`, JSON.stringify(udhaarRecords));
+    localStorage.setItem(`${userPrefix}bills`, JSON.stringify(bills));
+    localStorage.setItem(`${userPrefix}goals`, JSON.stringify(goals));
   }, [
     isDataHydrated,
     currentUser?.id,
@@ -544,7 +590,6 @@ export default function App() {
           // Deep equality check before calling setRoomGroups to eliminate unnecessary re-renders
           if (currentJson !== serverJson) {
             setRoomGroups(roomsList);
-            localStorage.setItem('smm_room_groups', serverJson);
             localStorage.setItem(`smm_${uid}_room_groups`, serverJson);
             setActiveRoomId((prevActive) => {
               if (prevActive && roomsList.some((r) => r && r.id === prevActive)) {
@@ -552,10 +597,8 @@ export default function App() {
               }
               const fallback = roomsList[0]?.id || null;
               if (fallback) {
-                localStorage.setItem('smm_active_room_id', fallback);
                 localStorage.setItem(`smm_${uid}_active_room_id`, fallback);
               } else {
-                localStorage.removeItem('smm_active_room_id');
                 localStorage.removeItem(`smm_${uid}_active_room_id`);
               }
               return fallback;
@@ -2349,6 +2392,45 @@ export default function App() {
     }
   };
 
+  const handleUpdateMoneySettings = async (newPocketMoney: number, newWallets: WalletBalances) => {
+    setMonthlyPocketMoney(newPocketMoney);
+    setWallets(newWallets);
+    if (currentUser?.id) {
+      const updatedUser: StudentUser = {
+        ...currentUser,
+        monthlyPocketMoney: newPocketMoney,
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('smm_current_user', JSON.stringify(updatedUser));
+      const userPrefix = `smm_${currentUser.id}_`;
+      localStorage.setItem(`${userPrefix}pocket_money`, JSON.stringify(newPocketMoney));
+      localStorage.setItem(`${userPrefix}wallets`, JSON.stringify(newWallets));
+      saveUserStoredData(currentUser.id, {
+        monthlyPocketMoney: newPocketMoney,
+        wallets: newWallets,
+      });
+
+      try {
+        const token = localStorage.getItem('smm_auth_token');
+        await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': currentUser.id,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            monthlyPocketMoney: newPocketMoney,
+            wallets: newWallets,
+            user: updatedUser,
+          }),
+        });
+      } catch (e) {
+        console.warn('User money sync notice:', e);
+      }
+    }
+  };
+
   if (!currentUser) {
     return (
       <AuthScreen
@@ -2680,6 +2762,9 @@ export default function App() {
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}
           user={currentUser}
+          monthlyPocketMoney={monthlyPocketMoney}
+          wallets={wallets}
+          onUpdateMoney={handleUpdateMoneySettings}
           onUpdateUser={handleUpdateUserProfile}
           onOpenSetupWizard={() => setIsSetupWizardOpen(true)}
           onResetData={handleStartCleanRealData}

@@ -114,7 +114,7 @@ export async function signInWithGoogle(): Promise<{
       phone: fbUser.phoneNumber || undefined,
       photoUrl: fbUser.photoURL || undefined,
       monthlyPocketMoney: 0,
-      hasCompletedTour: true,
+      hasCompletedTour: false,
       createdAt: new Date().toISOString(),
     };
 

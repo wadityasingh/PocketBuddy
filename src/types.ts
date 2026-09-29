@@ -112,6 +112,7 @@ export interface Roommate {
   role?: 'owner' | 'admin' | 'member';
   joinedAt?: string;
   isSelf?: boolean;
+  photoUrl?: string;
 }
 
 export interface RoomGroup {

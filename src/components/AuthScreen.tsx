@@ -100,26 +100,52 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         saveUserStoredData(studentUser.id, existingData);
       }
 
-      // Sync account to local memory so other sessions can recognize it
-      syncAccountToLocal({
-        id: studentUser.id,
-        name: studentUser.name,
-        email: studentUser.email,
-        phone: studentUser.phone,
-        collegeName: studentUser.collegeName,
-        course: studentUser.course,
-        branch: studentUser.branch,
-        yearOfStudy: studentUser.yearOfStudy,
-        upiId: studentUser.upiId,
-        roomSplit: studentUser.roomSplit,
-        photoUrl: studentUser.photoUrl,
-        monthlyPocketMoney: studentUser.monthlyPocketMoney,
-        hasCompletedTour: studentUser.hasCompletedTour,
-        createdAt: studentUser.createdAt,
-      });
+      // Sync with server backend Google authentication route
+      let finalUser: StudentUser = studentUser;
+      let token = `token_${studentUser.id}_${Date.now()}`;
+      let isNewUser = !studentUser.hasCompletedTour && !localStorage.getItem(`smm_${studentUser.id}_money_setup_done`);
 
-      const token = `fb_token_${Date.now()}`;
-      triggerSuccessTransition(studentUser, existingData, token, false);
+      try {
+        const srvRes = await safeFetchJson('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: studentUser.id,
+            name: studentUser.name,
+            email: studentUser.email,
+            phone: studentUser.phone,
+            photoUrl: studentUser.photoUrl,
+          }),
+        }, 3000);
+
+        if (srvRes.ok && srvRes.data?.success) {
+          if (srvRes.data.user) finalUser = srvRes.data.user;
+          if (srvRes.data.token) token = srvRes.data.token;
+          if (srvRes.data.data) existingData = srvRes.data.data;
+          if (srvRes.data.isNewUser) isNewUser = true;
+        }
+      } catch (srvErr) {
+        console.warn('Backend google auth sync note:', srvErr);
+      }
+
+      // Check if money setup has already been completed for this user
+      const isMoneySetupDone =
+        finalUser.hasCompletedTour ||
+        localStorage.getItem(`smm_${finalUser.id}_money_setup_done`) === 'true' ||
+        (existingData && existingData.monthlyPocketMoney > 0);
+
+      if (!isMoneySetupDone) {
+        isNewUser = true;
+      }
+
+      localStorage.setItem('smm_auth_token', token);
+      localStorage.setItem('smm_current_user', JSON.stringify(finalUser));
+      saveUserStoredData(finalUser.id, existingData);
+
+      // Sync account to local memory so other sessions can recognize it
+      syncAccountToLocal(finalUser);
+
+      triggerSuccessTransition(finalUser, existingData, token, isNewUser);
     } catch (err: any) {
       console.error('Google Sign-In failed:', err);
       if (err?.code !== 'auth/popup-closed-by-user') {

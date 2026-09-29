@@ -1257,9 +1257,17 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                 key={m.id || m.userId || m.name}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/90 shrink-0 hover:bg-slate-100/70 transition"
               >
-                <div className="w-7 h-7 rounded-full bg-red-100 text-red-700 font-extrabold flex items-center justify-center text-xs shrink-0">
-                  {m.name.charAt(0).toUpperCase()}
-                </div>
+                {m.photoUrl || (isSelf && currentUser?.photoUrl) ? (
+                  <img
+                    src={m.photoUrl || (isSelf && currentUser?.photoUrl)}
+                    alt={m.name}
+                    className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-200"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-red-100 text-red-700 font-extrabold flex items-center justify-center text-xs shrink-0">
+                    {m.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
                     <span className="text-xs font-bold text-slate-900 truncate max-w-[95px] sm:max-w-none">
