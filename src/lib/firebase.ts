@@ -143,7 +143,7 @@ export async function signOutFromFirebase(): Promise<void> {
  * Save user profile document to /users/{userId}
  */
 export async function saveUserProfileToFirestore(user: StudentUser): Promise<void> {
-  if (!auth.currentUser || auth.currentUser.uid !== user.id) {
+  if (!user || !user.id) {
     return;
   }
   const path = `users/${user.id}`;
@@ -166,7 +166,7 @@ export async function saveUserProfileToFirestore(user: StudentUser): Promise<voi
       { merge: true }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn('Firestore saveUserProfile error:', error);
   }
 }
 
@@ -174,7 +174,7 @@ export async function saveUserProfileToFirestore(user: StudentUser): Promise<voi
  * Load user profile document from /users/{userId}
  */
 export async function loadUserProfileFromFirestore(userId: string): Promise<StudentUser | null> {
-  if (!auth.currentUser || auth.currentUser.uid !== userId) {
+  if (!userId) {
     return null;
   }
   const path = `users/${userId}`;
@@ -186,19 +186,18 @@ export async function loadUserProfileFromFirestore(userId: string): Promise<Stud
     }
     return null;
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn('Firestore loadUserProfile error:', error);
+    return null;
   }
 }
 
 /**
- * Save user financial state to /users/{userId}/data/state
+ * Save user financial state to /users/{userId}/data/state and /user_data/{userId}
  */
 export async function saveUserDataToFirestore(userId: string, data: any): Promise<void> {
-  if (!auth.currentUser || auth.currentUser.uid !== userId) {
-    // Only attempt Firestore write if the client is authenticated via Firebase Auth for this user ID
+  if (!userId) {
     return;
   }
-  const path = `users/${userId}/data/state`;
   try {
     const stateRef = doc(db, 'users', userId, 'data', 'state');
     await setDoc(
@@ -210,28 +209,69 @@ export async function saveUserDataToFirestore(userId: string, data: any): Promis
       },
       { merge: true }
     );
+    const uDataRef = doc(db, 'user_data', userId);
+    await setDoc(
+      uDataRef,
+      {
+        userId,
+        ...data,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn('Firestore saveUserData error:', error);
   }
 }
 
 /**
- * Load user financial state from /users/{userId}/data/state
+ * Load user financial state from /users/{userId}/data/state or /user_data/{userId}
  */
 export async function loadUserDataFromFirestore(userId: string): Promise<any | null> {
-  if (!auth.currentUser || auth.currentUser.uid !== userId) {
+  if (!userId) {
     return null;
   }
-  const path = `users/${userId}/data/state`;
   try {
     const stateRef = doc(db, 'users', userId, 'data', 'state');
     const snap = await getDoc(stateRef);
     if (snap.exists()) {
       return snap.data();
     }
+    const uDataRef = doc(db, 'user_data', userId);
+    const snap2 = await getDoc(uDataRef);
+    if (snap2.exists()) {
+      return snap2.data();
+    }
     return null;
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn('Firestore loadUserData error:', error);
+    return null;
+  }
+}
+
+/**
+ * Save room group document to /rooms/{roomId}
+ */
+export async function saveRoomToFirestore(room: any): Promise<void> {
+  if (!room || !room.id) return;
+  try {
+    const roomRef = doc(db, 'rooms', room.id);
+    await setDoc(roomRef, { ...room, updatedAt: new Date().toISOString() }, { merge: true });
+  } catch (error) {
+    console.warn('Firestore saveRoom error:', error);
+  }
+}
+
+/**
+ * Delete room document from /rooms/{roomId}
+ */
+export async function deleteRoomFromFirestore(roomId: string): Promise<void> {
+  if (!roomId) return;
+  try {
+    const { deleteDoc } = await import('firebase/firestore');
+    await deleteDoc(doc(db, 'rooms', roomId));
+  } catch (error) {
+    console.warn('Firestore deleteRoom error:', error);
   }
 }
 

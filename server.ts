@@ -5,6 +5,16 @@ import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import dotenv from "dotenv";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import {
+  getFirestore,
+  doc,
+  getDocFromServer,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  collection,
+} from "firebase/firestore";
 
 dotenv.config();
 
@@ -26,7 +36,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// Persistent Storage Directories
+// ==================== FIRESTORE PRODUCTION DATABASE ====================
+let firestoreDb: any = null;
+try {
+  const firebaseConfigPath = path.join(process.cwd(), "firebase-applet-config.json");
+  if (fs.existsSync(firebaseConfigPath)) {
+    const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
+    const fbApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    firestoreDb = getFirestore(fbApp, firebaseConfig.firestoreDatabaseId);
+    console.log("[Firestore] Connected to persistent database:", firebaseConfig.firestoreDatabaseId);
+  }
+} catch (fbInitErr) {
+  console.error("[Firestore] Initialization error:", fbInitErr);
+}
+
+// Persistent Storage Directories & Ephemeral Backup
 const DATA_DIR = path.join(process.cwd(), "data_store");
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -36,7 +60,15 @@ const USERS_FILE = path.join(DATA_DIR, "users.json");
 const ROOMS_FILE = path.join(DATA_DIR, "rooms.json");
 const DELETED_ROOMS_FILE = path.join(DATA_DIR, "deleted_rooms.json");
 
-function loadDeletedRoomIds(): Set<string> {
+// In-Memory Cloud Sync Cache (backed permanently by Firestore)
+let cachedRooms: ServerRoomGroup[] = [];
+let cachedUsers: ServerUser[] = [];
+let cachedDeletedRooms = new Set<string>();
+const cachedUserData = new Map<string, any>();
+const cachedUserNotes = new Map<string, ServerNote[]>();
+let firestoreInitialized = false;
+
+function loadDeletedRoomIdsFromDisk(): Set<string> {
   try {
     if (fs.existsSync(DELETED_ROOMS_FILE)) {
       const content = fs.readFileSync(DELETED_ROOMS_FILE, "utf-8");
@@ -47,12 +79,112 @@ function loadDeletedRoomIds(): Set<string> {
   return new Set();
 }
 
-function recordDeletedRoomId(roomId: string) {
+function saveDeletedRoomIdsToDisk(deleted: Set<string>) {
   try {
-    const deleted = loadDeletedRoomIds();
-    deleted.add(roomId);
     fs.writeFileSync(DELETED_ROOMS_FILE, JSON.stringify(Array.from(deleted), null, 2), "utf-8");
   } catch (_) {}
+}
+
+function loadDeletedRoomIds(): Set<string> {
+  if (cachedDeletedRooms.size > 0) return cachedDeletedRooms;
+  const disk = loadDeletedRoomIdsFromDisk();
+  disk.forEach((id) => cachedDeletedRooms.add(id));
+  return cachedDeletedRooms;
+}
+
+function recordDeletedRoomId(roomId: string) {
+  try {
+    cachedDeletedRooms.add(roomId);
+    saveDeletedRoomIdsToDisk(cachedDeletedRooms);
+    deleteRoomFromFirestore(roomId).catch(() => {});
+    persistDeletedRoomIdsToFirestore().catch(() => {});
+  } catch (_) {}
+}
+
+function sanitizeForFirestore(data: any): any {
+  if (data === undefined) return null;
+  return JSON.parse(JSON.stringify(data));
+}
+
+async function persistDeletedRoomIdsToFirestore() {
+  if (!firestoreDb) return;
+  try {
+    const sysRef = doc(firestoreDb, "system", "deleted_rooms");
+    await setDoc(sysRef, sanitizeForFirestore({
+      deletedRoomIds: Array.from(cachedDeletedRooms),
+      updatedAt: new Date().toISOString(),
+    }), { merge: true });
+  } catch (err) {
+    console.warn("[Firestore] Error saving deleted room IDs:", err);
+  }
+}
+
+async function persistRoomToFirestore(room: ServerRoomGroup) {
+  if (!firestoreDb || !room || !room.id) return;
+  try {
+    const roomRef = doc(firestoreDb, "rooms", room.id);
+    await setDoc(roomRef, sanitizeForFirestore({
+      ...room,
+      updatedAt: new Date().toISOString(),
+    }), { merge: true });
+  } catch (err) {
+    console.error(`[Firestore] Error persisting room ${room.id}:`, err);
+  }
+}
+
+async function deleteRoomFromFirestore(roomId: string) {
+  if (!firestoreDb || !roomId) return;
+  try {
+    const roomRef = doc(firestoreDb, "rooms", roomId);
+    await deleteDoc(roomRef);
+  } catch (err) {
+    console.error(`[Firestore] Error deleting room ${roomId}:`, err);
+  }
+}
+
+async function persistUserToFirestore(user: ServerUser) {
+  if (!firestoreDb || !user || !user.id) return;
+  try {
+    const userRef = doc(firestoreDb, "users", user.id);
+    await setDoc(userRef, sanitizeForFirestore({
+      ...user,
+      updatedAt: new Date().toISOString(),
+    }), { merge: true });
+  } catch (err) {
+    console.error(`[Firestore] Error persisting user ${user.id}:`, err);
+  }
+}
+
+async function persistUserDataToFirestore(userId: string, data: any) {
+  if (!firestoreDb || !userId || !data) return;
+  try {
+    const cleanPayload = sanitizeForFirestore({
+      userId,
+      ...data,
+      updatedAt: new Date().toISOString(),
+    });
+    const uDataRef = doc(firestoreDb, "user_data", userId);
+    await setDoc(uDataRef, cleanPayload, { merge: true });
+
+    const stateRef = doc(firestoreDb, "users", userId, "data", "state");
+    await setDoc(stateRef, cleanPayload, { merge: true });
+  } catch (err) {
+    console.error(`[Firestore] Error persisting user data for ${userId}:`, err);
+  }
+}
+
+async function persistUserNotesToFirestore(userId: string, notes: ServerNote[]) {
+  if (!firestoreDb || !userId) return;
+  try {
+    const notesRef = doc(firestoreDb, "notes", userId);
+    await setDoc(notesRef, sanitizeForFirestore({
+      userId,
+      notes: notes || [],
+      updatedAt: new Date().toISOString(),
+    }), { merge: true });
+  } catch (err) {
+    console.error(`[Firestore] Error persisting notes for ${userId}:`, err);
+  }
 }
 
 interface ServerRoomActivity {
@@ -137,9 +269,8 @@ interface ServerRoomGroup {
   createdAt: string;
 }
 
-function loadRooms(): ServerRoomGroup[] {
+function loadRoomsFromDisk(): ServerRoomGroup[] {
   let rooms: ServerRoomGroup[] = [];
-  const deletedIds = loadDeletedRoomIds();
   try {
     if (fs.existsSync(ROOMS_FILE)) {
       const content = fs.readFileSync(ROOMS_FILE, "utf-8");
@@ -148,13 +279,10 @@ function loadRooms(): ServerRoomGroup[] {
   } catch (err) {
     console.error("Error reading rooms file:", err);
   }
-
-  // Filter out any rooms that have been deleted
-  rooms = (rooms || []).filter((r) => r && r.id && !deletedIds.has(r.id));
-  return rooms;
+  return Array.isArray(rooms) ? rooms : [];
 }
 
-function saveRooms(rooms: ServerRoomGroup[]) {
+function saveRoomsToDisk(rooms: ServerRoomGroup[]) {
   try {
     const deletedIds = loadDeletedRoomIds();
     const cleanRooms = (rooms || []).filter((r) => r && r.id && !deletedIds.has(r.id));
@@ -163,6 +291,34 @@ function saveRooms(rooms: ServerRoomGroup[]) {
   } catch (err) {
     console.error("Error saving rooms file:", err);
   }
+}
+
+function loadRooms(): ServerRoomGroup[] {
+  const deletedIds = loadDeletedRoomIds();
+  if (cachedRooms.length === 0 && !firestoreInitialized) {
+    cachedRooms = loadRoomsFromDisk();
+  }
+  return (cachedRooms || []).filter((r) => r && r.id && !deletedIds.has(r.id));
+}
+
+function saveRooms(rooms: ServerRoomGroup[]) {
+  const deletedIds = loadDeletedRoomIds();
+  const cleanRooms = (rooms || []).filter((r) => r && r.id && !deletedIds.has(r.id));
+  
+  // Track removed rooms to delete from Firestore
+  const newRoomIdSet = new Set(cleanRooms.map((r) => r.id));
+  const removedRooms = cachedRooms.filter((r) => r && r.id && !newRoomIdSet.has(r.id));
+
+  cachedRooms = cleanRooms;
+  saveRoomsToDisk(cleanRooms);
+
+  // Immediately persist every room to Firestore cloud database
+  cleanRooms.forEach((room) => {
+    persistRoomToFirestore(room).catch(() => {});
+  });
+  removedRooms.forEach((room) => {
+    deleteRoomFromFirestore(room.id).catch(() => {});
+  });
 }
 
 interface ServerUser {
@@ -200,7 +356,7 @@ function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password.trim()).digest("hex");
 }
 
-function loadUsers(): ServerUser[] {
+function loadUsersFromDisk(): ServerUser[] {
   let users: ServerUser[] = [];
   try {
     if (fs.existsSync(USERS_FILE)) {
@@ -210,67 +366,31 @@ function loadUsers(): ServerUser[] {
   } catch (err) {
     console.error("Error reading users file:", err);
   }
-
-  // Remove any remaining dummy or test users
-  const DUMMY_EMAILS = ["aditya@campus.edu", "rahul@campus.edu", "aman@campus.edu", "aarav.sharma@example.edu"];
-  const initialLength = users.length;
-  users = users.filter((u) => {
-    if (!u) return false;
-    const em = (u.email || "").toLowerCase();
-    if (DUMMY_EMAILS.includes(em)) return false;
-    if (u.id.includes("test_") || em.includes("test1") || em.includes("test2") || em.includes("test3") || u.name?.toUpperCase().startsWith("TEST")) {
-      return false;
-    }
-    return true;
-  });
-  if (users.length !== initialLength) {
-    saveUsers(users);
-  }
-
-  // Auto-restore any real registered members from rooms.json if missing from users.json
-  try {
-    if (fs.existsSync(ROOMS_FILE)) {
-      const rooms: ServerRoomGroup[] = JSON.parse(fs.readFileSync(ROOMS_FILE, "utf-8"));
-      let addedAny = false;
-      rooms.forEach((room) => {
-        (room.members || []).forEach((m) => {
-          if (m.userId && !users.some((u) => u.id === m.userId)) {
-            users.push({
-              id: m.userId,
-              name: m.name || "Student",
-              email: m.email || `${m.userId}@student.pocketbuddy`,
-              phone: m.phone || "",
-              passwordHash: hashPassword("password123"),
-              collegeName: "",
-              course: "Student",
-              yearOfStudy: "",
-              upiId: m.upiId || "",
-              monthlyPocketMoney: 0,
-              hasCompletedTour: true,
-              createdAt: m.joinedAt ? new Date(m.joinedAt).toISOString() : new Date().toISOString(),
-            });
-            addedAny = true;
-          }
-        });
-      });
-      if (addedAny || users.length !== initialLength) {
-        saveUsers(users);
-      }
-    }
-  } catch (err) {
-    console.error("Error restoring users from rooms:", err);
-  }
-
-  return users;
+  return Array.isArray(users) ? users : [];
 }
 
-function saveUsers(users: ServerUser[]) {
+function saveUsersToDisk(users: ServerUser[]) {
   try {
     fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
     try { fs.chmodSync(USERS_FILE, 0o666); } catch (_) {}
   } catch (err) {
     console.error("Error saving users file:", err);
   }
+}
+
+function loadUsers(): ServerUser[] {
+  if (cachedUsers.length === 0 && !firestoreInitialized) {
+    cachedUsers = loadUsersFromDisk();
+  }
+  return cachedUsers || [];
+}
+
+function saveUsers(users: ServerUser[]) {
+  cachedUsers = users;
+  saveUsersToDisk(users);
+  users.forEach((user) => {
+    persistUserToFirestore(user).catch(() => {});
+  });
 }
 
 function getUserDataFilePath(userId: string): string {
@@ -281,7 +401,7 @@ function getUserNotesFilePath(userId: string): string {
   return path.join(DATA_DIR, `user_notes_${userId}.json`);
 }
 
-function loadUserNotes(userId: string): ServerNote[] {
+function loadUserNotesFromDisk(userId: string): ServerNote[] {
   if (!userId) return [];
   const notesPath = getUserNotesFilePath(userId);
   try {
@@ -300,7 +420,7 @@ function loadUserNotes(userId: string): ServerNote[] {
   return [];
 }
 
-function saveUserNotes(userId: string, notes: ServerNote[]) {
+function saveUserNotesToDisk(userId: string, notes: ServerNote[]) {
   if (!userId) return;
   const notesPath = getUserNotesFilePath(userId);
   try {
@@ -314,6 +434,26 @@ function saveUserNotes(userId: string, notes: ServerNote[]) {
   }
 }
 
+function loadUserNotes(userId: string): ServerNote[] {
+  if (!userId) return [];
+  if (cachedUserNotes.has(userId)) {
+    return cachedUserNotes.get(userId)!;
+  }
+  const fromDisk = loadUserNotesFromDisk(userId);
+  if (fromDisk.length > 0) {
+    cachedUserNotes.set(userId, fromDisk);
+    return fromDisk;
+  }
+  return [];
+}
+
+function saveUserNotes(userId: string, notes: ServerNote[]) {
+  if (!userId) return;
+  cachedUserNotes.set(userId, notes);
+  saveUserNotesToDisk(userId, notes);
+  persistUserNotesToFirestore(userId, notes).catch(() => {});
+}
+
 function getUserDataBackupFilePath(userId: string): string {
   return path.join(DATA_DIR, `user_data_${userId}.backup.json`);
 }
@@ -321,71 +461,51 @@ function getUserDataBackupFilePath(userId: string): string {
 function reconcileUserRooms(userId: string, data: any): any {
   if (!data || !userId || userId === "guest") return data;
   try {
-    if (fs.existsSync(ROOMS_FILE)) {
-      const content = fs.readFileSync(ROOMS_FILE, "utf-8");
-      if (content.trim()) {
-        const rooms: ServerRoomGroup[] = JSON.parse(content);
-        const userRooms = rooms.filter((r) => {
-          if (!r) return false;
-          if (r.ownerId === userId) return true;
-          return (r.members || []).some(
-            (m) => m && (m.userId === userId || m.id === userId || m.id === "rm_" + userId)
-          );
-        });
+    const rooms = loadRooms();
+    const userRooms = rooms.filter((r) => {
+      if (!r) return false;
+      if (r.ownerId === userId) return true;
+      return (r.members || []).some(
+        (m) => m && (m.userId === userId || m.id === userId || m.id === "rm_" + userId)
+      );
+    });
 
-        // Strictly isolate: A user's data must ONLY contain rooms where they are owner or verified member
-        data.roomGroups = userRooms;
-        if (!data.activeRoomId || !userRooms.some((r: any) => r.id === data.activeRoomId)) {
-          data.activeRoomId = userRooms[0]?.id || null;
-        }
-      }
-    } else {
-      data.roomGroups = [];
-      data.activeRoomId = null;
+    // Strictly isolate: A user's data must ONLY contain rooms where they are owner or verified member
+    data.roomGroups = userRooms;
+    if (!data.activeRoomId || !userRooms.some((r: any) => r.id === data.activeRoomId)) {
+      data.activeRoomId = userRooms[0]?.id || null;
     }
   } catch (_) {}
   return data;
 }
 
-function loadUserData(userId: string): any {
+function loadUserDataFromDisk(userId: string): any {
   const filePath = getUserDataFilePath(userId);
   const backupFilePath = getUserDataBackupFilePath(userId);
   try {
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, "utf-8");
       if (content.trim()) {
-        return reconcileUserRooms(userId, JSON.parse(content));
+        return JSON.parse(content);
       }
     }
-    // Fallback to backup if primary file is missing or empty
     if (fs.existsSync(backupFilePath)) {
       const bkpContent = fs.readFileSync(backupFilePath, "utf-8");
       if (bkpContent.trim()) {
-        const parsed = JSON.parse(bkpContent);
-        // Restore primary from backup
-        fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2), "utf-8");
-        return reconcileUserRooms(userId, parsed);
+        return JSON.parse(bkpContent);
       }
     }
-  } catch (err) {
-    console.error("Error reading user data file:", err);
-    if (fs.existsSync(backupFilePath)) {
-      try {
-        return reconcileUserRooms(userId, JSON.parse(fs.readFileSync(backupFilePath, "utf-8")));
-      } catch (_) {}
-    }
-  }
+  } catch (_) {}
   return null;
 }
 
-function saveUserData(userId: string, data: any) {
+function saveUserDataToDisk(userId: string, data: any) {
   const filePath = getUserDataFilePath(userId);
   const backupFilePath = getUserDataBackupFilePath(userId);
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    // Create backup before overwriting if existing file has valid content
     if (fs.existsSync(filePath)) {
       try {
         const existing = fs.readFileSync(filePath, "utf-8");
@@ -394,11 +514,153 @@ function saveUserData(userId: string, data: any) {
         }
       } catch (_) {}
     }
-
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
     try { fs.chmodSync(filePath, 0o666); } catch (_) {}
   } catch (err) {
     console.error("Error saving user data file:", err);
+  }
+}
+
+function loadUserData(userId: string): any {
+  if (!userId) return null;
+  let data = cachedUserData.get(userId);
+  if (!data) {
+    data = loadUserDataFromDisk(userId);
+    if (data) {
+      cachedUserData.set(userId, data);
+    }
+  }
+  if (!data) return null;
+  return reconcileUserRooms(userId, data);
+}
+
+function saveUserData(userId: string, data: any) {
+  if (!userId || !data) return;
+  cachedUserData.set(userId, data);
+  saveUserDataToDisk(userId, data);
+  persistUserDataToFirestore(userId, data).catch(() => {});
+}
+
+// Master Startup Synchronizer for Firestore
+async function initFirestorePersistence() {
+  if (!firestoreDb) {
+    console.warn("[Firestore] No Firestore instance available, running with disk persistence.");
+    return;
+  }
+
+  try {
+    console.log("[Firestore Persistence] Connecting and syncing with Firestore production database...");
+
+    // 1. Deleted room IDs
+    try {
+      const sysSnap = await getDocFromServer(doc(firestoreDb, "system", "deleted_rooms"));
+      if (sysSnap.exists()) {
+        const d = sysSnap.data();
+        if (Array.isArray(d?.deletedRoomIds)) {
+          d.deletedRoomIds.forEach((id: string) => cachedDeletedRooms.add(id));
+        }
+      }
+    } catch (_) {}
+    const diskDeleted = loadDeletedRoomIdsFromDisk();
+    diskDeleted.forEach((id) => cachedDeletedRooms.add(id));
+
+    // 2. Load all registered users from Firestore
+    try {
+      const usersSnap = await getDocs(collection(firestoreDb, "users"));
+      const fsUsers: ServerUser[] = [];
+      usersSnap.forEach((d) => {
+        const u = d.data() as ServerUser;
+        if (u && u.id && u.email) {
+          fsUsers.push(u);
+        }
+      });
+
+      if (fsUsers.length > 0) {
+        cachedUsers = fsUsers;
+        saveUsersToDisk(cachedUsers);
+        console.log(`[Firestore Persistence] Successfully loaded ${cachedUsers.length} user(s) from Firestore.`);
+      } else {
+        const diskUsers = loadUsersFromDisk();
+        if (diskUsers.length > 0) {
+          cachedUsers = diskUsers;
+          for (const u of diskUsers) {
+            await persistUserToFirestore(u);
+          }
+          console.log(`[Firestore Persistence] Seeded ${diskUsers.length} existing user(s) into Firestore.`);
+        }
+      }
+    } catch (uErr) {
+      console.error("[Firestore Persistence] Error loading users:", uErr);
+    }
+
+    // 3. Load all rooms from Firestore
+    try {
+      const roomsSnap = await getDocs(collection(firestoreDb, "rooms"));
+      const fsRooms: ServerRoomGroup[] = [];
+      roomsSnap.forEach((d) => {
+        const r = d.data() as ServerRoomGroup;
+        if (r && r.id && !cachedDeletedRooms.has(r.id)) {
+          fsRooms.push(r);
+        }
+      });
+
+      if (fsRooms.length > 0) {
+        cachedRooms = fsRooms;
+        saveRoomsToDisk(cachedRooms);
+        console.log(`[Firestore Persistence] Successfully loaded ${cachedRooms.length} room(s) with expenses from Firestore.`);
+      } else {
+        const diskRooms = loadRoomsFromDisk();
+        if (diskRooms.length > 0) {
+          cachedRooms = diskRooms;
+          for (const r of diskRooms) {
+            await persistRoomToFirestore(r);
+          }
+          console.log(`[Firestore Persistence] Seeded ${diskRooms.length} existing room(s) into Firestore.`);
+        }
+      }
+    } catch (rErr) {
+      console.error("[Firestore Persistence] Error loading rooms:", rErr);
+    }
+
+    // 4. Preload and migrate user data and notes for registered users
+    for (const u of cachedUsers) {
+      if (!u.id) continue;
+      try {
+        const uSnap = await getDocFromServer(doc(firestoreDb, "user_data", u.id));
+        if (uSnap.exists()) {
+          const ud = uSnap.data();
+          cachedUserData.set(u.id, ud);
+          saveUserDataToDisk(u.id, ud);
+        } else {
+          const diskUd = loadUserDataFromDisk(u.id);
+          if (diskUd) {
+            cachedUserData.set(u.id, diskUd);
+            await persistUserDataToFirestore(u.id, diskUd);
+          }
+        }
+      } catch (_) {}
+
+      try {
+        const noteSnap = await getDocFromServer(doc(firestoreDb, "notes", u.id));
+        if (noteSnap.exists()) {
+          const nd = noteSnap.data();
+          const notes = Array.isArray(nd?.notes) ? nd.notes : [];
+          cachedUserNotes.set(u.id, notes);
+          saveUserNotesToDisk(u.id, notes);
+        } else {
+          const diskNotes = loadUserNotesFromDisk(u.id);
+          if (diskNotes.length > 0) {
+            cachedUserNotes.set(u.id, diskNotes);
+            await persistUserNotesToFirestore(u.id, diskNotes);
+          }
+        }
+      } catch (_) {}
+    }
+
+    firestoreInitialized = true;
+    console.log("[Firestore Persistence] Database is active, connected, and fully synchronized!");
+  } catch (err) {
+    console.error("[Firestore Persistence] Error during startup sync:", err);
   }
 }
 
@@ -1283,7 +1545,7 @@ function generateUniqueRoomCode(existingRooms: ServerRoomGroup[]): string {
     for (let i = 0; i < 6; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    if (!existingRooms.some((r) => r.inviteCode.toUpperCase() === code)) {
+    if (!existingRooms.some((r) => r?.inviteCode && r.inviteCode.toUpperCase() === code)) {
       return code;
     }
   }
@@ -1473,7 +1735,7 @@ app.post("/api/rooms", (req, res) => {
   const candidateCode = req.body?.inviteCode && String(req.body.inviteCode).length === 6 ? String(req.body.inviteCode).toUpperCase() : null;
 
   const roomId = candidateId || ("room_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6));
-  const inviteCode = candidateCode && !rooms.some((r) => r.inviteCode.toUpperCase() === candidateCode) ? candidateCode : generateUniqueRoomCode(rooms);
+  const inviteCode = candidateCode && !rooms.some((r) => r?.inviteCode && r.inviteCode.toUpperCase() === candidateCode) ? candidateCode : generateUniqueRoomCode(rooms);
   const today = new Date().toISOString().split("T")[0];
   const roomType = type && String(type).trim() ? String(type).trim() : "Flat / Apartment";
 
@@ -1547,7 +1809,7 @@ app.post("/api/rooms/join", (req, res) => {
 
   const rooms = loadRooms();
   const cleanCode = inviteCode.trim().toUpperCase();
-  const room = rooms.find((r) => r.inviteCode.toUpperCase() === cleanCode);
+  const room = rooms.find((r) => r?.inviteCode && r.inviteCode.toUpperCase() === cleanCode);
 
   if (!room) {
     return res.status(404).json({ success: false, error: "Room with code " + cleanCode + " not found. Please verify the code." });
@@ -2770,6 +3032,9 @@ app.delete("/api/rooms/:roomId", (req, res) => {
                 uData.activeRoomId = uData.roomGroups[0]?.id || null;
               }
               fs.writeFileSync(filePath, JSON.stringify(uData, null, 2), "utf-8");
+              const targetUserId = f.replace("user_data_", "").replace(".json", "");
+              cachedUserData.set(targetUserId, uData);
+              persistUserDataToFirestore(targetUserId, uData).catch(() => {});
             }
           } catch (_) {}
         }
@@ -2827,6 +3092,9 @@ app.post("/api/rooms/:roomId/leave", (req, res) => {
                   uData.activeRoomId = uData.roomGroups[0]?.id || null;
                 }
                 fs.writeFileSync(filePath, JSON.stringify(uData, null, 2), "utf-8");
+                const targetUserId = f.replace("user_data_", "").replace(".json", "");
+                cachedUserData.set(targetUserId, uData);
+                persistUserDataToFirestore(targetUserId, uData).catch(() => {});
               }
             } catch (_) {}
           }
@@ -3678,6 +3946,7 @@ Output ONLY valid JSON adhering strictly to this schema:
 
 // Vite middleware / Static file serving
 async function startServer() {
+  await initFirestorePersistence();
   ensureUsersDataFiles();
 
   const hasDist = fs.existsSync(path.join(process.cwd(), "dist", "index.html"));
