@@ -622,7 +622,7 @@ export default function App() {
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       fetchRooms(currentUser.id);
-    }, 8000);
+    }, 4000);
 
     const onFocus = () => fetchRooms(currentUser.id);
     window.addEventListener('focus', onFocus);
@@ -1610,65 +1610,30 @@ export default function App() {
         body: JSON.stringify({ expense: exp }),
       });
 
-      if (res.status === 403) {
+      if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        alert(errData.error || 'You do not have permission to edit this expense.');
-        return;
+        const msg = errData.error || 'Failed to save expense.';
+        alert(msg);
+        throw new Error(msg);
       }
 
-      if (res.ok) {
-        const data = await res.json();
-        const updatedRoom = data.room || data.data;
-        if (updatedRoom) {
-          setRoomGroups((prev) => {
-            const next = (prev || []).map((r) => (r && r.id === targetRoomId ? updatedRoom : r));
-            localStorage.setItem('smm_room_groups', JSON.stringify(next));
-            return next;
-          });
-          syncedWithBackend = true;
-        }
-      }
-    } catch (err) {
-      console.warn('Backend sync paused, preserving expense in local state:', err);
-    }
-
-    // Local resilient update if backend was unavailable or errored
-    if (!syncedWithBackend) {
-      setRoomGroups((prev) => {
-        const next = (prev || []).map((r) => {
-          if (!r || r.id !== targetRoomId) return r;
-          const expenses = [...(r.expenses || [])];
-          const existingIdx = expenses.findIndex((e) => e && e.id === exp.id);
-          const isEdit = existingIdx >= 0;
-          if (isEdit) {
-            const target = expenses[existingIdx];
-            const ownerId = target?.createdByUserId || target?.paidByUserId;
-            if (ownerId && currentUser?.id && ownerId !== currentUser.id) {
-              return r; // Block unauthorized local edit
-            }
-            expenses[existingIdx] = exp;
-          } else {
-            expenses.unshift(exp);
+      const data = await res.json();
+      const updatedRoom = data.room || data.data;
+      if (updatedRoom) {
+        setRoomGroups((prev) => {
+          const next = (prev || []).map((r) => (r && r.id === targetRoomId ? updatedRoom : r));
+          localStorage.setItem('smm_room_groups', JSON.stringify(next));
+          if (currentUser?.id) {
+            localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
           }
-          const activities = [...(r.activities || [])];
-          activities.unshift({
-            id: 'act_' + Date.now(),
-            roomId: targetRoomId,
-            text: isEdit
-              ? `${currentUser?.name || exp.paidBy || 'Roommate'} updated "${exp.title}" (₹${exp.totalAmount})`
-              : `${exp.paidBy || 'Roommate'} added "${exp.title}" for ₹${exp.totalAmount}`,
-            time: new Date().toISOString(),
-            type: isEdit ? 'edit' : 'expense',
-          });
-          return { ...r, expenses, activities };
+          return next;
         });
-        localStorage.setItem('smm_room_groups', JSON.stringify(next));
-        return next;
-      });
+      }
+      await fetchRooms(currentUser?.id);
+    } catch (err) {
+      console.error('Error adding/updating room expense:', err);
+      throw err;
     }
-
-    // Note: My Money and My Room data are strictly separated.
-    // Shared room expenses do not automatically populate personal My Money transactions.
   };
 
   const handleDeleteRoomExpense = async (expenseId: string) => {
@@ -1707,57 +1672,28 @@ export default function App() {
         headers,
       });
 
-      if (res.status === 403) {
+      if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         alert(errData.error || 'You do not have permission to delete this expense.');
         return;
       }
 
-      if (res.ok) {
-        const data = await res.json();
-        const updatedRoom = data.room || data.data;
-        if (updatedRoom) {
-          setRoomGroups((prev) => {
-            const next = (prev || []).map((r) => (r && r.id === activeRoomId ? updatedRoom : r));
-            localStorage.setItem('smm_room_groups', JSON.stringify(next));
-            return next;
-          });
-          return;
-        }
+      const data = await res.json();
+      const updatedRoom = data.room || data.data;
+      if (updatedRoom) {
+        setRoomGroups((prev) => {
+          const next = (prev || []).map((r) => (r && r.id === activeRoomId ? updatedRoom : r));
+          localStorage.setItem('smm_room_groups', JSON.stringify(next));
+          if (currentUser?.id) {
+            localStorage.setItem(`smm_${currentUser.id}_room_groups`, JSON.stringify(next));
+          }
+          return next;
+        });
       }
+      await fetchRooms(currentUser?.id);
     } catch (err) {
       console.warn('Network issue deleting room expense from server:', err);
     }
-
-    // Local fallback only if authorized
-    setRoomGroups((prev) => {
-      const next = (prev || []).map((r) => {
-        if (!r || r.id !== activeRoomId) return r;
-        const expToDelete = (r.expenses || []).find((e) => e && e.id === expenseId);
-        const ownerId = expToDelete?.createdByUserId || expToDelete?.paidByUserId;
-        if (ownerId && currentUser?.id && ownerId !== currentUser.id) {
-          return r; // Do NOT delete unowned expense
-        }
-        const updatedExpenses = (r.expenses || []).filter((e) => e && e.id !== expenseId);
-        const activities = [...(r.activities || [])];
-        if (expToDelete) {
-          activities.unshift({
-            id: 'act_' + Date.now(),
-            roomId: activeRoomId,
-            text: `${currentUser?.name || 'Member'} deleted expense "${expToDelete.title}" (₹${expToDelete.totalAmount})`,
-            time: new Date().toISOString(),
-            type: 'expense',
-          });
-        }
-        return {
-          ...r,
-          expenses: updatedExpenses,
-          activities,
-        };
-      });
-      localStorage.setItem('smm_room_groups', JSON.stringify(next));
-      return next;
-    });
   };
 
   const handleAddRoommateToRoom = async (name: string, upiId?: string, phone?: string) => {
@@ -1941,8 +1877,8 @@ export default function App() {
         }
         return next;
       });
-      return;
     }
+    await fetchRooms(currentUser?.id);
   };
 
   const handleDeleteRoomSettlement = async (settleId: string) => {
@@ -1976,6 +1912,7 @@ export default function App() {
         return next;
       });
     }
+    await fetchRooms(currentUser?.id);
   };
 
   const handleAcceptRoomSettlement = async (settleId: string) => {
@@ -2009,6 +1946,7 @@ export default function App() {
         return next;
       });
     }
+    await fetchRooms(currentUser?.id);
   };
 
   const handleRejectRoomSettlement = async (settleId: string) => {
@@ -2045,6 +1983,7 @@ export default function App() {
         return next;
       });
     }
+    await fetchRooms(currentUser?.id);
   };
 
   const handleDeleteRoomGroup = async (roomId: string): Promise<{ success: boolean; error?: string }> => {

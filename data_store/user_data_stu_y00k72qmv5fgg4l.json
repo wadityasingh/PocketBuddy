@@ -1,0 +1,93 @@
+{
+  "goals": [],
+  "monthlyPocketMoney": 0,
+  "roomExpenses": [],
+  "roomGroups": [
+    {
+      "type": "Hostel",
+      "ownerId": "stu_rp14p5gmv5fgg3a",
+      "createdAt": "2026-10-12",
+      "inviteCode": "7HBR2H",
+      "id": "room_1791820155064_z4t7",
+      "expenses": [],
+      "name": "Hostel Room 302",
+      "activities": [
+        {
+          "text": "Manmohan Yadav joined the room",
+          "id": "act_1791820155090",
+          "roomId": "room_1791820155064_z4t7",
+          "type": "join",
+          "time": "2026-10-12T15:49:15.090Z"
+        },
+        {
+          "text": "Shivam Gautam joined the room",
+          "id": "act_1791820155076",
+          "type": "join",
+          "time": "2026-10-12T15:49:15.076Z",
+          "roomId": "room_1791820155064_z4t7"
+        },
+        {
+          "time": "2026-10-12T15:49:15.064Z",
+          "type": "join",
+          "roomId": "room_1791820155064_z4t7",
+          "id": "act_1791820155064",
+          "text": "Aditya Singh created room \"Hostel Room 302\""
+        }
+      ],
+      "settlements": [],
+      "members": [
+        {
+          "joinedAt": "2026-10-12",
+          "name": "Aditya Singh",
+          "role": "owner",
+          "id": "rm_stu_rp14p5gmv5fgg3a",
+          "isSelf": true,
+          "email": "aditya@test.com",
+          "upiId": "adityasingh@upi",
+          "userId": "stu_rp14p5gmv5fgg3a"
+        },
+        {
+          "isSelf": true,
+          "userId": "stu_4u2tjhgmv5fgg42",
+          "name": "Shivam Gautam",
+          "upiId": "shivamgautam@upi",
+          "email": "shivam@test.com",
+          "role": "member",
+          "id": "rm_stu_4u2tjhgmv5fgg42",
+          "joinedAt": "2026-10-12"
+        },
+        {
+          "name": "Manmohan Yadav",
+          "isSelf": true,
+          "userId": "stu_y00k72qmv5fgg4l",
+          "upiId": "manmohanyadav@upi",
+          "email": "manmohan@test.com",
+          "id": "rm_stu_y00k72qmv5fgg4l",
+          "joinedAt": "2026-10-12",
+          "role": "member"
+        }
+      ]
+    }
+  ],
+  "roommates": [],
+  "activeRoomId": "room_1791820155064_z4t7",
+  "wallets": {
+    "bank": 0,
+    "upi": 0,
+    "cash": 0
+  },
+  "hasCompletedTour": true,
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "rebateRuleNoticeHours": 24,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40
+  },
+  "udhaarRecords": [],
+  "isSampleData": false,
+  "transactions": [],
+  "userId": "stu_y00k72qmv5fgg4l",
+  "bills": [],
+  "updatedAt": "2026-10-12T15:49:15.094Z"
+}

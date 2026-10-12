@@ -1,0 +1,269 @@
+{
+  "updatedAt": "2026-10-12T15:10:19.575Z",
+  "isSampleData": false,
+  "roomExpenses": [],
+  "activeRoomId": "room_1791654450306_xz8f",
+  "goals": [],
+  "udhaarRecords": [],
+  "userName": "Shivam Gautam",
+  "roomGroups": [
+    {
+      "expenses": [
+        {
+          "title": "Atta",
+          "status": "pending",
+          "totalAmount": 18,
+          "createdBy": "Shivam Gautam",
+          "id": "exp_n220h1umv5dvs6h",
+          "notes": "",
+          "paidBy": "Shivam Gautam",
+          "amount": 18,
+          "createdByUserId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+          "createdAt": "2026-10-12T15:05:40.446Z",
+          "roomId": "room_1791654450306_xz8f",
+          "participants": [
+            {
+              "name": "Aditya Singh",
+              "hasPaid": false,
+              "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+              "share": 6
+            },
+            {
+              "share": 6,
+              "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+              "name": "Shivam Gautam",
+              "hasPaid": true
+            },
+            {
+              "userId": "6MgRbOl5opbtzU9ace8KCvAEk9D3",
+              "share": 6,
+              "hasPaid": false,
+              "name": "Manmohan Yadav"
+            }
+          ],
+          "category": "General",
+          "date": "2026-10-12",
+          "paidByUserId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+          "splitType": "equal"
+        },
+        {
+          "amount": 200,
+          "paidBy": "Aditya Singh",
+          "category": "General",
+          "participants": [
+            {
+              "share": 66.67,
+              "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+              "hasPaid": true,
+              "name": "Aditya Singh"
+            },
+            {
+              "name": "Shivam Gautam",
+              "share": 66.67,
+              "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+              "hasPaid": false
+            },
+            {
+              "hasPaid": false,
+              "name": "Manmohan Yadav",
+              "share": 66.66,
+              "userId": "6MgRbOl5opbtzU9ace8KCvAEk9D3"
+            }
+          ],
+          "createdBy": "Aditya Singh",
+          "createdByUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "id": "exp_9ipquhzmv5bh90c",
+          "paidByUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "status": "pending",
+          "title": "Oil (kachhi ghani)",
+          "splitType": "equal",
+          "date": "2026-10-12",
+          "roomId": "room_1791654450306_xz8f",
+          "notes": "",
+          "createdAt": "2026-10-12T13:58:10.256Z",
+          "totalAmount": 200
+        },
+        {
+          "participants": [
+            {
+              "share": 31.67,
+              "name": "Aditya Singh",
+              "hasPaid": false,
+              "userId": "RtonbhWc38Ubaa32haYPDIRtnx33"
+            },
+            {
+              "hasPaid": false,
+              "share": 31.67,
+              "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+              "name": "Shivam Gautam"
+            },
+            {
+              "share": 31.66,
+              "hasPaid": true,
+              "name": "Manmohan Yadav",
+              "userId": "6MgRbOl5opbtzU9ace8KCvAEk9D3"
+            }
+          ],
+          "status": "pending",
+          "id": "exp_whv98komv3o20hf",
+          "date": "2026-10-11",
+          "createdBy": "Manmohan Yadav",
+          "paidBy": "Manmohan Yadav",
+          "amount": 95,
+          "paidByUserId": "6MgRbOl5opbtzU9ace8KCvAEk9D3",
+          "category": "General",
+          "notes": "",
+          "createdAt": "2026-10-11T10:14:48.427Z",
+          "roomId": "room_1791654450306_xz8f",
+          "createdByUserId": "6MgRbOl5opbtzU9ace8KCvAEk9D3",
+          "totalAmount": 95,
+          "splitType": "equal",
+          "title": "Aalu , tamatar , pyaj"
+        }
+      ],
+      "settlements": [
+        {
+          "createdAt": "2026-10-12T15:09:44.268Z",
+          "note": "Settled debt of ₹86 from Shivam Gautam to Aditya Singh",
+          "mode": "UPI",
+          "roomId": "room_1791654450306_xz8f",
+          "amount": 86,
+          "creditorId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "fromUserId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+          "debtorId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+          "status": "rejected",
+          "ownerId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+          "createdBy": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+          "to": "Aditya Singh",
+          "toUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "date": "2026-10-12",
+          "updatedAt": "2026-10-12T15:10:13.642Z",
+          "from": "Shivam Gautam",
+          "id": "settle_1791817784268_ypcr"
+        }
+      ],
+      "ownerId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+      "inviteCode": "NADMJQ",
+      "createdAt": "2026-10-10",
+      "activities": [
+        {
+          "roomId": "room_1791654450306_xz8f",
+          "type": "settlement",
+          "time": "2026-10-12T15:10:13.642Z",
+          "id": "act_1791817813642",
+          "text": "❌ Aditya Singh marked payment of ₹86 from Shivam Gautam as Not Received"
+        },
+        {
+          "roomId": "room_1791654450306_xz8f",
+          "text": "🔔 Settlement request: Shivam Gautam recorded ₹86 via UPI to Aditya Singh. Waiting for Aditya Singh to Accept.",
+          "id": "act_1791817784268",
+          "type": "settlement",
+          "time": "2026-10-12T15:09:44.268Z"
+        },
+        {
+          "roomId": "room_1791654450306_xz8f",
+          "id": "act_1791817540447",
+          "time": "2026-10-12T15:05:40.447Z",
+          "type": "expense",
+          "text": "Shivam Gautam added Atta ₹18"
+        },
+        {
+          "id": "act_1791813490256",
+          "time": "2026-10-12T13:58:10.256Z",
+          "type": "expense",
+          "roomId": "room_1791654450306_xz8f",
+          "text": "Aditya Singh added Oil (kachhi ghani) ₹200"
+        },
+        {
+          "roomId": "room_1791654450306_xz8f",
+          "id": "act_1791713688427",
+          "text": "Manmohan Yadav added Aalu , tamatar , pyaj ₹95",
+          "type": "expense",
+          "time": "2026-10-11T10:14:48.427Z"
+        },
+        {
+          "text": "Manmohan Yadav joined the room",
+          "id": "act_1791654473502",
+          "roomId": "room_1791654450306_xz8f",
+          "time": "2026-10-10T17:47:53.502Z",
+          "type": "join"
+        },
+        {
+          "roomId": "room_1791654450306_xz8f",
+          "type": "join",
+          "time": "2026-10-10T17:47:49.250Z",
+          "id": "act_1791654469250",
+          "text": "Shivam Gautam joined the room"
+        },
+        {
+          "type": "join",
+          "time": "2026-10-10T17:47:30.534Z",
+          "id": "act_1791654450534",
+          "text": "Aditya Singh created room \"ROOMIE\"",
+          "roomId": "room_1791654450306_xz8f"
+        }
+      ],
+      "members": [
+        {
+          "isSelf": true,
+          "joinedAt": "2026-10-10",
+          "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "role": "owner",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJG-CMqzv2-J6Qp8zUAez1NsSf4eG_LypoyDktsGX4keRePOnkUpA=s96-c",
+          "upiId": null,
+          "id": "rm_RtonbhWc38Ubaa32haYPDIRtnx33",
+          "phone": null,
+          "name": "Aditya Singh",
+          "email": "sadityasingh6275520@gmail.com"
+        },
+        {
+          "upiId": "shivamgautam@upi",
+          "isSelf": true,
+          "name": "Shivam Gautam",
+          "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+          "phone": null,
+          "email": "sg8339774@gmail.com",
+          "id": "rm_a8fFEspQX9MwhjF1vLB8ShYQyl22",
+          "role": "member",
+          "joinedAt": "2026-10-10",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocL7_2ev-rz1NSAtbGymYMhF9H3wHZY3I0W-xBAJVqG8ZaA8XyPw=s96-c"
+        },
+        {
+          "phone": null,
+          "email": "manmohanyadav123123@gmail.com",
+          "name": "Manmohan Yadav",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocLePIO__j-kqHSOs_J13-OP04oMT8-qtYXlp2yXRa-7yiamDpM=s96-c",
+          "userId": "6MgRbOl5opbtzU9ace8KCvAEk9D3",
+          "joinedAt": "2026-10-10",
+          "upiId": null,
+          "id": "rm_6MgRbOl5opbtzU9ace8KCvAEk9D3",
+          "role": "member",
+          "isSelf": true
+        }
+      ],
+      "id": "room_1791654450306_xz8f",
+      "updatedAt": "2026-10-12T13:58:10.258Z",
+      "name": "ROOMIE",
+      "type": "Flat"
+    }
+  ],
+  "monthlyPocketMoney": 5000,
+  "hasCompletedTour": true,
+  "messConfig": {
+    "mealsPerDay": 3,
+    "rebateRuleNoticeHours": 24,
+    "monthlyMessFee": 0,
+    "rebatePerSkippedMeal": 40
+  },
+  "bills": [],
+  "transactions": [],
+  "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+  "meals": [],
+  "wallets": {
+    "cash": 2000,
+    "bank": 0,
+    "upi": 0
+  },
+  "roommates": [],
+  "forceReset": true
+}

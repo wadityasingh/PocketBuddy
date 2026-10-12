@@ -1,0 +1,59 @@
+{
+  "bills": [],
+  "isSampleData": false,
+  "transactions": [],
+  "roomGroups": [
+    {
+      "createdAt": "2026-10-12",
+      "id": "room_1791820155064_z4t7",
+      "activities": [
+        {
+          "roomId": "room_1791820155064_z4t7",
+          "time": "2026-10-12T15:49:15.064Z",
+          "type": "join",
+          "text": "Aditya Singh created room \"Hostel Room 302\"",
+          "id": "act_1791820155064"
+        }
+      ],
+      "name": "Hostel Room 302",
+      "members": [
+        {
+          "name": "Aditya Singh",
+          "isSelf": true,
+          "id": "rm_stu_rp14p5gmv5fgg3a",
+          "userId": "stu_rp14p5gmv5fgg3a",
+          "role": "owner",
+          "joinedAt": "2026-10-12",
+          "email": "aditya@test.com",
+          "upiId": "adityasingh@upi"
+        }
+      ],
+      "inviteCode": "7HBR2H",
+      "expenses": [],
+      "type": "Hostel",
+      "settlements": [],
+      "ownerId": "stu_rp14p5gmv5fgg3a"
+    }
+  ],
+  "roommates": [],
+  "wallets": {
+    "upi": 0,
+    "cash": 0,
+    "bank": 0
+  },
+  "userId": "stu_rp14p5gmv5fgg3a",
+  "udhaarRecords": [],
+  "messConfig": {
+    "rebateRuleNoticeHours": 24,
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40
+  },
+  "meals": [],
+  "monthlyPocketMoney": 0,
+  "roomExpenses": [],
+  "hasCompletedTour": true,
+  "activeRoomId": "room_1791820155064_z4t7",
+  "updatedAt": "2026-10-12T15:49:15.068Z",
+  "goals": []
+}

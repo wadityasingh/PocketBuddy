@@ -1,0 +1,26 @@
+{
+  "udhaarRecords": [],
+  "wallets": {
+    "bank": 0,
+    "upi": 0,
+    "cash": 0
+  },
+  "roomGroups": [],
+  "updatedAt": "2026-10-10T17:47:09.267Z",
+  "bills": [],
+  "hasCompletedTour": true,
+  "transactions": [],
+  "isSampleData": false,
+  "monthlyPocketMoney": 0,
+  "meals": [],
+  "roommates": [],
+  "messConfig": {
+    "rebateRuleNoticeHours": 24,
+    "monthlyMessFee": 0,
+    "rebatePerSkippedMeal": 40,
+    "mealsPerDay": 3
+  },
+  "userId": "6D5XrO3VFUMdhbYgIPoL1PrHqk22",
+  "goals": [],
+  "roomExpenses": []
+}

@@ -1,9 +1,11 @@
 export function formatINR(amount?: number | null): string {
   const safeAmt = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+  const hasDecimals = Math.abs(Math.round(safeAmt * 100) % 100) > 0;
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
-    maximumFractionDigits: 0,
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: hasDecimals ? 2 : 0,
   }).format(safeAmt);
 }
 

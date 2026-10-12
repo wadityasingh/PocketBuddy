@@ -1,0 +1,62 @@
+{
+  "activeRoomId": "room_1791811211424_hc5y",
+  "roomExpenses": [],
+  "wallets": {
+    "bank": 0,
+    "upi": 1000,
+    "cash": 5000
+  },
+  "meals": [],
+  "isSampleData": false,
+  "updatedAt": "2026-10-12T13:44:46.899Z",
+  "bills": [],
+  "messConfig": {
+    "mealsPerDay": 3,
+    "rebateRuleNoticeHours": 24,
+    "rebatePerSkippedMeal": 40,
+    "monthlyMessFee": 0
+  },
+  "roomGroups": [
+    {
+      "type": "Flat / Apartment",
+      "updatedAt": "2026-10-12T13:20:11.991Z",
+      "id": "room_1791811211424_hc5y",
+      "expenses": [],
+      "name": "2",
+      "createdAt": "2026-10-12",
+      "inviteCode": "5C4YVA",
+      "members": [
+        {
+          "role": "owner",
+          "id": "rm_r0u8HvzVSvScm4Bm31gI9nVmHEi2",
+          "upiId": "jayeshsinghrathore@upi",
+          "isSelf": true,
+          "name": "Jayesh Singh Rathore",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIXD4Yg60eKpnu7hr_Gn3uBgaL6zMyFZO44rjfNLWzTFs0-l0DE=s96-c",
+          "userId": "r0u8HvzVSvScm4Bm31gI9nVmHEi2",
+          "joinedAt": "2026-10-12",
+          "email": "zj9892952@gmail.com"
+        }
+      ],
+      "activities": [
+        {
+          "time": "2026-10-12T13:20:11.988Z",
+          "type": "join",
+          "id": "act_1791811211988",
+          "text": "Jayesh Singh Rathore created room \"2\"",
+          "roomId": "room_1791811211424_hc5y"
+        }
+      ],
+      "ownerId": "r0u8HvzVSvScm4Bm31gI9nVmHEi2",
+      "settlements": []
+    }
+  ],
+  "userId": "r0u8HvzVSvScm4Bm31gI9nVmHEi2",
+  "hasCompletedTour": true,
+  "transactions": [],
+  "monthlyPocketMoney": 15000,
+  "goals": [],
+  "udhaarRecords": [],
+  "roommates": [],
+  "userName": "Jayesh Singh Rathore"
+}

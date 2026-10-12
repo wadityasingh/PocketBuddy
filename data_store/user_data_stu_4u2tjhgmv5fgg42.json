@@ -1,0 +1,76 @@
+{
+  "hasCompletedTour": true,
+  "wallets": {
+    "bank": 0,
+    "cash": 0,
+    "upi": 0
+  },
+  "transactions": [],
+  "isSampleData": false,
+  "bills": [],
+  "messConfig": {
+    "mealsPerDay": 3,
+    "rebateRuleNoticeHours": 24,
+    "monthlyMessFee": 0,
+    "rebatePerSkippedMeal": 40
+  },
+  "roommates": [],
+  "goals": [],
+  "monthlyPocketMoney": 0,
+  "userId": "stu_4u2tjhgmv5fgg42",
+  "activeRoomId": "room_1791820155064_z4t7",
+  "meals": [],
+  "updatedAt": "2026-10-12T15:49:15.079Z",
+  "udhaarRecords": [],
+  "roomExpenses": [],
+  "roomGroups": [
+    {
+      "members": [
+        {
+          "joinedAt": "2026-10-12",
+          "role": "owner",
+          "userId": "stu_rp14p5gmv5fgg3a",
+          "isSelf": true,
+          "email": "aditya@test.com",
+          "upiId": "adityasingh@upi",
+          "id": "rm_stu_rp14p5gmv5fgg3a",
+          "name": "Aditya Singh"
+        },
+        {
+          "name": "Shivam Gautam",
+          "isSelf": true,
+          "userId": "stu_4u2tjhgmv5fgg42",
+          "joinedAt": "2026-10-12",
+          "id": "rm_stu_4u2tjhgmv5fgg42",
+          "upiId": "shivamgautam@upi",
+          "email": "shivam@test.com",
+          "role": "member"
+        }
+      ],
+      "name": "Hostel Room 302",
+      "id": "room_1791820155064_z4t7",
+      "inviteCode": "7HBR2H",
+      "settlements": [],
+      "ownerId": "stu_rp14p5gmv5fgg3a",
+      "expenses": [],
+      "type": "Hostel",
+      "activities": [
+        {
+          "time": "2026-10-12T15:49:15.076Z",
+          "roomId": "room_1791820155064_z4t7",
+          "id": "act_1791820155076",
+          "type": "join",
+          "text": "Shivam Gautam joined the room"
+        },
+        {
+          "text": "Aditya Singh created room \"Hostel Room 302\"",
+          "type": "join",
+          "id": "act_1791820155064",
+          "time": "2026-10-12T15:49:15.064Z",
+          "roomId": "room_1791820155064_z4t7"
+        }
+      ],
+      "createdAt": "2026-10-12"
+    }
+  ]
+}

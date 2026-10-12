@@ -1,0 +1,26 @@
+{
+  "hasCompletedTour": true,
+  "updatedAt": "2026-10-10T17:47:09.268Z",
+  "udhaarRecords": [],
+  "transactions": [],
+  "isSampleData": false,
+  "goals": [],
+  "monthlyPocketMoney": 0,
+  "wallets": {
+    "cash": 0,
+    "bank": 0,
+    "upi": 0
+  },
+  "meals": [],
+  "messConfig": {
+    "rebateRuleNoticeHours": 24,
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40
+  },
+  "roomExpenses": [],
+  "roommates": [],
+  "roomGroups": [],
+  "userId": "EbktDi3IKhhcMiegfOy7cwoAnQn1",
+  "bills": []
+}

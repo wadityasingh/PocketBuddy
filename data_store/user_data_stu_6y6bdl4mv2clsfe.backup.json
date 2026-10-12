@@ -1,0 +1,107 @@
+{
+  "isSampleData": false,
+  "goals": [],
+  "roommates": [],
+  "roomGroups": [
+    {
+      "updatedAt": "2026-10-12T13:20:11.992Z",
+      "ownerId": "TW9t2Hi7QacCraF878DgLdVRfUI2",
+      "settlements": [],
+      "members": [
+        {
+          "userId": "TW9t2Hi7QacCraF878DgLdVRfUI2",
+          "isSelf": true,
+          "phone": null,
+          "email": "amanmishra3190@gmail.com",
+          "role": "owner",
+          "joinedAt": "2026-10-10",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJgVuS4GCWPuQD2azKVO8Xf7zEQGPkPnkW1tvJCmXpCwPCNPx_V=s96-c",
+          "upiId": null,
+          "id": "rm_TW9t2Hi7QacCraF878DgLdVRfUI2",
+          "name": "Aman Mishra Aman Mishra"
+        },
+        {
+          "name": "Sarthak",
+          "id": "rm_user_manual_mv2ci85h",
+          "phone": "7705874781",
+          "userId": "user_manual_mv2ci85h",
+          "role": "member",
+          "joinedAt": "2026-10-10",
+          "isSelf": false
+        },
+        {
+          "role": "member",
+          "userId": "stu_6y6bdl4mv2clsfe",
+          "isSelf": true,
+          "phone": "7705874781",
+          "email": "singhsarthak4781@gmail.com",
+          "id": "rm_stu_6y6bdl4mv2clsfe",
+          "joinedAt": "2026-10-10",
+          "name": "Sarthak Singh",
+          "upiId": "sarthaksingh@upi"
+        }
+      ],
+      "activities": [
+        {
+          "type": "join",
+          "time": "2026-10-10T12:06:54.456Z",
+          "roomId": "room_1791633763394_5xju",
+          "text": "Sarthak Singh joined the room",
+          "id": "act_1791634014456"
+        },
+        {
+          "roomId": "room_1791633763394_5xju",
+          "id": "act_1791633800645",
+          "text": "Sarthak was added to the room",
+          "type": "member",
+          "time": "2026-10-10T12:03:20.645Z"
+        },
+        {
+          "time": "2026-10-10T12:02:44.552Z",
+          "type": "join",
+          "id": "act_1791633764551",
+          "text": "Aman Mishra Aman Mishra created room \"Aas\"",
+          "roomId": "room_1791633763394_5xju"
+        }
+      ],
+      "expenses": [],
+      "type": "Flat",
+      "inviteCode": "FG4A7C",
+      "id": "room_1791633763394_5xju",
+      "name": "Aas",
+      "createdAt": "2026-10-10"
+    }
+  ],
+  "roomExpenses": [],
+  "activeRoomId": "room_1791633763394_5xju",
+  "wallets": {
+    "cash": 0,
+    "upi": 70,
+    "bank": 0
+  },
+  "udhaarRecords": [],
+  "transactions": [
+    {
+      "id": "id_fdwe218mv2co9ml",
+      "amount": 70,
+      "title": "Bhindii",
+      "type": "income",
+      "paymentMode": "UPI",
+      "category": "Income",
+      "date": "2026-10-10"
+    }
+  ],
+  "monthlyPocketMoney": 0,
+  "hasCompletedTour": true,
+  "bills": [],
+  "userId": "stu_6y6bdl4mv2clsfe",
+  "updatedAt": "2026-10-12T13:47:27.907Z",
+  "userName": "Sarthak Singh",
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "meals": []
+}

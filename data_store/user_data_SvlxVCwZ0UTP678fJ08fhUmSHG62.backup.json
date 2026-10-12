@@ -1,0 +1,204 @@
+{
+  "roomGroups": [
+    {
+      "type": "Apartment",
+      "members": [
+        {
+          "id": "rm_SvlxVCwZ0UTP678fJ08fhUmSHG62",
+          "role": "owner",
+          "upiId": "vishalmaddheshiya@upi",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocKmlnhA-hUsg-WJl6yk56UNLIiXjdiwfVNGJ4pUBjawMbBJLw=s96-c",
+          "isSelf": true,
+          "joinedAt": "2026-10-03",
+          "name": "Vishal Maddheshiya",
+          "userId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+          "email": "vishalmaddheshiya580@gmail.com"
+        },
+        {
+          "upiId": "null",
+          "name": "Aditya Singh",
+          "id": "rm_RtonbhWc38Ubaa32haYPDIRtnx33",
+          "role": "member",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJG-CMqzv2-J6Qp8zUAez1NsSf4eG_LypoyDktsGX4keRePOnkUpA=s96-c",
+          "email": "sadityasingh6275520@gmail.com",
+          "phone": "8957190542",
+          "isSelf": true,
+          "joinedAt": "2026-10-03",
+          "userId": "RtonbhWc38Ubaa32haYPDIRtnx33"
+        }
+      ],
+      "id": "room_1791013551860_2jb9",
+      "expenses": [
+        {
+          "splitType": "equal",
+          "createdByUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "createdAt": "2026-10-03T07:46:59.792Z",
+          "roomId": "room_1791013551860_2jb9",
+          "totalAmount": 260,
+          "amount": 260,
+          "paidBy": "Aditya Singh",
+          "createdBy": "Aditya Singh",
+          "notes": "",
+          "participants": [
+            {
+              "userId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+              "hasPaid": false,
+              "share": 130,
+              "name": "Vishal Maddheshiya"
+            },
+            {
+              "name": "Aditya Singh",
+              "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+              "hasPaid": true,
+              "share": 130
+            }
+          ],
+          "date": "2026-10-03",
+          "title": "Dft",
+          "status": "pending",
+          "category": "General",
+          "paidByUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "id": "exp_xlqjzwkmus39ehj"
+        },
+        {
+          "createdByUserId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+          "createdBy": "Vishal Maddheshiya",
+          "roomId": "room_1791013551860_2jb9",
+          "participants": [
+            {
+              "hasPaid": true,
+              "userId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+              "name": "Vishal Maddheshiya",
+              "share": 30
+            },
+            {
+              "name": "Aditya Singh",
+              "hasPaid": false,
+              "share": 30,
+              "userId": "RtonbhWc38Ubaa32haYPDIRtnx33"
+            }
+          ],
+          "totalAmount": 60,
+          "paidByUserId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+          "date": "2026-10-03",
+          "category": "General",
+          "title": "Dooodh",
+          "status": "pending",
+          "id": "exp_1q7bjnmmus38sdg",
+          "splitType": "equal",
+          "createdAt": "2026-10-03T07:46:32.707Z",
+          "amount": 60,
+          "paidBy": "Vishal Maddheshiya",
+          "notes": ""
+        }
+      ],
+      "ownerId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+      "name": "Tt",
+      "inviteCode": "BZLWBE",
+      "activities": [
+        {
+          "text": "✅ Aditya Singh verified & accepted settlement of ₹100 from Vishal Maddheshiya (UPI)",
+          "id": "act_1791013665093",
+          "type": "settlement",
+          "time": "2026-10-03T07:47:45.093Z",
+          "roomId": "room_1791013551860_2jb9"
+        },
+        {
+          "roomId": "room_1791013551860_2jb9",
+          "id": "act_1791013658791",
+          "text": "🔔 Settlement request: Vishal Maddheshiya recorded ₹100 via UPI to Aditya Singh. Waiting for Aditya Singh to Accept.",
+          "time": "2026-10-03T07:47:38.791Z",
+          "type": "settlement"
+        },
+        {
+          "roomId": "room_1791013551860_2jb9",
+          "id": "act_1791013619792",
+          "time": "2026-10-03T07:46:59.792Z",
+          "type": "expense",
+          "text": "Aditya Singh added Dft ₹260"
+        },
+        {
+          "text": "Vishal Maddheshiya added Dooodh ₹60",
+          "type": "expense",
+          "time": "2026-10-03T07:46:32.707Z",
+          "id": "act_1791013592707",
+          "roomId": "room_1791013551860_2jb9"
+        },
+        {
+          "time": "2026-10-03T07:46:10.934Z",
+          "type": "join",
+          "text": "Aditya Singh joined the room",
+          "roomId": "room_1791013551860_2jb9",
+          "id": "act_1791013570934"
+        },
+        {
+          "time": "2026-10-03T07:45:52.836Z",
+          "type": "join",
+          "text": "Vishal Maddheshiya created room \"Tt\"",
+          "id": "act_1791013552836",
+          "roomId": "room_1791013551860_2jb9"
+        }
+      ],
+      "settlements": [
+        {
+          "confirmedAt": "2026-10-03T07:47:45.093Z",
+          "status": "completed",
+          "ownerId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+          "mode": "UPI",
+          "createdAt": "2026-10-03T07:47:38.791Z",
+          "fromUserId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+          "confirmedBy": "Aditya Singh",
+          "note": "Settled debt of ₹100 from Vishal Maddheshiya to Aditya Singh",
+          "amount": 100,
+          "creditorId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "debtorId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+          "date": "2026-10-03",
+          "roomId": "room_1791013551860_2jb9",
+          "from": "Vishal Maddheshiya",
+          "updatedAt": "2026-10-03T07:47:45.093Z",
+          "to": "Aditya Singh",
+          "toUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+          "createdBy": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+          "id": "settle_1791013658791_esmw"
+        }
+      ],
+      "createdAt": "2026-10-03"
+    }
+  ],
+  "userId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+  "transactions": [
+    {
+      "amount": 230,
+      "title": "Copy",
+      "date": "2026-10-03",
+      "paymentMode": "UPI",
+      "category": "Expense",
+      "type": "expense",
+      "id": "id_mckybgemus36ja9"
+    }
+  ],
+  "hasCompletedTour": true,
+  "udhaarRecords": [],
+  "wallets": {
+    "upi": 4000,
+    "bank": 0,
+    "cash": 1000
+  },
+  "updatedAt": "2026-10-10T17:47:09.279Z",
+  "goals": [],
+  "meals": [],
+  "isSampleData": false,
+  "forceReset": true,
+  "monthlyPocketMoney": 5000,
+  "activeRoomId": "room_1791013551860_2jb9",
+  "userName": "Vishal Maddheshiya",
+  "roomExpenses": [],
+  "roommates": [],
+  "bills": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24,
+    "mealsPerDay": 3
+  }
+}

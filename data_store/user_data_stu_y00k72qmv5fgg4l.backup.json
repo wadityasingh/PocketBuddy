@@ -1,0 +1,91 @@
+{
+  "monthlyPocketMoney": 0,
+  "wallets": {
+    "cash": 0,
+    "upi": 0,
+    "bank": 0
+  },
+  "isSampleData": false,
+  "transactions": [],
+  "roomExpenses": [],
+  "roommates": [],
+  "roomGroups": [
+    {
+      "id": "room_1791820155064_z4t7",
+      "name": "Hostel Room 302",
+      "type": "Hostel",
+      "inviteCode": "7HBR2H",
+      "ownerId": "stu_rp14p5gmv5fgg3a",
+      "members": [
+        {
+          "id": "rm_stu_rp14p5gmv5fgg3a",
+          "userId": "stu_rp14p5gmv5fgg3a",
+          "name": "Aditya Singh",
+          "email": "aditya@test.com",
+          "upiId": "adityasingh@upi",
+          "role": "owner",
+          "joinedAt": "2026-10-12",
+          "isSelf": true
+        },
+        {
+          "id": "rm_stu_4u2tjhgmv5fgg42",
+          "userId": "stu_4u2tjhgmv5fgg42",
+          "name": "Shivam Gautam",
+          "email": "shivam@test.com",
+          "upiId": "shivamgautam@upi",
+          "role": "member",
+          "joinedAt": "2026-10-12",
+          "isSelf": true
+        },
+        {
+          "id": "rm_stu_y00k72qmv5fgg4l",
+          "userId": "stu_y00k72qmv5fgg4l",
+          "name": "Manmohan Yadav",
+          "email": "manmohan@test.com",
+          "upiId": "manmohanyadav@upi",
+          "role": "member",
+          "joinedAt": "2026-10-12",
+          "isSelf": true
+        }
+      ],
+      "expenses": [],
+      "settlements": [],
+      "activities": [
+        {
+          "id": "act_1791820155090",
+          "roomId": "room_1791820155064_z4t7",
+          "text": "Manmohan Yadav joined the room",
+          "time": "2026-10-12T15:49:15.090Z",
+          "type": "join"
+        },
+        {
+          "id": "act_1791820155076",
+          "roomId": "room_1791820155064_z4t7",
+          "text": "Shivam Gautam joined the room",
+          "time": "2026-10-12T15:49:15.076Z",
+          "type": "join"
+        },
+        {
+          "id": "act_1791820155064",
+          "roomId": "room_1791820155064_z4t7",
+          "text": "Aditya Singh created room \"Hostel Room 302\"",
+          "time": "2026-10-12T15:49:15.064Z",
+          "type": "join"
+        }
+      ],
+      "createdAt": "2026-10-12"
+    }
+  ],
+  "activeRoomId": "room_1791820155064_z4t7",
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "udhaarRecords": [],
+  "bills": [],
+  "goals": [],
+  "hasCompletedTour": true
+}

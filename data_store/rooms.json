@@ -1,1 +1,957 @@
-[]
+[
+  {
+    "id": "room_1791820185454_690p",
+    "name": "Hostel Room 404",
+    "type": "Hostel",
+    "inviteCode": "YKHLAP",
+    "ownerId": "stu_wac8l0imv5fh3im",
+    "members": [
+      {
+        "id": "rm_stu_wac8l0imv5fh3im",
+        "userId": "stu_wac8l0imv5fh3im",
+        "name": "Aditya Singh 2",
+        "email": "aditya2@test.com",
+        "upiId": "adityasingh2@upi",
+        "role": "owner",
+        "joinedAt": "2026-10-12"
+      },
+      {
+        "id": "rm_stu_g6wa32gmv5fh3jm",
+        "userId": "stu_g6wa32gmv5fh3jm",
+        "name": "Shivam Gautam 2",
+        "email": "shivam2@test.com",
+        "upiId": "shivamgautam2@upi",
+        "role": "member",
+        "joinedAt": "2026-10-12"
+      },
+      {
+        "id": "rm_stu_b5hw8zzmv5fh3kb",
+        "userId": "stu_b5hw8zzmv5fh3kb",
+        "name": "Manmohan Yadav 2",
+        "email": "manmohan2@test.com",
+        "upiId": "manmohanyadav2@upi",
+        "role": "member",
+        "joinedAt": "2026-10-12"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "exp_1791820185563_gor0",
+        "roomId": "room_1791820185454_690p",
+        "title": "vegetables",
+        "totalAmount": 95,
+        "amount": 95,
+        "category": "General",
+        "paidByUserId": "stu_b5hw8zzmv5fh3kb",
+        "paidBy": "Manmohan Yadav 2",
+        "createdByUserId": "stu_b5hw8zzmv5fh3kb",
+        "createdBy": "Manmohan Yadav 2",
+        "splitType": "equal",
+        "participants": [
+          {
+            "userId": "stu_wac8l0imv5fh3im",
+            "name": "Aditya Singh 2",
+            "share": 31.67,
+            "hasPaid": false
+          },
+          {
+            "userId": "stu_g6wa32gmv5fh3jm",
+            "name": "Shivam Gautam 2",
+            "share": 31.66,
+            "hasPaid": false
+          },
+          {
+            "userId": "stu_b5hw8zzmv5fh3kb",
+            "name": "Manmohan Yadav 2",
+            "share": 31.67,
+            "hasPaid": true
+          }
+        ],
+        "date": "2026-10-12",
+        "notes": "",
+        "createdAt": "2026-10-12T15:49:45.564Z",
+        "status": "pending"
+      },
+      {
+        "id": "exp_1791820185553_4l9b",
+        "roomId": "room_1791820185454_690p",
+        "title": "atta",
+        "totalAmount": 18,
+        "amount": 18,
+        "category": "General",
+        "paidByUserId": "stu_g6wa32gmv5fh3jm",
+        "paidBy": "Shivam Gautam 2",
+        "createdByUserId": "stu_g6wa32gmv5fh3jm",
+        "createdBy": "Shivam Gautam 2",
+        "splitType": "equal",
+        "participants": [
+          {
+            "userId": "stu_wac8l0imv5fh3im",
+            "name": "Aditya Singh 2",
+            "share": 6,
+            "hasPaid": false
+          },
+          {
+            "userId": "stu_g6wa32gmv5fh3jm",
+            "name": "Shivam Gautam 2",
+            "share": 6,
+            "hasPaid": true
+          },
+          {
+            "userId": "stu_b5hw8zzmv5fh3kb",
+            "name": "Manmohan Yadav 2",
+            "share": 6,
+            "hasPaid": false
+          }
+        ],
+        "date": "2026-10-12",
+        "notes": "",
+        "createdAt": "2026-10-12T15:49:45.554Z",
+        "status": "pending"
+      },
+      {
+        "id": "exp_1791820185513_ffn9",
+        "roomId": "room_1791820185454_690p",
+        "title": "oil",
+        "totalAmount": 200,
+        "amount": 200,
+        "category": "General",
+        "paidByUserId": "stu_wac8l0imv5fh3im",
+        "paidBy": "Aditya Singh 2",
+        "createdByUserId": "stu_wac8l0imv5fh3im",
+        "createdBy": "Aditya Singh 2",
+        "splitType": "equal",
+        "participants": [
+          {
+            "userId": "stu_wac8l0imv5fh3im",
+            "name": "Aditya Singh 2",
+            "share": 66.67,
+            "hasPaid": true
+          },
+          {
+            "userId": "stu_g6wa32gmv5fh3jm",
+            "name": "Shivam Gautam 2",
+            "share": 66.67,
+            "hasPaid": false
+          },
+          {
+            "userId": "stu_b5hw8zzmv5fh3kb",
+            "name": "Manmohan Yadav 2",
+            "share": 66.66,
+            "hasPaid": false
+          }
+        ],
+        "date": "2026-10-12",
+        "notes": "",
+        "createdAt": "2026-10-12T15:49:45.513Z",
+        "status": "pending"
+      }
+    ],
+    "settlements": [
+      {
+        "id": "settle_1791820185576_ulor",
+        "roomId": "room_1791820185454_690p",
+        "createdBy": "stu_g6wa32gmv5fh3jm",
+        "ownerId": "stu_g6wa32gmv5fh3jm",
+        "debtorId": "stu_g6wa32gmv5fh3jm",
+        "creditorId": "stu_wac8l0imv5fh3im",
+        "fromUserId": "stu_g6wa32gmv5fh3jm",
+        "from": "Shivam Gautam 2",
+        "toUserId": "stu_wac8l0imv5fh3im",
+        "to": "Aditya Singh 2",
+        "amount": 86.33,
+        "date": "2026-10-12",
+        "mode": "UPI",
+        "status": "completed",
+        "note": "Shivam Gautam 2 settled ₹86.33 with Aditya Singh 2",
+        "createdAt": "2026-10-12T15:49:45.576Z",
+        "updatedAt": "2026-10-12T15:49:45.598Z",
+        "confirmedAt": "2026-10-12T15:49:45.598Z",
+        "confirmedBy": "Aditya Singh 2"
+      }
+    ],
+    "activities": [
+      {
+        "id": "act_1791820185598",
+        "roomId": "room_1791820185454_690p",
+        "text": "✅ Aditya Singh 2 verified & accepted settlement of ₹86.33 from Shivam Gautam 2 (UPI)",
+        "time": "2026-10-12T15:49:45.598Z",
+        "type": "settlement"
+      },
+      {
+        "id": "act_1791820185576",
+        "roomId": "room_1791820185454_690p",
+        "text": "🔔 Settlement request: Shivam Gautam 2 recorded ₹86.33 via UPI to Aditya Singh 2. Waiting for Aditya Singh 2 to Accept.",
+        "time": "2026-10-12T15:49:45.576Z",
+        "type": "settlement"
+      },
+      {
+        "id": "act_1791820185564",
+        "roomId": "room_1791820185454_690p",
+        "text": "Manmohan Yadav 2 added vegetables ₹95",
+        "time": "2026-10-12T15:49:45.564Z",
+        "type": "expense"
+      },
+      {
+        "id": "act_1791820185554",
+        "roomId": "room_1791820185454_690p",
+        "text": "Shivam Gautam 2 added atta ₹18",
+        "time": "2026-10-12T15:49:45.554Z",
+        "type": "expense"
+      },
+      {
+        "id": "act_1791820185513",
+        "roomId": "room_1791820185454_690p",
+        "text": "Aditya Singh 2 added oil ₹200",
+        "time": "2026-10-12T15:49:45.513Z",
+        "type": "expense"
+      },
+      {
+        "id": "act_1791820185477",
+        "roomId": "room_1791820185454_690p",
+        "text": "Manmohan Yadav 2 joined the room",
+        "time": "2026-10-12T15:49:45.477Z",
+        "type": "join"
+      },
+      {
+        "id": "act_1791820185468",
+        "roomId": "room_1791820185454_690p",
+        "text": "Shivam Gautam 2 joined the room",
+        "time": "2026-10-12T15:49:45.468Z",
+        "type": "join"
+      },
+      {
+        "id": "act_1791820185454",
+        "roomId": "room_1791820185454_690p",
+        "text": "Aditya Singh 2 created room \"Hostel Room 404\"",
+        "time": "2026-10-12T15:49:45.454Z",
+        "type": "join"
+      }
+    ],
+    "createdAt": "2026-10-12"
+  },
+  {
+    "settlements": [
+      {
+        "amount": 100,
+        "createdAt": "2026-10-03T07:47:38.791Z",
+        "mode": "UPI",
+        "note": "Settled debt of ₹100 from Vishal Maddheshiya to Aditya Singh",
+        "status": "completed",
+        "fromUserId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+        "from": "Vishal Maddheshiya",
+        "debtorId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+        "createdBy": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+        "roomId": "room_1791013551860_2jb9",
+        "creditorId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "ownerId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+        "confirmedAt": "2026-10-03T07:47:45.093Z",
+        "confirmedBy": "Aditya Singh",
+        "toUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "date": "2026-10-03",
+        "updatedAt": "2026-10-03T07:47:45.093Z",
+        "id": "settle_1791013658791_esmw",
+        "to": "Aditya Singh"
+      }
+    ],
+    "ownerId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+    "name": "Tt",
+    "inviteCode": "BZLWBE",
+    "members": [
+      {
+        "id": "rm_SvlxVCwZ0UTP678fJ08fhUmSHG62",
+        "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocKmlnhA-hUsg-WJl6yk56UNLIiXjdiwfVNGJ4pUBjawMbBJLw=s96-c",
+        "role": "owner",
+        "name": "Vishal Maddheshiya",
+        "joinedAt": "2026-10-03",
+        "upiId": "vishalmaddheshiya@upi",
+        "email": "vishalmaddheshiya580@gmail.com",
+        "userId": "SvlxVCwZ0UTP678fJ08fhUmSHG62"
+      }
+    ],
+    "updatedAt": "2026-10-12T15:49:15.198Z",
+    "activities": [
+      {
+        "type": "join",
+        "text": "Aditya Singh left the room",
+        "roomId": "room_1791013551860_2jb9",
+        "id": "act_1791309635027",
+        "time": "2026-10-06T18:00:35.027Z"
+      },
+      {
+        "time": "2026-10-03T07:47:45.093Z",
+        "roomId": "room_1791013551860_2jb9",
+        "type": "settlement",
+        "text": "✅ Aditya Singh verified & accepted settlement of ₹100 from Vishal Maddheshiya (UPI)",
+        "id": "act_1791013665093"
+      },
+      {
+        "id": "act_1791013658791",
+        "text": "🔔 Settlement request: Vishal Maddheshiya recorded ₹100 via UPI to Aditya Singh. Waiting for Aditya Singh to Accept.",
+        "type": "settlement",
+        "time": "2026-10-03T07:47:38.791Z",
+        "roomId": "room_1791013551860_2jb9"
+      },
+      {
+        "type": "expense",
+        "text": "Aditya Singh added Dft ₹260",
+        "roomId": "room_1791013551860_2jb9",
+        "id": "act_1791013619792",
+        "time": "2026-10-03T07:46:59.792Z"
+      },
+      {
+        "text": "Vishal Maddheshiya added Dooodh ₹60",
+        "id": "act_1791013592707",
+        "type": "expense",
+        "roomId": "room_1791013551860_2jb9",
+        "time": "2026-10-03T07:46:32.707Z"
+      },
+      {
+        "text": "Aditya Singh joined the room",
+        "type": "join",
+        "id": "act_1791013570934",
+        "time": "2026-10-03T07:46:10.934Z",
+        "roomId": "room_1791013551860_2jb9"
+      },
+      {
+        "time": "2026-10-03T07:45:52.836Z",
+        "id": "act_1791013552836",
+        "text": "Vishal Maddheshiya created room \"Tt\"",
+        "type": "join",
+        "roomId": "room_1791013551860_2jb9"
+      }
+    ],
+    "createdAt": "2026-10-03",
+    "type": "Apartment",
+    "id": "room_1791013551860_2jb9",
+    "expenses": [
+      {
+        "createdBy": "Aditya Singh",
+        "roomId": "room_1791013551860_2jb9",
+        "notes": "",
+        "title": "Dft",
+        "paidBy": "Aditya Singh",
+        "id": "exp_xlqjzwkmus39ehj",
+        "splitType": "equal",
+        "category": "General",
+        "status": "pending",
+        "totalAmount": 260,
+        "createdAt": "2026-10-03T07:46:59.792Z",
+        "createdByUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "date": "2026-10-03",
+        "paidByUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "amount": 260,
+        "participants": [
+          {
+            "userId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+            "hasPaid": false,
+            "share": 130,
+            "name": "Vishal Maddheshiya"
+          },
+          {
+            "share": 130,
+            "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+            "hasPaid": true,
+            "name": "Aditya Singh"
+          }
+        ]
+      },
+      {
+        "status": "pending",
+        "createdAt": "2026-10-03T07:46:32.707Z",
+        "amount": 60,
+        "date": "2026-10-03",
+        "splitType": "equal",
+        "category": "General",
+        "participants": [
+          {
+            "name": "Vishal Maddheshiya",
+            "hasPaid": true,
+            "share": 30,
+            "userId": "SvlxVCwZ0UTP678fJ08fhUmSHG62"
+          },
+          {
+            "hasPaid": false,
+            "share": 30,
+            "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+            "name": "Aditya Singh"
+          }
+        ],
+        "roomId": "room_1791013551860_2jb9",
+        "totalAmount": 60,
+        "title": "Dooodh",
+        "paidByUserId": "SvlxVCwZ0UTP678fJ08fhUmSHG62",
+        "notes": "",
+        "paidBy": "Vishal Maddheshiya",
+        "createdBy": "Vishal Maddheshiya",
+        "id": "exp_1q7bjnmmus38sdg",
+        "createdByUserId": "SvlxVCwZ0UTP678fJ08fhUmSHG62"
+      }
+    ]
+  },
+  {
+    "createdAt": "2026-10-10",
+    "ownerId": "TW9t2Hi7QacCraF878DgLdVRfUI2",
+    "inviteCode": "FG4A7C",
+    "updatedAt": "2026-10-12T15:49:15.198Z",
+    "name": "Aas",
+    "settlements": [],
+    "expenses": [],
+    "id": "room_1791633763394_5xju",
+    "members": [
+      {
+        "joinedAt": "2026-10-10",
+        "id": "rm_TW9t2Hi7QacCraF878DgLdVRfUI2",
+        "role": "owner",
+        "upiId": null,
+        "email": "amanmishra3190@gmail.com",
+        "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJgVuS4GCWPuQD2azKVO8Xf7zEQGPkPnkW1tvJCmXpCwPCNPx_V=s96-c",
+        "name": "Aman Mishra Aman Mishra",
+        "phone": null,
+        "userId": "TW9t2Hi7QacCraF878DgLdVRfUI2"
+      },
+      {
+        "role": "member",
+        "joinedAt": "2026-10-10",
+        "id": "rm_user_manual_mv2ci85h",
+        "phone": "7705874781",
+        "userId": "user_manual_mv2ci85h",
+        "name": "Sarthak"
+      },
+      {
+        "email": "singhsarthak4781@gmail.com",
+        "userId": "stu_6y6bdl4mv2clsfe",
+        "upiId": "sarthaksingh@upi",
+        "phone": "7705874781",
+        "role": "member",
+        "joinedAt": "2026-10-10",
+        "id": "rm_stu_6y6bdl4mv2clsfe",
+        "name": "Sarthak Singh"
+      }
+    ],
+    "type": "Flat",
+    "activities": [
+      {
+        "type": "join",
+        "text": "Sarthak Singh joined the room",
+        "id": "act_1791634014456",
+        "time": "2026-10-10T12:06:54.456Z",
+        "roomId": "room_1791633763394_5xju"
+      },
+      {
+        "type": "member",
+        "text": "Sarthak was added to the room",
+        "roomId": "room_1791633763394_5xju",
+        "time": "2026-10-10T12:03:20.645Z",
+        "id": "act_1791633800645"
+      },
+      {
+        "text": "Aman Mishra Aman Mishra created room \"Aas\"",
+        "type": "join",
+        "id": "act_1791633764551",
+        "time": "2026-10-10T12:02:44.552Z",
+        "roomId": "room_1791633763394_5xju"
+      }
+    ]
+  },
+  {
+    "inviteCode": "NADMJQ",
+    "ownerId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+    "id": "room_1791654450306_xz8f",
+    "settlements": [
+      {
+        "creditorId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "status": "rejected",
+        "from": "Shivam Gautam",
+        "toUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "fromUserId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+        "date": "2026-10-12",
+        "createdAt": "2026-10-12T15:09:44.268Z",
+        "debtorId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+        "amount": 86,
+        "roomId": "room_1791654450306_xz8f",
+        "createdBy": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+        "mode": "UPI",
+        "updatedAt": "2026-10-12T15:10:13.642Z",
+        "to": "Aditya Singh",
+        "id": "settle_1791817784268_ypcr",
+        "note": "Settled debt of ₹86 from Shivam Gautam to Aditya Singh",
+        "ownerId": "a8fFEspQX9MwhjF1vLB8ShYQyl22"
+      }
+    ],
+    "name": "ROOMIE",
+    "expenses": [
+      {
+        "splitType": "equal",
+        "paidByUserId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+        "paidBy": "Shivam Gautam",
+        "createdAt": "2026-10-12T15:05:40.446Z",
+        "participants": [
+          {
+            "name": "Aditya Singh",
+            "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+            "share": 6,
+            "hasPaid": false
+          },
+          {
+            "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+            "hasPaid": true,
+            "name": "Shivam Gautam",
+            "share": 6
+          },
+          {
+            "name": "Manmohan Yadav",
+            "hasPaid": false,
+            "share": 6,
+            "userId": "6MgRbOl5opbtzU9ace8KCvAEk9D3"
+          }
+        ],
+        "totalAmount": 18,
+        "roomId": "room_1791654450306_xz8f",
+        "date": "2026-10-12",
+        "category": "General",
+        "id": "exp_n220h1umv5dvs6h",
+        "amount": 18,
+        "createdBy": "Shivam Gautam",
+        "notes": "",
+        "title": "Atta",
+        "status": "pending",
+        "createdByUserId": "a8fFEspQX9MwhjF1vLB8ShYQyl22"
+      },
+      {
+        "splitType": "equal",
+        "createdAt": "2026-10-12T13:58:10.256Z",
+        "status": "pending",
+        "participants": [
+          {
+            "share": 66.67,
+            "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+            "name": "Aditya Singh",
+            "hasPaid": true
+          },
+          {
+            "hasPaid": false,
+            "name": "Shivam Gautam",
+            "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+            "share": 66.67
+          },
+          {
+            "hasPaid": false,
+            "name": "Manmohan Yadav",
+            "share": 66.66,
+            "userId": "6MgRbOl5opbtzU9ace8KCvAEk9D3"
+          }
+        ],
+        "id": "exp_9ipquhzmv5bh90c",
+        "category": "General",
+        "amount": 200,
+        "paidByUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "roomId": "room_1791654450306_xz8f",
+        "createdBy": "Aditya Singh",
+        "date": "2026-10-12",
+        "createdByUserId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "paidBy": "Aditya Singh",
+        "title": "Oil (kachhi ghani)",
+        "totalAmount": 200,
+        "notes": ""
+      },
+      {
+        "roomId": "room_1791654450306_xz8f",
+        "totalAmount": 95,
+        "paidBy": "Manmohan Yadav",
+        "category": "General",
+        "createdBy": "Manmohan Yadav",
+        "participants": [
+          {
+            "name": "Aditya Singh",
+            "share": 31.67,
+            "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+            "hasPaid": false
+          },
+          {
+            "name": "Shivam Gautam",
+            "hasPaid": false,
+            "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+            "share": 31.67
+          },
+          {
+            "name": "Manmohan Yadav",
+            "hasPaid": true,
+            "share": 31.66,
+            "userId": "6MgRbOl5opbtzU9ace8KCvAEk9D3"
+          }
+        ],
+        "status": "pending",
+        "title": "Aalu , tamatar , pyaj",
+        "createdByUserId": "6MgRbOl5opbtzU9ace8KCvAEk9D3",
+        "notes": "",
+        "paidByUserId": "6MgRbOl5opbtzU9ace8KCvAEk9D3",
+        "id": "exp_whv98komv3o20hf",
+        "date": "2026-10-11",
+        "amount": 95,
+        "splitType": "equal",
+        "createdAt": "2026-10-11T10:14:48.427Z"
+      }
+    ],
+    "members": [
+      {
+        "name": "Aditya Singh",
+        "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJG-CMqzv2-J6Qp8zUAez1NsSf4eG_LypoyDktsGX4keRePOnkUpA=s96-c",
+        "email": "sadityasingh6275520@gmail.com",
+        "upiId": null,
+        "phone": null,
+        "id": "rm_RtonbhWc38Ubaa32haYPDIRtnx33",
+        "role": "owner",
+        "userId": "RtonbhWc38Ubaa32haYPDIRtnx33",
+        "joinedAt": "2026-10-10"
+      },
+      {
+        "id": "rm_a8fFEspQX9MwhjF1vLB8ShYQyl22",
+        "userId": "a8fFEspQX9MwhjF1vLB8ShYQyl22",
+        "email": "sg8339774@gmail.com",
+        "upiId": "shivamgautam@upi",
+        "phone": null,
+        "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocL7_2ev-rz1NSAtbGymYMhF9H3wHZY3I0W-xBAJVqG8ZaA8XyPw=s96-c",
+        "name": "Shivam Gautam",
+        "role": "member",
+        "joinedAt": "2026-10-10"
+      },
+      {
+        "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocLePIO__j-kqHSOs_J13-OP04oMT8-qtYXlp2yXRa-7yiamDpM=s96-c",
+        "email": "manmohanyadav123123@gmail.com",
+        "upiId": null,
+        "phone": null,
+        "id": "rm_6MgRbOl5opbtzU9ace8KCvAEk9D3",
+        "joinedAt": "2026-10-10",
+        "userId": "6MgRbOl5opbtzU9ace8KCvAEk9D3",
+        "role": "member",
+        "name": "Manmohan Yadav"
+      }
+    ],
+    "type": "Flat",
+    "activities": [
+      {
+        "text": "❌ Aditya Singh marked payment of ₹86 from Shivam Gautam as Not Received",
+        "type": "settlement",
+        "id": "act_1791817813642",
+        "time": "2026-10-12T15:10:13.642Z",
+        "roomId": "room_1791654450306_xz8f"
+      },
+      {
+        "roomId": "room_1791654450306_xz8f",
+        "id": "act_1791817784268",
+        "time": "2026-10-12T15:09:44.268Z",
+        "text": "🔔 Settlement request: Shivam Gautam recorded ₹86 via UPI to Aditya Singh. Waiting for Aditya Singh to Accept.",
+        "type": "settlement"
+      },
+      {
+        "roomId": "room_1791654450306_xz8f",
+        "time": "2026-10-12T15:05:40.447Z",
+        "id": "act_1791817540447",
+        "text": "Shivam Gautam added Atta ₹18",
+        "type": "expense"
+      },
+      {
+        "roomId": "room_1791654450306_xz8f",
+        "id": "act_1791813490256",
+        "time": "2026-10-12T13:58:10.256Z",
+        "text": "Aditya Singh added Oil (kachhi ghani) ₹200",
+        "type": "expense"
+      },
+      {
+        "roomId": "room_1791654450306_xz8f",
+        "id": "act_1791713688427",
+        "text": "Manmohan Yadav added Aalu , tamatar , pyaj ₹95",
+        "type": "expense",
+        "time": "2026-10-11T10:14:48.427Z"
+      },
+      {
+        "id": "act_1791654473502",
+        "roomId": "room_1791654450306_xz8f",
+        "text": "Manmohan Yadav joined the room",
+        "type": "join",
+        "time": "2026-10-10T17:47:53.502Z"
+      },
+      {
+        "type": "join",
+        "text": "Shivam Gautam joined the room",
+        "id": "act_1791654469250",
+        "time": "2026-10-10T17:47:49.250Z",
+        "roomId": "room_1791654450306_xz8f"
+      },
+      {
+        "time": "2026-10-10T17:47:30.534Z",
+        "roomId": "room_1791654450306_xz8f",
+        "type": "join",
+        "text": "Aditya Singh created room \"ROOMIE\"",
+        "id": "act_1791654450534"
+      }
+    ],
+    "createdAt": "2026-10-10",
+    "updatedAt": "2026-10-12T15:49:15.199Z"
+  },
+  {
+    "ownerId": "r0u8HvzVSvScm4Bm31gI9nVmHEi2",
+    "id": "room_1791811211424_hc5y",
+    "settlements": [],
+    "type": "Flat / Apartment",
+    "activities": [
+      {
+        "text": "Jayesh Singh Rathore created room \"2\"",
+        "type": "join",
+        "id": "act_1791811211988",
+        "time": "2026-10-12T13:20:11.988Z",
+        "roomId": "room_1791811211424_hc5y"
+      }
+    ],
+    "expenses": [],
+    "name": "2",
+    "createdAt": "2026-10-12",
+    "members": [
+      {
+        "joinedAt": "2026-10-12",
+        "userId": "r0u8HvzVSvScm4Bm31gI9nVmHEi2",
+        "name": "Jayesh Singh Rathore",
+        "role": "owner",
+        "id": "rm_r0u8HvzVSvScm4Bm31gI9nVmHEi2",
+        "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIXD4Yg60eKpnu7hr_Gn3uBgaL6zMyFZO44rjfNLWzTFs0-l0DE=s96-c",
+        "upiId": "jayeshsinghrathore@upi",
+        "email": "zj9892952@gmail.com"
+      }
+    ],
+    "updatedAt": "2026-10-12T15:49:15.199Z",
+    "inviteCode": "5C4YVA"
+  },
+  {
+    "settlements": [
+      {
+        "toUserId": "stu_rp14p5gmv5fgg3a",
+        "status": "completed",
+        "debtorId": "stu_4u2tjhgmv5fgg42",
+        "fromUserId": "stu_4u2tjhgmv5fgg42",
+        "mode": "UPI",
+        "amount": 86.33,
+        "createdAt": "2026-10-12T15:49:15.178Z",
+        "creditorId": "stu_rp14p5gmv5fgg3a",
+        "note": "Shivam Gautam settled ₹86.33 with Aditya Singh",
+        "ownerId": "stu_4u2tjhgmv5fgg42",
+        "roomId": "room_1791820155064_z4t7",
+        "from": "Shivam Gautam",
+        "id": "settle_1791820155178_8umv",
+        "to": "Aditya Singh",
+        "confirmedAt": "2026-10-12T15:49:15.197Z",
+        "confirmedBy": "Aditya Singh",
+        "date": "2026-10-12",
+        "updatedAt": "2026-10-12T15:49:15.197Z",
+        "createdBy": "stu_4u2tjhgmv5fgg42"
+      }
+    ],
+    "activities": [
+      {
+        "type": "settlement",
+        "text": "✅ Aditya Singh verified & accepted settlement of ₹86.33 from Shivam Gautam (UPI)",
+        "roomId": "room_1791820155064_z4t7",
+        "time": "2026-10-12T15:49:15.197Z",
+        "id": "act_1791820155197"
+      },
+      {
+        "time": "2026-10-12T15:49:15.178Z",
+        "roomId": "room_1791820155064_z4t7",
+        "type": "settlement",
+        "text": "🔔 Settlement request: Shivam Gautam recorded ₹86.33 via UPI to Aditya Singh. Waiting for Aditya Singh to Accept.",
+        "id": "act_1791820155178"
+      },
+      {
+        "text": "Manmohan Yadav added vegetables ₹95",
+        "type": "expense",
+        "id": "act_1791820155160",
+        "time": "2026-10-12T15:49:15.160Z",
+        "roomId": "room_1791820155064_z4t7"
+      },
+      {
+        "text": "Shivam Gautam added atta ₹18",
+        "type": "expense",
+        "id": "act_1791820155148",
+        "roomId": "room_1791820155064_z4t7",
+        "time": "2026-10-12T15:49:15.148Z"
+      },
+      {
+        "type": "expense",
+        "text": "Aditya Singh added oil ₹200",
+        "roomId": "room_1791820155064_z4t7",
+        "id": "act_1791820155118",
+        "time": "2026-10-12T15:49:15.118Z"
+      },
+      {
+        "type": "join",
+        "roomId": "room_1791820155064_z4t7",
+        "text": "Manmohan Yadav joined the room",
+        "id": "act_1791820155090",
+        "time": "2026-10-12T15:49:15.090Z"
+      },
+      {
+        "text": "Shivam Gautam joined the room",
+        "id": "act_1791820155076",
+        "type": "join",
+        "roomId": "room_1791820155064_z4t7",
+        "time": "2026-10-12T15:49:15.076Z"
+      },
+      {
+        "time": "2026-10-12T15:49:15.064Z",
+        "type": "join",
+        "roomId": "room_1791820155064_z4t7",
+        "id": "act_1791820155064",
+        "text": "Aditya Singh created room \"Hostel Room 302\""
+      }
+    ],
+    "type": "Hostel",
+    "members": [
+      {
+        "email": "aditya@test.com",
+        "upiId": "adityasingh@upi",
+        "role": "owner",
+        "joinedAt": "2026-10-12",
+        "userId": "stu_rp14p5gmv5fgg3a",
+        "id": "rm_stu_rp14p5gmv5fgg3a",
+        "name": "Aditya Singh"
+      },
+      {
+        "joinedAt": "2026-10-12",
+        "name": "Shivam Gautam",
+        "id": "rm_stu_4u2tjhgmv5fgg42",
+        "role": "member",
+        "userId": "stu_4u2tjhgmv5fgg42",
+        "email": "shivam@test.com",
+        "upiId": "shivamgautam@upi"
+      },
+      {
+        "userId": "stu_y00k72qmv5fgg4l",
+        "joinedAt": "2026-10-12",
+        "upiId": "manmohanyadav@upi",
+        "email": "manmohan@test.com",
+        "name": "Manmohan Yadav",
+        "role": "member",
+        "id": "rm_stu_y00k72qmv5fgg4l"
+      }
+    ],
+    "updatedAt": "2026-10-12T15:49:15.197Z",
+    "expenses": [
+      {
+        "paidByUserId": "stu_y00k72qmv5fgg4l",
+        "roomId": "room_1791820155064_z4t7",
+        "participants": [
+          {
+            "hasPaid": false,
+            "userId": "stu_rp14p5gmv5fgg3a",
+            "name": "Aditya Singh",
+            "share": 31.67
+          },
+          {
+            "name": "Shivam Gautam",
+            "share": 31.67,
+            "userId": "stu_4u2tjhgmv5fgg42",
+            "hasPaid": false
+          },
+          {
+            "hasPaid": true,
+            "name": "Manmohan Yadav",
+            "share": 31.66,
+            "userId": "stu_y00k72qmv5fgg4l"
+          }
+        ],
+        "notes": "",
+        "title": "vegetables",
+        "paidBy": "Manmohan Yadav",
+        "createdBy": "Manmohan Yadav",
+        "totalAmount": 95,
+        "status": "pending",
+        "date": "2026-10-12",
+        "createdByUserId": "stu_y00k72qmv5fgg4l",
+        "category": "General",
+        "id": "exp_1791820155160_sh6a",
+        "splitType": "equal",
+        "createdAt": "2026-10-12T15:49:15.160Z",
+        "amount": 95
+      },
+      {
+        "date": "2026-10-12",
+        "roomId": "room_1791820155064_z4t7",
+        "paidByUserId": "stu_4u2tjhgmv5fgg42",
+        "notes": "",
+        "totalAmount": 18,
+        "title": "atta",
+        "participants": [
+          {
+            "share": 6,
+            "hasPaid": false,
+            "name": "Aditya Singh",
+            "userId": "stu_rp14p5gmv5fgg3a"
+          },
+          {
+            "hasPaid": true,
+            "name": "Shivam Gautam",
+            "userId": "stu_4u2tjhgmv5fgg42",
+            "share": 6
+          },
+          {
+            "name": "Manmohan Yadav",
+            "hasPaid": false,
+            "share": 6,
+            "userId": "stu_y00k72qmv5fgg4l"
+          }
+        ],
+        "createdBy": "Shivam Gautam",
+        "paidBy": "Shivam Gautam",
+        "createdByUserId": "stu_4u2tjhgmv5fgg42",
+        "id": "exp_1791820155147_rarp",
+        "status": "pending",
+        "category": "General",
+        "splitType": "equal",
+        "amount": 18,
+        "createdAt": "2026-10-12T15:49:15.148Z"
+      },
+      {
+        "createdByUserId": "stu_rp14p5gmv5fgg3a",
+        "roomId": "room_1791820155064_z4t7",
+        "id": "exp_1791820155118_uk52",
+        "createdBy": "Aditya Singh",
+        "participants": [
+          {
+            "name": "Aditya Singh",
+            "hasPaid": true,
+            "share": 66.67,
+            "userId": "stu_rp14p5gmv5fgg3a"
+          },
+          {
+            "share": 66.67,
+            "hasPaid": false,
+            "name": "Shivam Gautam",
+            "userId": "stu_4u2tjhgmv5fgg42"
+          },
+          {
+            "userId": "stu_y00k72qmv5fgg4l",
+            "hasPaid": false,
+            "share": 66.66,
+            "name": "Manmohan Yadav"
+          }
+        ],
+        "paidBy": "Aditya Singh",
+        "notes": "",
+        "title": "oil",
+        "paidByUserId": "stu_rp14p5gmv5fgg3a",
+        "category": "General",
+        "splitType": "equal",
+        "createdAt": "2026-10-12T15:49:15.118Z",
+        "status": "pending",
+        "totalAmount": 200,
+        "date": "2026-10-12",
+        "amount": 200
+      }
+    ],
+    "inviteCode": "7HBR2H",
+    "id": "room_1791820155064_z4t7",
+    "name": "Hostel Room 302",
+    "createdAt": "2026-10-12",
+    "ownerId": "stu_rp14p5gmv5fgg3a"
+  }
+]

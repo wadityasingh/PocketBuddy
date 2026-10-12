@@ -303,7 +303,16 @@ function loadRooms(): ServerRoomGroup[] {
 
 function saveRooms(rooms: ServerRoomGroup[]) {
   const deletedIds = loadDeletedRoomIds();
-  const cleanRooms = (rooms || []).filter((r) => r && r.id && !deletedIds.has(r.id));
+  const cleanRooms = (rooms || [])
+    .filter((r) => r && r.id && !deletedIds.has(r.id))
+    .map((r) => ({
+      ...r,
+      members: (r.members || []).map((m) => {
+        const copy = { ...m };
+        delete (copy as any).isSelf;
+        return copy;
+      }),
+    }));
   
   // Track removed rooms to delete from Firestore
   const newRoomIdSet = new Set(cleanRooms.map((r) => r.id));
@@ -1755,7 +1764,6 @@ app.post("/api/rooms", (req, res) => {
         phone: creatorPhone || user.phone,
         role: "owner",
         joinedAt: today,
-        isSelf: true,
         photoUrl: user.photoUrl,
       },
     ],
@@ -1873,7 +1881,6 @@ app.post("/api/rooms/join", (req, res) => {
       phone: user.phone,
       role: "member",
       joinedAt: today,
-      isSelf: true,
       photoUrl: user.photoUrl,
     });
 
@@ -2132,8 +2139,29 @@ app.post("/api/rooms/:roomId/expenses", (req, res) => {
 
     if (splitType === "equal") {
       const count = Math.max(1, rawParticipants.length);
-      const baseShare = Math.floor((amount / count) * 100) / 100;
-      const remainderCents = Math.round((amount - baseShare * count) * 100);
+      const totalPaise = Math.round(amount * 100);
+      const baseSharePaise = Math.floor(totalPaise / count);
+      const remainderPaise = totalPaise - baseSharePaise * count;
+
+      // Payer absorbs first remainder paisa so individual balances reflect standard fair split
+      const prioritized = [...rawParticipants].sort((a: any, b: any) => {
+        const aId = a.userId || a.id;
+        const bId = b.userId || b.id;
+        const aName = (a.name || "").toLowerCase().trim();
+        const bName = (b.name || "").toLowerCase().trim();
+        const payerNameLower = finalPaidByName.toLowerCase().trim();
+        const aIsPayer = aId === finalPaidByUserId || aName === payerNameLower;
+        const bIsPayer = bId === finalPaidByUserId || bName === payerNameLower;
+        if (aIsPayer && !bIsPayer) return -1;
+        if (!aIsPayer && bIsPayer) return 1;
+        return 0;
+      });
+
+      const shareMap: Record<string, number> = {};
+      prioritized.forEach((p: any, idx: number) => {
+        const pKey = (p.userId || p.id || p.name || "").toLowerCase().trim();
+        shareMap[pKey] = (idx < remainderPaise ? baseSharePaise + 1 : baseSharePaise) / 100;
+      });
 
       calculatedParticipants = rawParticipants.map((p: any, idx: number) => {
         const pMember =
@@ -2146,12 +2174,15 @@ app.post("/api/rooms/:roomId/expenses", (req, res) => {
           ) || p;
         const pUserId = pMember?.userId || pMember?.id || p.userId || ("user_" + idx);
         const pName = pMember?.name || p.name || `Flatmate ${idx + 1}`;
-        const shareVal = idx < remainderCents ? Math.round((baseShare + 0.01) * 100) / 100 : baseShare;
+        const pKey = (p.userId || p.id || p.name || "").toLowerCase().trim();
+        const shareVal = shareMap[pKey] !== undefined
+          ? shareMap[pKey]
+          : (idx < remainderPaise ? baseSharePaise + 1 : baseSharePaise) / 100;
         return {
           userId: pUserId,
           name: pName,
           share: shareVal,
-          hasPaid: pUserId === finalPaidByUserId,
+          hasPaid: pUserId === finalPaidByUserId || pName.toLowerCase() === finalPaidByName.toLowerCase(),
         };
       });
     } else {
@@ -2408,7 +2439,8 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
       if (byUid) return byUid;
     }
     if (name) {
-      const byName = members.find((m) => m && m.name && m.name.toLowerCase() === name.toLowerCase());
+      const cleanName = name.toLowerCase().replace(/\s*\(you\)\s*/g, '').trim();
+      const byName = members.find((m) => m && m.name && m.name.toLowerCase().trim() === cleanName);
       if (byName) return byName;
     }
     return undefined;
@@ -2428,7 +2460,8 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
 
   members.forEach((m) => {
     if (m && m.name) {
-      balances[m.name.toLowerCase()] = {
+      const key = m.userId || m.id || m.name.toLowerCase().trim();
+      balances[key] = {
         member: m,
         totalPaid: 0,
         totalShare: 0,
@@ -2442,7 +2475,7 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
   expenses.forEach((exp) => {
     if (!exp) return;
     const payerMem = findMember(exp.paidBy, exp.paidByUserId);
-    const payerKey = payerMem ? payerMem.name.toLowerCase() : (exp.paidBy || "").toLowerCase();
+    const payerKey = payerMem ? (payerMem.userId || payerMem.id || payerMem.name.toLowerCase().trim()) : (exp.paidBy || "").toLowerCase().trim();
     if (balances[payerKey]) {
       balances[payerKey].totalPaid += Number(exp.totalAmount || exp.amount || 0);
     }
@@ -2451,7 +2484,7 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
       exp.participants.forEach((p) => {
         if (!p) return;
         const pMem = findMember(p.name, p.userId);
-        const pKey = pMem ? pMem.name.toLowerCase() : (p.name || "").toLowerCase();
+        const pKey = pMem ? (pMem.userId || pMem.id || pMem.name.toLowerCase().trim()) : (p.name || "").toLowerCase().trim();
         if (balances[pKey]) {
           balances[pKey].totalShare += Number(p.share || 0);
         }
@@ -2460,11 +2493,11 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
   });
 
   settlements.forEach((s) => {
-    if (!s || s.status === "cancelled" || s.status === "pending" || s.status === "rejected") return;
+    if (!s || s.status !== "completed") return;
     const debtorMem = findMember(s.from, s.debtorId || s.fromUserId);
     const creditorMem = findMember(s.to, s.creditorId || s.toUserId);
-    const fromKey = debtorMem ? debtorMem.name.toLowerCase() : (s.from || "").toLowerCase();
-    const toKey = creditorMem ? creditorMem.name.toLowerCase() : (s.to || "").toLowerCase();
+    const fromKey = debtorMem ? (debtorMem.userId || debtorMem.id || debtorMem.name.toLowerCase().trim()) : (s.from || "").toLowerCase().trim();
+    const toKey = creditorMem ? (creditorMem.userId || creditorMem.id || creditorMem.name.toLowerCase().trim()) : (s.to || "").toLowerCase().trim();
 
     if (balances[fromKey]) {
       balances[fromKey].settledPaid += Number(s.amount || 0);
@@ -2474,23 +2507,27 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
     }
   });
 
+  // Calculate net balance in paise:
   Object.values(balances).forEach((b) => {
-    b.net = b.totalPaid + b.settledPaid - (b.totalShare + b.settledReceived);
+    const paidPaise = Math.round(b.totalPaid * 100) + Math.round(b.settledPaid * 100);
+    const sharePaise = Math.round(b.totalShare * 100) + Math.round(b.settledReceived * 100);
+    b.net = (paidPaise - sharePaise) / 100;
   });
 
-  const debtors: { member: ServerRoomMember; amount: number }[] = [];
-  const creditors: { member: ServerRoomMember; amount: number }[] = [];
+  const debtors: { member: ServerRoomMember; amountPaise: number }[] = [];
+  const creditors: { member: ServerRoomMember; amountPaise: number }[] = [];
 
   Object.values(balances).forEach((b) => {
-    if (b.net < -0.9) {
-      debtors.push({ member: b.member, amount: Math.abs(b.net) });
-    } else if (b.net > 0.9) {
-      creditors.push({ member: b.member, amount: b.net });
+    const netPaise = Math.round(b.net * 100);
+    if (netPaise < 0) {
+      debtors.push({ member: b.member, amountPaise: Math.abs(netPaise) });
+    } else if (netPaise > 0) {
+      creditors.push({ member: b.member, amountPaise: netPaise });
     }
   });
 
-  debtors.sort((a, b) => b.amount - a.amount);
-  creditors.sort((a, b) => b.amount - a.amount);
+  debtors.sort((a, b) => b.amountPaise - a.amountPaise);
+  creditors.sort((a, b) => b.amountPaise - a.amountPaise);
 
   const debts: ServerRoomDebt[] = [];
   let i = 0;
@@ -2502,23 +2539,23 @@ function calculateRoomDebts(room: ServerRoomGroup): ServerRoomDebt[] {
   while (i < dList.length && j < cList.length) {
     const debtor = dList[i];
     const creditor = cList[j];
-    const settledAmount = Math.min(debtor.amount, creditor.amount);
+    const settledAmountPaise = Math.min(debtor.amountPaise, creditor.amountPaise);
 
-    if (settledAmount > 0.5) {
+    if (settledAmountPaise > 0) {
       debts.push({
         debtorId: debtor.member.userId || debtor.member.id,
         debtorName: debtor.member.name,
         creditorId: creditor.member.userId || creditor.member.id,
         creditorName: creditor.member.name,
-        amount: Math.round(settledAmount * 100) / 100,
+        amount: settledAmountPaise / 100,
       });
     }
 
-    debtor.amount -= settledAmount;
-    creditor.amount -= settledAmount;
+    debtor.amountPaise -= settledAmountPaise;
+    creditor.amountPaise -= settledAmountPaise;
 
-    if (debtor.amount < 0.9) i++;
-    if (creditor.amount < 0.9) j++;
+    if (debtor.amountPaise === 0) i++;
+    if (creditor.amountPaise === 0) j++;
   }
 
   return debts;
@@ -2619,13 +2656,34 @@ const handleRecordSettlement = (req: express.Request, res: express.Response) => 
       return isDebtorMatch && isCreditorMatch;
     });
 
-    if (matchingDebt && matchingDebt.amount > 0) {
-      if (settleAmount > matchingDebt.amount + 5) {
-        return res.status(400).json({
-          success: false,
-          error: `Settlement amount (₹${settleAmount}) exceeds the outstanding payable debt of ₹${matchingDebt.amount} from ${debtorMember.name} to ${creditorMember.name}.`,
-        });
-      }
+    if (!matchingDebt || matchingDebt.amount <= 0.005) {
+      return res.status(400).json({
+        success: false,
+        error: `No outstanding debt exists between ${debtorMember.name} and ${creditorMember.name}.`,
+      });
+    }
+
+    const existingPendingAmount = (room.settlements || [])
+      .filter((s) => {
+        if (!s || s.status !== "pending") return false;
+        const isDebtor =
+          s.debtorId === debtorMember!.userId ||
+          s.debtorId === debtorMember!.id ||
+          s.from?.toLowerCase().trim() === debtorMember!.name.toLowerCase().trim();
+        const isCreditor =
+          s.creditorId === creditorMember!.userId ||
+          s.creditorId === creditorMember!.id ||
+          s.to?.toLowerCase().trim() === creditorMember!.name.toLowerCase().trim();
+        return isDebtor && isCreditor;
+      })
+      .reduce((sum, s) => sum + Number(s.amount || 0), 0);
+
+    const remainingPayable = Math.round((matchingDebt.amount - existingPendingAmount) * 100) / 100;
+    if (settleAmount > remainingPayable + 0.01) {
+      return res.status(400).json({
+        success: false,
+        error: `Settlement amount (₹${settleAmount.toFixed(2)}) exceeds the remaining payable debt of ₹${Math.max(0, remainingPayable).toFixed(2)} between ${debtorMember.name} and ${creditorMember.name}.`,
+      });
     }
 
     // 4. Deduplication guard (prevent double submissions within 3 seconds)
@@ -2728,7 +2786,7 @@ const handleAcceptSettlement = (req: express.Request, res: express.Response) => 
     }
 
     if (sett.status === "completed") {
-      return res.json({ success: true, data: room, room, message: "Settlement already accepted" });
+      return res.status(400).json({ success: false, error: "This settlement has already been approved and settled." });
     }
 
     // STRICTLY ONLY THE RECEIVER (Creditor) CAN ACCEPT
@@ -2746,7 +2804,28 @@ const handleAcceptSettlement = (req: express.Request, res: express.Response) => 
     if (!isReceiverById && !isReceiverByName) {
       return res.status(403).json({
         success: false,
-        error: `Forbidden: Sirf receiver (${sett.to}) hi is settlement ko confirm/accept kar sakta hai.`,
+        error: `Unauthorized: Only the receiver (${sett.to}) can approve and accept this settlement.`,
+      });
+    }
+
+    // Overpayment guard on approval
+    const currentDebts = calculateRoomDebts(room);
+    const matchingDebt = currentDebts.find((d) => {
+      const isDebtor =
+        d.debtorId === sett.debtorId ||
+        d.debtorId === sett.fromUserId ||
+        d.debtorName.toLowerCase().trim() === (sett.from || '').toLowerCase().trim();
+      const isCreditor =
+        d.creditorId === sett.creditorId ||
+        d.creditorId === sett.toUserId ||
+        d.creditorName.toLowerCase().trim() === (sett.to || '').toLowerCase().trim();
+      return isDebtor && isCreditor;
+    });
+
+    if (!matchingDebt || sett.amount > matchingDebt.amount + 0.05) {
+      return res.status(400).json({
+        success: false,
+        error: `Cannot accept settlement: Amount (₹${sett.amount}) exceeds current outstanding debt of ₹${matchingDebt ? matchingDebt.amount.toFixed(2) : '0.00'}.`,
       });
     }
 

@@ -1,0 +1,28 @@
+{
+  "activeRoomId": null,
+  "roomExpenses": [],
+  "isSampleData": false,
+  "goals": [],
+  "roommates": [],
+  "roomGroups": [],
+  "updatedAt": "2026-10-10T17:47:09.285Z",
+  "bills": [],
+  "monthlyPocketMoney": 10000,
+  "messConfig": {
+    "rebateRuleNoticeHours": 24,
+    "rebatePerSkippedMeal": 40,
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3
+  },
+  "transactions": [],
+  "wallets": {
+    "bank": 0,
+    "cash": 0,
+    "upi": 0
+  },
+  "udhaarRecords": [],
+  "meals": [],
+  "userId": "stu_gla8wdcmuwalrzq",
+  "userName": "Ha",
+  "hasCompletedTour": true
+}

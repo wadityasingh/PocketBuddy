@@ -1,0 +1,56 @@
+{
+  "monthlyPocketMoney": 0,
+  "wallets": {
+    "cash": 0,
+    "upi": 0,
+    "bank": 0
+  },
+  "isSampleData": false,
+  "transactions": [],
+  "roomExpenses": [],
+  "roommates": [],
+  "roomGroups": [
+    {
+      "id": "room_1791820185454_690p",
+      "name": "Hostel Room 404",
+      "type": "Hostel",
+      "inviteCode": "YKHLAP",
+      "ownerId": "stu_wac8l0imv5fh3im",
+      "members": [
+        {
+          "id": "rm_stu_wac8l0imv5fh3im",
+          "userId": "stu_wac8l0imv5fh3im",
+          "name": "Aditya Singh 2",
+          "email": "aditya2@test.com",
+          "upiId": "adityasingh2@upi",
+          "role": "owner",
+          "joinedAt": "2026-10-12"
+        }
+      ],
+      "expenses": [],
+      "settlements": [],
+      "activities": [
+        {
+          "id": "act_1791820185454",
+          "roomId": "room_1791820185454_690p",
+          "text": "Aditya Singh 2 created room \"Hostel Room 404\"",
+          "time": "2026-10-12T15:49:45.454Z",
+          "type": "join"
+        }
+      ],
+      "createdAt": "2026-10-12"
+    }
+  ],
+  "activeRoomId": "room_1791820185454_690p",
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "udhaarRecords": [],
+  "bills": [],
+  "goals": [],
+  "hasCompletedTour": true
+}

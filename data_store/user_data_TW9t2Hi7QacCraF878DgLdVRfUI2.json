@@ -1,0 +1,124 @@
+{
+  "userId": "TW9t2Hi7QacCraF878DgLdVRfUI2",
+  "bills": [],
+  "udhaarRecords": [],
+  "updatedAt": "2026-10-11T05:32:45.641Z",
+  "isSampleData": false,
+  "transactions": [
+    {
+      "date": "2026-10-11",
+      "category": "Expense",
+      "id": "id_90lilwomv3dzqvw",
+      "amount": 351,
+      "paymentMode": "UPI",
+      "type": "expense",
+      "title": "Naman ka recharge"
+    },
+    {
+      "type": "expense",
+      "paymentMode": "UPI",
+      "amount": 2500,
+      "id": "id_otrt11tmv2ct0re",
+      "date": "2026-10-10",
+      "title": "Room rent",
+      "category": "Expense"
+    },
+    {
+      "id": "id_w5i63jnmv2cr8rv",
+      "paymentMode": "UPI",
+      "type": "expense",
+      "category": "Expense",
+      "title": "Paneer",
+      "date": "2026-10-10",
+      "amount": 30
+    }
+  ],
+  "hasCompletedTour": false,
+  "messConfig": {
+    "rebatePerSkippedMeal": 40,
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebateRuleNoticeHours": 24
+  },
+  "wallets": {
+    "bank": 0,
+    "upi": 6000,
+    "cash": 0
+  },
+  "meals": [],
+  "activeRoomId": "room_1791633763394_5xju",
+  "monthlyPocketMoney": 6000,
+  "roommates": [],
+  "roomGroups": [
+    {
+      "inviteCode": "FG4A7C",
+      "id": "room_1791633763394_5xju",
+      "createdAt": "2026-10-10",
+      "members": [
+        {
+          "joinedAt": "2026-10-10",
+          "id": "rm_TW9t2Hi7QacCraF878DgLdVRfUI2",
+          "name": "Aman Mishra Aman Mishra",
+          "role": "owner",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJgVuS4GCWPuQD2azKVO8Xf7zEQGPkPnkW1tvJCmXpCwPCNPx_V=s96-c",
+          "phone": null,
+          "isSelf": true,
+          "upiId": null,
+          "email": "amanmishra3190@gmail.com",
+          "userId": "TW9t2Hi7QacCraF878DgLdVRfUI2"
+        },
+        {
+          "role": "member",
+          "phone": "7705874781",
+          "id": "rm_user_manual_mv2ci85h",
+          "joinedAt": "2026-10-10",
+          "userId": "user_manual_mv2ci85h",
+          "name": "Sarthak",
+          "isSelf": false
+        },
+        {
+          "isSelf": true,
+          "userId": "stu_6y6bdl4mv2clsfe",
+          "joinedAt": "2026-10-10",
+          "email": "singhsarthak4781@gmail.com",
+          "upiId": "sarthaksingh@upi",
+          "phone": "7705874781",
+          "id": "rm_stu_6y6bdl4mv2clsfe",
+          "name": "Sarthak Singh",
+          "role": "member"
+        }
+      ],
+      "type": "Flat",
+      "updatedAt": "2026-10-10T17:47:53.503Z",
+      "ownerId": "TW9t2Hi7QacCraF878DgLdVRfUI2",
+      "name": "Aas",
+      "expenses": [],
+      "settlements": [],
+      "activities": [
+        {
+          "roomId": "room_1791633763394_5xju",
+          "text": "Sarthak Singh joined the room",
+          "type": "join",
+          "id": "act_1791634014456",
+          "time": "2026-10-10T12:06:54.456Z"
+        },
+        {
+          "roomId": "room_1791633763394_5xju",
+          "time": "2026-10-10T12:03:20.645Z",
+          "type": "member",
+          "id": "act_1791633800645",
+          "text": "Sarthak was added to the room"
+        },
+        {
+          "id": "act_1791633764551",
+          "time": "2026-10-10T12:02:44.552Z",
+          "roomId": "room_1791633763394_5xju",
+          "text": "Aman Mishra Aman Mishra created room \"Aas\"",
+          "type": "join"
+        }
+      ]
+    }
+  ],
+  "goals": [],
+  "roomExpenses": []
+}

@@ -1,26 +1,26 @@
 {
-  "meals": [],
-  "transactions": [],
-  "updatedAt": "2026-10-02T07:22:09.993Z",
-  "roomGroups": [],
-  "monthlyPocketMoney": 0,
-  "messConfig": {
-    "mealsPerDay": 3,
-    "rebatePerSkippedMeal": 40,
-    "rebateRuleNoticeHours": 24,
-    "monthlyMessFee": 0
-  },
   "roomExpenses": [],
-  "userId": "yHCZFxC3uCdJTO19yJ2VVJnPerX2",
-  "wallets": {
-    "cash": 0,
-    "upi": 0,
-    "bank": 0
-  },
   "bills": [],
-  "hasCompletedTour": true,
-  "goals": [],
+  "wallets": {
+    "bank": 0,
+    "upi": 0,
+    "cash": 0
+  },
   "isSampleData": false,
+  "meals": [],
   "roommates": [],
-  "udhaarRecords": []
+  "userId": "yHCZFxC3uCdJTO19yJ2VVJnPerX2",
+  "roomGroups": [],
+  "udhaarRecords": [],
+  "messConfig": {
+    "rebateRuleNoticeHours": 24,
+    "rebatePerSkippedMeal": 40,
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3
+  },
+  "monthlyPocketMoney": 0,
+  "updatedAt": "2026-10-10T17:47:09.290Z",
+  "goals": [],
+  "transactions": [],
+  "hasCompletedTour": true
 }

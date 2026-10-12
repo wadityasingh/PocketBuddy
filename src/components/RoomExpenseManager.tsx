@@ -302,9 +302,8 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       const clean = (nameOrId || '').toLowerCase().replace(/\s*\(you\)\s*/g, '').trim();
       const found = members.find((m) => {
         const mClean = m.name.toLowerCase().replace(/\s*\(you\)\s*/g, '').trim();
-        if (userId && (m.userId === userId || m.id === userId)) return true;
+        if (userId && (m.userId === userId || m.id === userId || m.id === `rm_${userId}`)) return true;
         if (clean && (mClean === clean || m.id.toLowerCase() === clean || (m.userId && m.userId.toLowerCase() === clean))) return true;
-        if ((clean === 'you' || clean === effectiveUserName.toLowerCase()) && (m.isSelf || m.name.toLowerCase() === effectiveUserName.toLowerCase())) return true;
         return false;
       });
       return found ? found.name : nameOrId || 'Unknown';
@@ -341,7 +340,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
     settlements.forEach((s) => {
       // Settle Up Confirmation: Only completed settlements count towards balances!
       // Pending, cancelled, or rejected settlements MUST NOT clear/reduce debts until accepted!
-      if (!s || s.status === 'pending' || s.status === 'cancelled' || s.status === 'rejected') return;
+      if (!s || s.status !== 'completed') return;
       const fromKey = findMemberKey(s.from, s.fromUserId);
       const toKey = findMemberKey(s.to, s.toUserId);
       if (!balances[fromKey]) {
@@ -354,34 +353,37 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       balances[toKey].settledReceived += Number(s.amount || 0);
     });
 
-    // Net: (totalPaid + settledPaid) - (totalShare + settledReceived)
+    // Net: (totalPaid + settledPaid) - (totalShare + settledReceived) in exact paise
     members.forEach((m) => {
       const b = balances[m.name];
       if (b) {
-        b.net = b.totalPaid + b.settledPaid - (b.totalShare + b.settledReceived);
+        const paidPaise = Math.round(b.totalPaid * 100) + Math.round(b.settledPaid * 100);
+        const sharePaise = Math.round(b.totalShare * 100) + Math.round(b.settledReceived * 100);
+        b.net = (paidPaise - sharePaise) / 100;
       }
     });
 
     return balances;
-  }, [members, expenses, settlements, effectiveUserName]);
+  }, [members, expenses, settlements]);
 
   // Pairwise debt settlements ("Who owes whom / Kisko dena hai, kisko lena hai")
   const debts = useMemo(() => {
-    const debtors: { name: string; amount: number }[] = [];
-    const creditors: { name: string; amount: number }[] = [];
+    const debtors: { name: string; amountPaise: number }[] = [];
+    const creditors: { name: string; amountPaise: number }[] = [];
 
     members.forEach((m) => {
       const b = memberBalances[m.name];
       if (!b) return;
-      if (b.net < -0.9) {
-        debtors.push({ name: m.name, amount: Math.abs(b.net) });
-      } else if (b.net > 0.9) {
-        creditors.push({ name: m.name, amount: b.net });
+      const netPaise = Math.round(b.net * 100);
+      if (netPaise < 0) {
+        debtors.push({ name: m.name, amountPaise: Math.abs(netPaise) });
+      } else if (netPaise > 0) {
+        creditors.push({ name: m.name, amountPaise: netPaise });
       }
     });
 
-    debtors.sort((a, b) => b.amount - a.amount);
-    creditors.sort((a, b) => b.amount - a.amount);
+    debtors.sort((a, b) => b.amountPaise - a.amountPaise);
+    creditors.sort((a, b) => b.amountPaise - a.amountPaise);
 
     const result: { from: string; to: string; amount: number }[] = [];
     let i = 0;
@@ -394,43 +396,49 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
     while (i < dList.length && j < cList.length) {
       const debtor = dList[i];
       const creditor = cList[j];
-      const settledAmount = Math.min(debtor.amount, creditor.amount);
+      const settledAmountPaise = Math.min(debtor.amountPaise, creditor.amountPaise);
 
-      if (settledAmount > 0.5) {
+      if (settledAmountPaise > 0) {
         result.push({
           from: debtor.name,
           to: creditor.name,
-          amount: Math.round(settledAmount),
+          amount: settledAmountPaise / 100,
         });
       }
 
-      debtor.amount -= settledAmount;
-      creditor.amount -= settledAmount;
+      debtor.amountPaise -= settledAmountPaise;
+      creditor.amountPaise -= settledAmountPaise;
 
-      if (debtor.amount < 0.9) i++;
-      if (creditor.amount < 0.9) j++;
+      if (debtor.amountPaise === 0) i++;
+      if (creditor.amountPaise === 0) j++;
     }
 
     return result;
   }, [members, memberBalances]);
 
   const selfMember = useMemo(() => {
-    return (
-      members.find(
-        (m) =>
-          m.isSelf ||
-          (effectiveUserId && (m.userId === effectiveUserId || m.id === effectiveUserId || m.id === 'rm_' + effectiveUserId)) ||
-          (currentUser?.id && (m.userId === currentUser.id || m.id === currentUser.id || m.id === 'rm_' + currentUser.id))
-      ) ||
-      members.find(
-        (m) =>
-          Boolean(currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase())
-      ) ||
-      members.find((m) => m.name.toLowerCase() === effectiveUserName.toLowerCase()) ||
-      members.find((m) => Boolean(currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase())) ||
-      members.find((m) => m.name.toLowerCase() === 'you')
-    );
-  }, [members, effectiveUserId, effectiveUserName, currentUser]);
+    const uid = currentUser?.id || effectiveUserId;
+    const uemail = currentUser?.email?.toLowerCase().trim();
+    const uname = (currentUser?.name || (currentUserName !== 'You' ? currentUserName : '')).toLowerCase().trim();
+
+    // 1. Exact match by user ID
+    if (uid) {
+      const byUid = members.find((m) => m && (m.userId === uid || m.id === uid || m.id === 'rm_' + uid));
+      if (byUid) return byUid;
+    }
+    // 2. Exact match by email
+    if (uemail) {
+      const byEmail = members.find((m) => m && m.email && m.email.toLowerCase().trim() === uemail);
+      if (byEmail) return byEmail;
+    }
+    // 3. Exact match by name (excluding generic 'you')
+    if (uname && uname !== 'you') {
+      const byName = members.find((m) => m && m.name && m.name.toLowerCase().trim() === uname);
+      if (byName) return byName;
+    }
+    // 4. Server-annotated isSelf ONLY IF user ID matches
+    return members.find((m) => m && m.isSelf && uid && (m.userId === uid || m.id === uid || m.id === 'rm_' + uid)) || null;
+  }, [members, effectiveUserId, currentUserName, currentUser]);
 
   // Active user's standing and compact balance summary
   const myStanding = useMemo(() => {
@@ -452,11 +460,14 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   const selfNames = useMemo(() => {
     const set = new Set<string>();
     set.add('you');
-    if (effectiveUserName) set.add(effectiveUserName.toLowerCase().trim());
-    if (currentUser?.name) set.add(currentUser.name.toLowerCase().trim());
-    if (selfMember?.name) set.add(selfMember.name.toLowerCase().trim());
+    if (selfMember?.name) {
+      set.add(selfMember.name.toLowerCase().trim());
+    }
+    if (currentUser?.name && currentUser.name.toLowerCase().trim() !== 'you') {
+      set.add(currentUser.name.toLowerCase().trim());
+    }
     return set;
-  }, [effectiveUserName, selfMember, currentUser]);
+  }, [selfMember, currentUser]);
 
   // Debts payable by logged-in user and receivable by logged-in user
   const myPayableDebts = useMemo(() => {
@@ -494,19 +505,29 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
   const pendingExpenseIdRef = React.useRef<string>('');
 
-  // Permission check: strictly only the creator of the expense or room owner can edit
+  // Permission check: strictly only the creator of the expense can edit
   const canModifyExpense = (exp: RoomExpense): boolean => {
     if (!currentUser?.id) return false;
-    if (isRoomOwner) return true;
-    const creatorId = exp.createdByUserId || exp.paidByUserId;
+    const creatorId = exp.createdByUserId;
     if (creatorId) {
       return creatorId === currentUser.id;
     }
     if (exp.createdBy) {
-      return exp.createdBy.toLowerCase() === effectiveUserName.toLowerCase();
+      const c = exp.createdBy.toLowerCase().trim();
+      return (
+        c === (currentUser.name || '').toLowerCase().trim() ||
+        Boolean(selfMember?.name && c === selfMember.name.toLowerCase().trim())
+      );
     }
-    if (exp.paidBy) {
-      return exp.paidBy.toLowerCase() === effectiveUserName.toLowerCase();
+    if (!exp.createdBy && !exp.createdByUserId) {
+      if (exp.paidByUserId) return exp.paidByUserId === currentUser.id;
+      if (exp.paidBy) {
+        const p = exp.paidBy.toLowerCase().trim();
+        return (
+          p === (currentUser.name || '').toLowerCase().trim() ||
+          Boolean(selfMember?.name && p === selfMember.name.toLowerCase().trim())
+        );
+      }
     }
     return false;
   };
@@ -659,26 +680,43 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
     }
 
     const payerMember = members.find(
-      (m) => m.name.toLowerCase() === expensePaidBy.toLowerCase() || m.id === expensePaidBy
+      (m) => m.name.toLowerCase() === expensePaidBy.toLowerCase() || m.id === expensePaidBy || m.userId === expensePaidBy
     );
-    const paidByName = payerMember?.name || expensePaidBy || effectiveUserName;
-    const paidByUserId = payerMember?.userId || payerMember?.id || effectiveUserId;
+    const paidByName = payerMember?.name || expensePaidBy || selfMember?.name || effectiveUserName;
+    const paidByUserId = payerMember?.userId || payerMember?.id || selfMember?.userId || effectiveUserId;
 
     let calculatedParticipants: RoomParticipant[] = [];
 
     // All expenses use Equal Split across selected roommates
     const count = selectedParticipantIds.length;
-    const baseShare = Math.floor((total / count) * 100) / 100;
-    const remainderCents = Math.round((total - baseShare * count) * 100);
+    const totalPaise = Math.round(total * 100);
+    const baseSharePaise = Math.floor(totalPaise / count);
+    const remainderPaise = totalPaise - baseSharePaise * count;
+
+    // Prioritize payer so the payer absorbs the first remainder paisa
+    const prioritizedParticipantIds = [...selectedParticipantIds].sort((a, b) => {
+      const aIsPayer = a.toLowerCase().trim() === paidByName.toLowerCase().trim();
+      const bIsPayer = b.toLowerCase().trim() === paidByName.toLowerCase().trim();
+      if (aIsPayer && !bIsPayer) return -1;
+      if (!aIsPayer && bIsPayer) return 1;
+      return 0;
+    });
+
+    const shareMap: Record<string, number> = {};
+    prioritizedParticipantIds.forEach((name, idx) => {
+      shareMap[name.toLowerCase().trim()] = (idx < remainderPaise ? baseSharePaise + 1 : baseSharePaise) / 100;
+    });
 
     calculatedParticipants = selectedParticipantIds.map((name, idx) => {
-      const member = members.find((m) => m.name.toLowerCase() === name.toLowerCase());
-      const shareVal = idx < remainderCents ? Math.round((baseShare + 0.01) * 100) / 100 : baseShare;
+      const member = members.find((m) => m.name.toLowerCase().trim() === name.toLowerCase().trim());
+      const shareVal = shareMap[name.toLowerCase().trim()] !== undefined
+        ? shareMap[name.toLowerCase().trim()]
+        : ((idx < remainderPaise ? baseSharePaise + 1 : baseSharePaise) / 100);
       return {
         userId: member?.userId || member?.id || `user_${idx}`,
         name: member?.name || name,
         share: shareVal,
-        hasPaid: (member?.name || name) === paidByName,
+        hasPaid: (member?.name || name).toLowerCase().trim() === paidByName.toLowerCase().trim(),
       };
     });
 
@@ -691,8 +729,8 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       amount: total,
       paidBy: paidByName,
       paidByUserId: paidByUserId,
-      createdBy: editingExpense?.createdBy || effectiveUserName,
-      createdByUserId: editingExpense?.createdByUserId || effectiveUserId,
+      createdBy: editingExpense?.createdBy || selfMember?.name || effectiveUserName,
+      createdByUserId: editingExpense?.createdByUserId || selfMember?.userId || effectiveUserId,
       splitType: 'equal',
       participants: calculatedParticipants,
       date: expenseDate,
@@ -1245,9 +1283,11 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
 
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
           {members.map((m) => {
-            const isSelf =
-              selfNames.has(m.name.toLowerCase()) ||
-              (m.userId && m.userId === (currentUser?.id || effectiveUserId));
+            const isSelf = Boolean(
+              (selfMember && (m.id === selfMember.id || m.userId === selfMember.userId || m.name.toLowerCase().trim() === selfMember.name.toLowerCase().trim())) ||
+              (currentUser?.id && (m.userId === currentUser.id || m.id === currentUser.id || m.id === `rm_${currentUser.id}`)) ||
+              (currentUser?.email && m.email && m.email.toLowerCase().trim() === currentUser.email.toLowerCase().trim())
+            );
             const isAdmin =
               m.role === 'owner' ||
               (currentRoom.ownerId && (m.userId === currentRoom.ownerId || m.id === currentRoom.ownerId));
@@ -1428,7 +1468,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
             </div>
           </div>
           <span className="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2 block truncate">
-            ₹{totalRoomExpenses.toLocaleString('en-IN')}
+            {formatINR(totalRoomExpenses)}
           </span>
           <span className="text-[10px] sm:text-xs text-slate-400 mt-0.5 hidden sm:block">
             Total room expenses
@@ -1450,7 +1490,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               userOwesTotal > 0 ? 'text-red-600' : 'text-slate-800'
             }`}
           >
-            ₹{userOwesTotal.toLocaleString('en-IN')}
+            {formatINR(userOwesTotal)}
           </span>
           <span className="text-[10px] sm:text-xs text-slate-400 mt-0.5 hidden sm:block">
             {userOwesTotal > 0 ? 'You owe roommates' : 'All settled'}
@@ -1472,7 +1512,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               userIsOwedTotal > 0 ? 'text-emerald-700' : 'text-slate-800'
             }`}
           >
-            ₹{userIsOwedTotal.toLocaleString('en-IN')}
+            {formatINR(userIsOwedTotal)}
           </span>
           <span className="text-[10px] sm:text-xs text-slate-400 mt-0.5 hidden sm:block">
             {userIsOwedTotal > 0 ? 'Roommates owe you' : 'All settled'}
@@ -1526,7 +1566,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                         <span className="text-slate-500 font-medium text-[11px] sm:text-xs">pay</span>
                         <span className="font-bold text-slate-900 truncate max-w-[85px] sm:max-w-none">{creditorDisplayName}</span>
                         <span className="font-extrabold text-rose-600 shrink-0 ml-0.5">
-                          ₹{d.amount.toLocaleString('en-IN')}
+                          {formatINR(d.amount)}
                         </span>
                       </>
                     ) : isCreditor ? (
@@ -1535,7 +1575,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                         <span className="text-slate-500 font-medium text-[11px] sm:text-xs">pays</span>
                         <span className="font-extrabold text-emerald-600">You</span>
                         <span className="font-extrabold text-emerald-600 shrink-0 ml-0.5">
-                          ₹{d.amount.toLocaleString('en-IN')}
+                          {formatINR(d.amount)}
                         </span>
                       </>
                     ) : (
@@ -1544,7 +1584,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
                         <span className="text-slate-500 font-medium text-[11px] sm:text-xs">pays</span>
                         <span className="font-bold text-slate-900 truncate max-w-[85px] sm:max-w-none">{creditorDisplayName}</span>
                         <span className="font-extrabold text-slate-900 shrink-0 ml-0.5">
-                          ₹{d.amount.toLocaleString('en-IN')}
+                          {formatINR(d.amount)}
                         </span>
                       </>
                     )}
@@ -2951,9 +2991,11 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               </div>
               <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                 {members.map((m) => {
-                  const isSelf =
-                    m.name.toLowerCase() === effectiveUserName.toLowerCase() ||
-                    (m.userId && m.userId === effectiveUserId);
+                  const isSelf = Boolean(
+                    (selfMember && (m.id === selfMember.id || m.userId === selfMember.userId || m.name.toLowerCase().trim() === selfMember.name.toLowerCase().trim())) ||
+                    (currentUser?.id && (m.userId === currentUser.id || m.id === currentUser.id || m.id === `rm_${currentUser.id}`)) ||
+                    (currentUser?.email && m.email && m.email.toLowerCase().trim() === currentUser.email.toLowerCase().trim())
+                  );
                   const isMemberAdmin =
                     m.role === 'owner' ||
                     (currentRoom.ownerId && (m.userId === currentRoom.ownerId || m.id === currentRoom.ownerId));
