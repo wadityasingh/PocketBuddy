@@ -1,0 +1,24 @@
+{
+  "monthlyPocketMoney": 0,
+  "wallets": {
+    "cash": 0,
+    "upi": 0,
+    "bank": 0
+  },
+  "isSampleData": false,
+  "transactions": [],
+  "roomExpenses": [],
+  "roommates": [],
+  "roomGroups": [],
+  "meals": [],
+  "messConfig": {
+    "monthlyMessFee": 0,
+    "mealsPerDay": 3,
+    "rebatePerSkippedMeal": 40,
+    "rebateRuleNoticeHours": 24
+  },
+  "udhaarRecords": [],
+  "bills": [],
+  "goals": [],
+  "hasCompletedTour": true
+}

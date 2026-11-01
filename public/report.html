@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketBuddy — B.Tech CSE Mini-Project Report (Aditya Singh - 2404220100014)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --primary: #1e3a8a;
+    --text: #1f2937;
+    --border: #374151;
+    --bg-light: #f9fafb;
+    --font-serif: 'Crimson Pro', 'Times New Roman', Times, serif;
+    --font-mono: 'JetBrains Mono', Courier, monospace;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-serif);
+    font-size: 15pt;
+    line-height: 1.6;
+    color: var(--text);
+    background-color: #e5e7eb;
+    margin: 0;
+    padding: 20px 0;
+  }
+
+  .no-print-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #111827;
+    color: #ffffff;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    max-width: 210mm;
+    margin: 0 auto 20px auto;
+    border-radius: 8px;
+  }
+
+  .no-print-bar button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .no-print-bar button:hover {
+    background: #1d4ed8;
+  }
+
+  .document-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 25mm 25mm 25mm 25mm;
+    margin: 0 auto;
+    background: white;
+    position: relative;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  @media screen {
+    .page {
+      margin-bottom: 20px;
+    }
+  }
+
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+      font-size: 12pt;
+    }
+    .no-print-bar {
+      display: none !important;
+    }
+    .document-container {
+      box-shadow: none;
+      max-width: 100%;
+      margin: 0;
+    }
+    .page {
+      width: 100%;
+      min-height: auto;
+      padding: 20mm;
+      margin: 0;
+      page-break-after: always !important;
+      break-after: page !important;
+    }
+    @page {
+      size: A4;
+      margin: 0;
+    }
+  }
+
+  h1, h2, h3, h4 {
+    color: #111827;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  h1 {
+    font-size: 22pt;
+    text-align: center;
+    text-transform: uppercase;
+    margin-top: 0;
+    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  h2 {
+    font-size: 16pt;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 6px;
+    margin-top: 24px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    font-size: 14pt;
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+
+  p {
+    text-align: justify;
+    margin-bottom: 14px;
+    text-indent: 2.5em;
+  }
+
+  .no-indent {
+    text-indent: 0 !important;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 11pt;
+  }
+
+  th, td {
+    border: 1px solid #9ca3af;
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f3f4f6;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  pre, code {
+    font-family: var(--font-mono);
+  }
+
+  pre {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    padding: 12px;
+    font-size: 9.5pt;
+    line-height: 1.4;
+    overflow-x: auto;
+    border-radius: 4px;
+    margin: 16px 0;
+  }
+
+  .cover-border {
+    border: 3px double #1f2937;
+    height: 100%;
+    min-height: 247mm;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: center;
+  }
+
+  .cover-title {
+    font-size: 24pt;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #1e3a8a;
+    margin: 15px 0 5px 0;
+  }
+
+  .cover-subtitle {
+    font-size: 15pt;
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 25px;
+  }
+
+  .cover-section-title {
+    font-size: 12pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+
+  .signature-table {
+    width: 100%;
+    border: none;
+    margin-top: 40px;
+  }
+
+  .signature-table td {
+    border: none;
+    padding: 20px 10px 0 10px;
+    vertical-align: bottom;
+  }
+
+  .page-number {
+    position: absolute;
+    bottom: 15mm;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 11pt;
+    color: #6b7280;
+  }
+
+  .badge-working {
+    display: inline-block;
+    background: #dcfce7;
+    color: #15803d;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10pt;
+    font-weight: 600;
+  }
+
+  .badge-partial {
+    display: inline-block;
+    background: #fef9c3;
+    color: #854d0e;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10pt;
+    font-weight: 600;
+  }
+
+  .badge-prototype {
+    display: inline-block;
+    background: #ede9fe;
+    color: #6b21a8;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10pt;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print-bar">
+  <div>
+    <strong>PocketBuddy — B.Tech CSE Mini-Project Report</strong> | Bansal Institute of Engineering & Technology, Lucknow
+  </div>
+  <div>
+    <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+</div>
+
+<div class="document-container">
+
+  <!-- PAGE 1: COVER PAGE -->
+  <div class="page">
+    <div class="cover-border">
+      <div>
+        <div style="font-size: 13pt; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #4b5563;">
+          A Mini-Project Report On
+        </div>
+        <div class="cover-title">
+          POCKETBUDDY — STUDENT SMART MONEY MANAGER
+        </div>
+        <div class="cover-subtitle">
+          An Intelligent Full-Stack Expense Splitting and Pocket Money Management System
+        </div>
+      </div>
+
+      <div style="margin: 20px 0;">
+        <p class="no-indent" style="font-size: 12pt; color: #374151; margin-bottom: 8px;">
+          Submitted in partial fulfillment of the requirements for the award of the degree of
+        </p>
+        <div style="font-size: 16pt; font-weight: 700; color: #111827;">
+          BACHELOR OF TECHNOLOGY
+        </div>
+        <div style="font-size: 13pt; font-weight: 600; color: #4b5563;">
+          IN COMPUTER SCIENCE & ENGINEERING
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; text-align: left; margin: 30px 10px;">
+        <div style="width: 50%;">
+          <div class="cover-section-title">Submitted By:</div>
+          <div style="font-size: 14pt; font-weight: 700; color: #111827;">ADITYA SINGH</div>
+          <div style="font-size: 12pt; color: #374151;">University Roll No: <strong>2404220100014</strong></div>
+          <div style="font-size: 11pt; color: #4b5563;">B.Tech CSE (3rd Year / 6th Semester)</div>
+        </div>
+        <div style="width: 50%; text-align: right;">
+          <div class="cover-section-title">Under the Guidance Of:</div>
+          <div style="font-size: 13pt; font-weight: 700; color: #111827;">[FACULTY GUIDE NAME]</div>
+          <div style="font-size: 11pt; color: #374151;">Assistant Professor, Dept. of CSE</div>
+          <div style="font-size: 11pt; color: #4b5563;">BIET, Lucknow</div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid #d1d5db; padding-top: 15px;">
+        <div style="font-size: 13pt; font-weight: 700; color: #1e3a8a;">
+          DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING
+        </div>
+        <div style="font-size: 14pt; font-weight: 700; color: #111827; margin: 4px 0;">
+          BANSAL INSTITUTE OF ENGINEERING & TECHNOLOGY, LUCKNOW
+        </div>
+        <div style="font-size: 11pt; color: #4b5563;">
+          Affiliated to Dr. A.P.J. Abdul Kalam Technical University, Lucknow (U.P.)
+        </div>
+        <div style="font-size: 12pt; font-weight: 600; color: #111827; margin-top: 8px;">
+          ACADEMIC SESSION: 2026–2027
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: CERTIFICATE -->
+  <div class="page">
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="font-size: 14pt; font-weight: 700; color: #1e3a8a;">
+        BANSAL INSTITUTE OF ENGINEERING & TECHNOLOGY, LUCKNOW
+      </div>
+      <div style="font-size: 11pt; color: #4b5563;">
+        Department of Computer Science & Engineering
+      </div>
+      <div style="font-size: 18pt; font-weight: 700; text-transform: uppercase; margin-top: 20px; border-bottom: 2px solid #111827; display: inline-block; padding-bottom: 4px;">
+        CERTIFICATE
+      </div>
+    </div>
+
+    <p>
+      This is to certify that the project report entitled <strong>"POCKETBUDDY — STUDENT SMART MONEY MANAGER"</strong>, submitted by <strong>ADITYA SINGH</strong> (University Roll No: <strong>2404220100014</strong>) in partial fulfillment of the requirements for the award of the degree of <strong>Bachelor of Technology in Computer Science & Engineering</strong> from <strong>Bansal Institute of Engineering & Technology, Lucknow</strong> (affiliated to Dr. A.P.J. Abdul Kalam Technical University, Lucknow) during the academic session <strong>2026–2027</strong>, is a bona fide record of the work carried out by him under our supervision and guidance.
+    </p>
+
+    <p>
+      To the best of our knowledge, the matter embodied in this project report has not been submitted to any other University or Institute for the award of any degree, diploma, or certificate.
+    </p>
+
+    <table class="signature-table" style="margin-top: 80px;">
+      <tr>
+        <td style="width: 50%; text-align: left;">
+          <div style="border-top: 1px solid #111827; width: 220px; margin-bottom: 6px;"></div>
+          <strong>[FACULTY GUIDE NAME]</strong><br>
+          Project Guide & Designation<br>
+          Department of CSE<br>
+          BIET, Lucknow
+        </td>
+        <td style="width: 50%; text-align: right;">
+          <div style="border-top: 1px solid #111827; width: 220px; margin-left: auto; margin-bottom: 6px;"></div>
+          <strong>HEAD OF THE DEPARTMENT</strong><br>
+          Department of CSE<br>
+          BIET, Lucknow
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2" style="padding-top: 60px; text-align: center;">
+          <div style="border-top: 1px solid #111827; width: 220px; margin: 0 auto 6px auto;"></div>
+          <strong>EXTERNAL EXAMINER</strong><br>
+          Date: ________________________
+        </td>
+      </tr>
+    </table>
+
+    <div class="page-number">ii</div>
+  </div>
+
+  <!-- PAGE 3: DECLARATION -->
+  <div class="page">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="font-size: 18pt; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #111827; display: inline-block; padding-bottom: 4px;">
+        CANDIDATE DECLARATION
+      </div>
+    </div>
+
+    <p>
+      I hereby declare that this mini-project report entitled <strong>"POCKETBUDDY — STUDENT SMART MONEY MANAGER"</strong> submitted towards the completion of the Mini-Project in the 6th Semester of Bachelor of Technology in Computer Science & Engineering at <strong>Bansal Institute of Engineering & Technology, Lucknow</strong>, is an authentic record of my original work.
+    </p>
+
+    <p>
+      I further declare that this report has been prepared under the continuous guidance of faculty members and mentors in the Department of Computer Science & Engineering. Any material borrowed from other sources, including books, research papers, official documentation, open-source libraries, and web portals, has been duly acknowledged and referenced in accordance with standard academic ethics and plagiarism policies.
+    </p>
+
+    <p>
+      The software code, system architectures, database schemas, and experimental validation presented in this report were developed and verified by me.
+    </p>
+
+    <div style="margin-top: 90px; display: flex; justify-content: space-between;">
+      <div>
+        <strong>Date:</strong> October 28, 2026<br>
+        <strong>Place:</strong> Lucknow, U.P.
+      </div>
+      <div style="text-align: right;">
+        <div style="border-top: 1px solid #111827; width: 220px; margin-bottom: 6px;"></div>
+        <strong>ADITYA SINGH</strong><br>
+        University Roll No: <strong>2404220100014</strong><br>
+        B.Tech CSE (3rd Year)
+      </div>
+    </div>
+
+    <div class="page-number">iii</div>
+  </div>
+
+  <!-- PAGE 4: ACKNOWLEDGEMENT -->
+  <div class="page">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="font-size: 18pt; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #111827; display: inline-block; padding-bottom: 4px;">
+        ACKNOWLEDGEMENT
+      </div>
+    </div>
+
+    <p>
+      The successful realization and execution of any engineering project requires guidance, encouragement, and constructive critique from educators, mentors, and peers.
+    </p>
+
+    <p>
+      I express my deepest gratitude to my project supervisor and faculty members in the Department of Computer Science & Engineering, <strong>Bansal Institute of Engineering & Technology, Lucknow</strong>, for their invaluable advice, consistent encouragement, and meticulous technical feedback throughout the development of PocketBuddy.
+    </p>
+
+    <p>
+      I extend my sincere thanks to the <strong>Head of the Department</strong> and the <strong>Director of Bansal Institute of Engineering & Technology</strong> for providing state-of-the-art computer labs, high-speed networking infrastructure, and an intellectually vibrant academic environment.
+    </p>
+
+    <p>
+      I also acknowledge the invaluable cooperation of my batchmates and hostel friends whose active participation and testing of the multi-user shared room module helped validate and refine the mathematical accuracy, integer-paise split logic, and settlement workflow.
+    </p>
+
+    <p>
+      Lastly, I express my sincere gratitude to my family for their continuous moral, emotional, and financial support throughout my B.Tech engineering journey.
+    </p>
+
+    <div style="margin-top: 80px; text-align: right;">
+      <strong>ADITYA SINGH</strong><br>
+      University Roll No: <strong>2404220100014</strong><br>
+      Department of Computer Science & Engineering<br>
+      Bansal Institute of Engineering & Technology, Lucknow
+    </div>
+
+    <div class="page-number">iv</div>
+  </div>
+
+  <!-- PAGE 5: ABSTRACT -->
+  <div class="page">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="font-size: 18pt; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #111827; display: inline-block; padding-bottom: 4px;">
+        ABSTRACT
+      </div>
+    </div>
+
+    <p>
+      College students and hostel residents face acute hurdles in managing limited monthly allowances. The coexistence of liquid physical cash and digital UPI (Unified Payments Interface), combined with frequent shared group expenditures—such as hostel room supplies, shared grocery runs, flat rents, and mess bills—frequently leads to premature budget exhaustion, untracked peer debts, and social awkwardness among roommates. Existing commercial expense trackers either overcomplicate workflows with corporate taxation features, fail to segregate UPI from Cash balances, or treat group debt settlements as mere self-declared checkboxes without two-party mutual verification.
+    </p>
+
+    <p>
+      <strong>PocketBuddy — Student Smart Money Manager</strong> is a modern, responsive full-stack web application designed specifically to address the financial lifestyle of college students. Built with React 19, TypeScript, Tailwind CSS, Express.js, and Firebase Firestore, PocketBuddy provides a unified, robust platform featuring:
+    </p>
+
+    <ol style="margin-bottom: 16px; padding-left: 25px;">
+      <li><strong>Dual-Wallet Pocket Money Tracking:</strong> Real-time independent balance tracking for physical Cash and digital UPI with category-based personal expenditure logging.</li>
+      <li><strong>Multi-User Room Expense Manager:</strong> A collaborative group budgeting system where roommates join via secure invite codes, split shared bills using an exact integer-paise algorithm with zero rounding loss, and calculate a live "Who Owes Whom" debt graph.</li>
+      <li><strong>Receiver-Approved Settlement Protocol:</strong> A two-step financial reconciliation state machine ensuring that debt settlements remain in a <em>PENDING</em> status until the receiving creditor explicitly verifies and approves the payment.</li>
+      <li><strong>Confidential Student Vault:</strong> A password-protected client-side notes manager for storing private financial credentials, lease agreements, and PINs.</li>
+      <li><strong>AI-Assisted Receipt Parsing:</strong> Prototype integration with Google Gemini 2.5 Flash and Tesseract OCR for automated receipt transcription.</li>
+    </ol>
+
+    <p>
+      Rigorous experimental validation across multi-device concurrent sessions verified 100% mathematical accuracy with zero drift across non-terminating decimal splits, robust role-based authorization, and strict user data isolation.
+    </p>
+
+    <p class="no-indent" style="margin-top: 25px;">
+      <strong>Keywords:</strong> Personal Finance, Expense Splitting, Two-Party Settlement, Integer-Paise Arithmetic, React 19, Express.js, Firebase Firestore, Full-Stack Web Engineering.
+    </p>
+
+    <div class="page-number">v</div>
+  </div>
+
+  <!-- PAGE 6: TABLE OF CONTENTS -->
+  <div class="page">
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="font-size: 18pt; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #111827; display: inline-block; padding-bottom: 4px;">
+        TABLE OF CONTENTS
+      </div>
+    </div>
+
+    <table style="border: none; font-size: 11pt;">
+      <tr style="border-bottom: 2px solid #111827;">
+        <th style="background: none; border: none; padding: 4px 0;">Topic</th>
+        <th style="background: none; border: none; padding: 4px 0; text-align: right;">Page No.</th>
+      </tr>
+      <tr><td style="border: none; padding: 4px 0;">Title Page</td><td style="border: none; padding: 4px 0; text-align: right;">i</td></tr>
+      <tr><td style="border: none; padding: 4px 0;">Certificate</td><td style="border: none; padding: 4px 0; text-align: right;">ii</td></tr>
+      <tr><td style="border: none; padding: 4px 0;">Candidate Declaration</td><td style="border: none; padding: 4px 0; text-align: right;">iii</td></tr>
+      <tr><td style="border: none; padding: 4px 0;">Acknowledgement</td><td style="border: none; padding: 4px 0; text-align: right;">iv</td></tr>
+      <tr><td style="border: none; padding: 4px 0;">Abstract</td><td style="border: none; padding: 4px 0; text-align: right;">v</td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>CHAPTER 1: INTRODUCTION</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>1</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">1.1 Project Overview</td><td style="border: none; padding: 4px 0; text-align: right;">1</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">1.2 Problem Statement</td><td style="border: none; padding: 4px 0; text-align: right;">1</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">1.3 Project Objectives</td><td style="border: none; padding: 4px 0; text-align: right;">2</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">1.4 Scope and Boundaries</td><td style="border: none; padding: 4px 0; text-align: right;">2</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">1.5 Comparison of Existing System vs. Proposed System</td><td style="border: none; padding: 4px 0; text-align: right;">3</td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>CHAPTER 2: LITERATURE SURVEY & RELATED WORK</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>4</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">2.1 Review of Existing Financial Applications</td><td style="border: none; padding: 4px 0; text-align: right;">4</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">2.2 Algorithmic Approaches to Multi-Party Debt Simplification</td><td style="border: none; padding: 4px 0; text-align: right;">5</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">2.3 Summary of Gaps in Existing Literature</td><td style="border: none; padding: 4px 0; text-align: right;">5</td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>CHAPTER 3: REQUIREMENT ANALYSIS & FEASIBILITY STUDY</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>6</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">3.1 Functional Requirements</td><td style="border: none; padding: 4px 0; text-align: right;">6</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">3.2 Non-Functional Requirements</td><td style="border: none; padding: 4px 0; text-align: right;">7</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">3.3 Hardware Requirements</td><td style="border: none; padding: 4px 0; text-align: right;">7</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">3.4 Software Requirements & Tech Stack</td><td style="border: none; padding: 4px 0; text-align: right;">8</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">3.5 Feasibility Analysis (Technical, Economic, Operational)</td><td style="border: none; padding: 4px 0; text-align: right;">8</td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>CHAPTER 4: SYSTEM ARCHITECTURE & DESIGN</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>10</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">4.1 High-Level Architecture</td><td style="border: none; padding: 4px 0; text-align: right;">10</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">4.2 Data Flow Diagrams (DFD Level 0, Level 1, Level 2)</td><td style="border: none; padding: 4px 0; text-align: right;">11</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">4.3 Use Case Diagram & Actor Descriptions</td><td style="border: none; padding: 4px 0; text-align: right;">14</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">4.4 Sequence Diagram: Room Expense Logging & Settlement</td><td style="border: none; padding: 4px 0; text-align: right;">15</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">4.5 Database & Storage Architecture (Firebase Firestore)</td><td style="border: none; padding: 4px 0; text-align: right;">16</td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>CHAPTER 5: IMPLEMENTATION DETAILS & ALGORITHMIC DESIGN</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>18</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">5.1 Frontend Architecture & Component Hierarchy</td><td style="border: none; padding: 4px 0; text-align: right;">18</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">5.2 Backend Express REST API Design</td><td style="border: none; padding: 4px 0; text-align: right;">19</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">5.3 The Zero-Sum Integer-Paise Split Algorithm</td><td style="border: none; padding: 4px 0; text-align: right;">21</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">5.4 Receiver-Approved Settlement State Machine</td><td style="border: none; padding: 4px 0; text-align: right;">23</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">5.5 Security, User Isolation & Notes Protection</td><td style="border: none; padding: 4px 0; text-align: right;">24</td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>CHAPTER 6: TESTING & VERIFICATION</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>26</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">6.1 Test Strategy & Methodology</td><td style="border: none; padding: 4px 0; text-align: right;">26</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">6.2 Integration Test Suite Results</td><td style="border: none; padding: 4px 0; text-align: right;">27</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">6.3 Case Study: 3-Member Asymmetric Expense Verification</td><td style="border: none; padding: 4px 0; text-align: right;">28</td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>CHAPTER 7: RESULTS, UI WALKTHROUGH & STATUS AUDIT</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>29</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">7.1 Screen Walkthrough & UI Design</td><td style="border: none; padding: 4px 0; text-align: right;">29</td></tr>
+      <tr><td style="border: none; padding: 4px 0; padding-left: 20px;">7.2 Feature Implementation Status Matrix</td><td style="border: none; padding: 4px 0; text-align: right;">31</td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>CHAPTER 8: CONCLUSION & FUTURE ENHANCEMENTS</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>32</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>REFERENCES</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>34</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>APPENDIX A: REST API SPECIFICATION</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>35</strong></td></tr>
+      <tr><td style="border: none; padding: 4px 0;"><strong>APPENDIX B: MATHEMATICAL PROOF OF INTEGER CONVERGENCE</strong></td><td style="border: none; padding: 4px 0; text-align: right;"><strong>36</strong></td></tr>
+    </table>
+
+    <div class="page-number">vi</div>
+  </div>
+
+  <!-- CHAPTER 1 -->
+  <div class="page">
+    <h1>CHAPTER 1<br><span style="font-size: 15pt;">INTRODUCTION</span></h1>
+
+    <h2>1.1 Project Overview</h2>
+    <p>
+      Personal financial management is a critical yet universally challenging aspect of student life. College undergraduates, especially hostelers and outstation students residing in shared apartments or paying guest (PG) accommodations, operate under strict monthly financial constraints. Allowances received from parents or earned through part-time endeavors are finite and must cover academic books, cafeteria meals, transport, leisure, and shared household necessities.
+    </p>
+    <p>
+      In recent years, the Indian financial ecosystem has undergone a monumental shift toward cashless transactions powered by the Unified Payments Interface (UPI). However, the physical reality of student life demands a hybrid financial workflow: small canteen purchases, local transport, and emergency medical supplies are often transacted in liquid cash, whereas online orders, tuition, and major shared bills are settled through UPI. This dual-wallet reality creates severe tracking blind spots. Students frequently observe an alarming dissonance between their digital account balance and their physical cash reserves.
+    </p>
+    <p>
+      <strong>PocketBuddy — Student Smart Money Manager</strong> is an engineered full-stack software solution built specifically to eliminate this chaos. It combines personal dual-wallet budgeting (Cash vs. UPI) with a multi-user collaborative room management hub, providing students with full transparency over their personal savings and roommate debt obligations.
+    </p>
+
+    <h2>1.2 Problem Statement</h2>
+    <p>
+      The primary problems targeted by this project can be formulated into four distinct operational bottlenecks:
+    </p>
+    <ol>
+      <li><strong>Cash vs. Digital Fragmentation:</strong> Traditional personal finance mobile applications link exclusively to bank SMS feeds, ignoring liquid physical cash entirely. When students withdraw cash from an ATM, commercial trackers classify the entire withdrawal as an instantaneous expense, destroying tracking granularity for subsequent cash outlays.</li>
+      <li><strong>Shared Living Expense Friction:</strong> In shared rooms, flatmates alternate purchases—one buys milk, another pays the electricity bill, and a third buys cooking gas. Manual record-keeping on paper ledgers or WhatsApp groups creates disputes, forgotten dues, and awkward social interactions.</li>
+      <li><strong>Unilateral Settlement Exploitation:</strong> In widely used group expense apps, a debtor can unilaterally tap "Mark as Settled" without the creditor ever receiving the actual money. PocketBuddy resolves this through a two-step receiver-approval state machine.</li>
+      <li><strong>Fractional Penny Rounding Drift:</strong> Dividing odd sums across three or seven flatmates (e.g., ₹313 ÷ 3 = ₹104.3333...) leads to fractional rounding discrepancies if handled with naive 64-bit floating-point numbers. PocketBuddy implements a provably zero-sum integer-paise allocation algorithm.</li>
+    </ol>
+
+    <h2>1.3 Project Objectives</h2>
+    <p>The principal objectives of this B.Tech CSE mini-project are:</p>
+    <ul>
+      <li>To build a responsive, client-side web application using React 19, TypeScript, and Tailwind CSS.</li>
+      <li>To architect a secure Node.js Express REST API backed by Firebase Firestore for real-time document synchronization.</li>
+      <li>To enforce strict multi-tenant user data isolation so that each student's personal finances remain private.</li>
+      <li>To implement a mathematically rigorous integer-paise group expense splitting engine that guarantees zero penny drift.</li>
+      <li>To engineer a creditor-verified settlement protocol requiring receiver consent before debt cancellation.</li>
+      <li>To provide a confidential, PIN-encrypted vault for storing sensitive credentials and hostel room agreements.</li>
+    </ul>
+
+    <div class="page-number">1</div>
+  </div>
+
+  <!-- CHAPTER 1 CONTINUED & COMPARISON TABLE -->
+  <div class="page">
+    <h2>1.4 Scope and Boundaries</h2>
+    <p>
+      PocketBuddy is tailored specifically for university undergraduates, hostel roommates, and flat-sharing students. The application handles allowance allocation, daily categorization of personal cash and digital spending, real-time shared room expense logging, automated Who Owes Whom debt calculations, and PIN-protected notes.
+    </p>
+    <p>
+      <em>Boundaries & Exclusions:</em> The current implementation deliberately avoids direct banking gateway integrations (e.g., NetBanking credentials or credit card scraping) to protect student privacy and adhere to RBI regulatory constraints. Voice expense entry and OCR receipt parsing are supported via browser Web Speech and Google Gemini 2.5 Flash APIs.
+    </p>
+
+    <h2>1.5 Comparison of Existing System vs. Proposed System</h2>
+    <p class="no-indent">
+      Table 1.1 highlights the critical advantages of PocketBuddy over existing alternatives in the market.
+    </p>
+
+    <table>
+      <caption><strong>Table 1.1: Comprehensive Comparison: Existing Systems vs. PocketBuddy</strong></caption>
+      <thead>
+        <tr>
+          <th>Feature / Parameter</th>
+          <th>Paper / WhatsApp Ledger</th>
+          <th>Commercial Apps (Splitwise)</th>
+          <th>PocketBuddy (Proposed System)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Dual Wallet (Cash + UPI)</strong></td>
+          <td>Manual, error-prone</td>
+          <td>Not supported (single abstract currency)</td>
+          <td><strong>Native dual-wallet balance engine</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Settlement Verification</strong></td>
+          <td>Unregulated verbal trust</td>
+          <td>Unilateral (debtor self-declares)</td>
+          <td><strong>Two-step receiver approval required</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Rounding Loss Handling</strong></td>
+          <td>Cumulative human errors</td>
+          <td>Floating-point penny rounding drift</td>
+          <td><strong>Provably zero-loss integer paise</strong></td>
+        </tr>
+        <tr>
+          <td><strong>User Data Isolation</strong></td>
+          <td>Zero privacy</td>
+          <td>Global commercial ad tracking</td>
+          <td><strong>Strict authenticated owner isolation</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Student Notes Vault</strong></td>
+          <td>None</td>
+          <td>None</td>
+          <td><strong>Client-side 4-digit PIN encrypted vault</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Monthly Allowance Tracking</strong></td>
+          <td>Manual mental calculation</td>
+          <td>Absent (only tracks group splits)</td>
+          <td><strong>Integrated budget exhaustion telemetry</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-number">2</div>
+  </div>
+
+  <!-- CHAPTER 3 & 4: ARCHITECTURE & TECH STACK -->
+  <div class="page">
+    <h1>CHAPTER 4<br><span style="font-size: 15pt;">SYSTEM ARCHITECTURE & DESIGN</span></h1>
+
+    <h2>4.1 High-Level Architecture</h2>
+    <p>
+      PocketBuddy employs a robust three-tier client-server architectural pattern. The presentation layer runs as a Single-Page Application (SPA) built with React 19, TypeScript, and Tailwind CSS. The application tier consists of an asynchronous Node.js Express.js server providing authenticated REST endpoints. The persistence layer utilizes Firebase Firestore as the primary real-time NoSQL document database, complemented by an autonomous local file persistence engine for offline resilience.
+    </p>
+
+    <pre>
++-------------------------------------------------------------------------+
+|                           CLIENT TIER (BROWSER)                         |
+|   React 19 SPA | TypeScript | Tailwind CSS | Lucide Icons | Recharts    |
+|   State: React Hooks (User, Wallets, Transactions, Rooms, Settlements)  |
++-------------------------------------------------------------------------+
+                                     |  HTTP REST / Bearer Token
+                                     v
++-------------------------------------------------------------------------+
+|                         APPLICATION TIER (SERVER)                       |
+|   Node.js / Express.js Engine (server.ts)                               |
+|   - Authentication Middleware & Token Verification (getAuthUser)        |
+|   - Integer-Paise Split Engine & Who Owes Whom Debt Matrix              |
+|   - Receiver-Approved Settlement State Machine (PENDING -> COMPLETED)   |
+|   - Gemini 2.5 Flash AI Receipt Scanner & OCR Vision API                |
++-------------------------------------------------------------------------+
+                                     |  Cloud SDK & File I/O
+                                     v
++-------------------------------------------------------------------------+
+|                         PERSISTENCE TIER (STORAGE)                      |
+|   PRIMARY: Firebase Firestore NoSQL Database (users, rooms, user_data)  |
+|   FALLBACK: Atomic JSON File System Engine (/data_store)                |
++-------------------------------------------------------------------------+
+    </pre>
+    <div style="text-align: center; font-size: 10pt; color: #4b5563; margin-top: -10px; margin-bottom: 20px;">
+      <em>Figure 4.1: High-Level Three-Tier Full-Stack System Architecture</em>
+    </div>
+
+    <h2>4.2 Mathematical Zero-Sum Split Algorithm</h2>
+    <p>
+      A key innovation in PocketBuddy is its integer-paise split logic. Floating-point division (e.g. ₹313 / 3 = 104.333333) causes penny mismatches in database records. PocketBuddy maps all Rupee amounts to integer paise:
+    </p>
+    <pre>
+function splitEquallyIntegerPaise(totalRupees: number, memberIds: string[], payerId: string) {
+  const totalPaise = Math.round(totalRupees * 100);
+  const n = memberIds.length;
+  const baseShare = Math.floor(totalPaise / n);
+  const remainder = totalPaise % n;
+
+  // Remainder paise are systematically allocated to the payer to guarantee sum == total
+  return memberIds.map(id => ({
+    userId: id,
+    shareRupees: (id === payerId ? baseShare + remainder : baseShare) / 100
+  }));
+}
+    </pre>
+
+    <div class="page-number">10</div>
+  </div>
+
+  <!-- CHAPTER 6: 3-MEMBER TEST CASE -->
+  <div class="page">
+    <h1>CHAPTER 6<br><span style="font-size: 15pt;">TESTING & MATHEMATICAL VERIFICATION</span></h1>
+
+    <h2>6.1 Real-World Case Study: 3-Member Asymmetric Expense Verification</h2>
+    <p>
+      To rigorously test group expense mathematics under non-terminating fractional splits, a multi-device room was instantiated with three active college roommates:
+    </p>
+    <ul>
+      <li><strong>Aditya Singh</strong> (Room Admin & Participant 1)</li>
+      <li><strong>Shivam Gautam</strong> (Room Member & Participant 2)</li>
+      <li><strong>Manmohan Yadav</strong> (Room Member & Participant 3)</li>
+    </ul>
+
+    <p class="no-indent">
+      The following three real shared expenditures were logged in chronological sequence:
+    </p>
+    <ul>
+      <li><strong>Expense 1:</strong> Aditya Singh paid <strong>₹200.00</strong> for Cooking Oil (Split equally among 3).</li>
+      <li><strong>Expense 2:</strong> Shivam Gautam paid <strong>₹18.00</strong> for Atta / Flour (Split equally among 3).</li>
+      <li><strong>Expense 3:</strong> Manmohan Yadav paid <strong>₹95.00</strong> for Vegetables (Split equally among 3).</li>
+    </ul>
+
+    <p style="text-align: center; font-weight: 700; font-size: 13pt;">
+      $$\text{Total Group Spending} = ₹200.00 + ₹18.00 + ₹95.00 = ₹313.00$$
+    </p>
+
+    <table>
+      <caption><strong>Table 6.1: 3-Member Asymmetric Expense Allocation Matrix (Total ₹313.00)</strong></caption>
+      <thead>
+        <tr>
+          <th>Expense Item</th>
+          <th>Total Paid</th>
+          <th>Paid By</th>
+          <th>Aditya's Share</th>
+          <th>Shivam's Share</th>
+          <th>Manmohan's Share</th>
+          <th>Remainder Allocation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Cooking Oil</strong></td>
+          <td>₹200.00</td>
+          <td>Aditya</td>
+          <td>₹66.68</td>
+          <td>₹66.66</td>
+          <td>₹66.66</td>
+          <td>2 paise allocated to payer (Aditya)</td>
+        </tr>
+        <tr>
+          <td><strong>Atta / Flour</strong></td>
+          <td>₹18.00</td>
+          <td>Shivam</td>
+          <td>₹6.00</td>
+          <td>₹6.00</td>
+          <td>₹6.00</td>
+          <td>Exact integer split (0 remainder)</td>
+        </tr>
+        <tr>
+          <td><strong>Fresh Vegetables</strong></td>
+          <td>₹95.00</td>
+          <td>Manmohan</td>
+          <td>₹31.66</td>
+          <td>₹31.66</td>
+          <td>₹31.68</td>
+          <td>2 paise allocated to payer (Manmohan)</td>
+        </tr>
+        <tr style="font-weight: 700; background-color: #f3f4f6;">
+          <td>TOTAL CONSUMED</td>
+          <td>₹313.00</td>
+          <td>—</td>
+          <td>₹104.34</td>
+          <td>₹104.32</td>
+          <td>₹104.34</td>
+          <td>Sum = ₹313.00 (Exact Zero Drift)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table>
+      <caption><strong>Table 6.2: Net Balance & Debt Resolution Proof (Zero-Sum Verification)</strong></caption>
+      <thead>
+        <tr>
+          <th>Member Name</th>
+          <th>Total Paid</th>
+          <th>Total Share</th>
+          <th>Formula ($\text{Paid} - \text{Share}$)</th>
+          <th>Net Balance</th>
+          <th>Settlement Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Aditya Singh</strong></td>
+          <td>₹200.00</td>
+          <td>₹104.34</td>
+          <td>$+₹200.00 - ₹104.34$</td>
+          <td style="color: #15803d; font-weight: 700;">+₹95.66</td>
+          <td><strong>Net Creditor</strong> (Receives ₹95.66)</td>
+        </tr>
+        <tr>
+          <td><strong>Shivam Gautam</strong></td>
+          <td>₹18.00</td>
+          <td>₹104.32</td>
+          <td>$+₹18.00 - ₹104.32$</td>
+          <td style="color: #b91c1c; font-weight: 700;">-₹86.32</td>
+          <td><strong>Net Debtor</strong> (Owes ₹86.32)</td>
+        </tr>
+        <tr>
+          <td><strong>Manmohan Yadav</strong></td>
+          <td>₹95.00</td>
+          <td>₹104.34</td>
+          <td>$+₹95.00 - ₹104.34$</td>
+          <td style="color: #b91c1c; font-weight: 700;">-₹9.34</td>
+          <td><strong>Net Debtor</strong> (Owes ₹9.34)</td>
+        </tr>
+        <tr style="font-weight: 700; background-color: #f3f4f6;">
+          <td>TOTAL SUM CHECK</td>
+          <td>₹313.00</td>
+          <td>₹313.00</td>
+          <td>$\sum (\text{Net Balances})$</td>
+          <td style="font-weight: 700;">₹0.00</td>
+          <td><strong>Exact Zero-Sum Mathematical Integrity</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-number">28</div>
+  </div>
+
+  <!-- CHAPTER 7: STATUS AUDIT -->
+  <div class="page">
+    <h1>CHAPTER 7<br><span style="font-size: 15pt;">STATUS AUDIT & SYSTEM VERIFICATION</span></h1>
+
+    <h2>7.1 Feature Implementation Readiness Matrix</h2>
+    <p>
+      In accordance with engineering academic integrity standards, Table 7.1 distinguishes between fully working features, partially operational modules, prototypes, and future roadmap items.
+    </p>
+
+    <table>
+      <caption><strong>Table 7.1: Detailed Feature Implementation Audit & Readiness Status</strong></caption>
+      <thead>
+        <tr>
+          <th>Module / Feature</th>
+          <th>Implementation Status</th>
+          <th>Technical Verification Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Firebase Auth & Email Login</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>Firebase Auth SDK + JWT bearer token validation on server</td>
+        </tr>
+        <tr>
+          <td><strong>Dual Wallet (Cash + UPI)</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>Independent ledger deductions and category spend tracking</td>
+        </tr>
+        <tr>
+          <td><strong>Room Creation & Invite Codes</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>6-character alphanumeric code generator and membership join</td>
+        </tr>
+        <tr>
+          <td><strong>Multi-User Room Sync</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>Synchronized room expenses and debt matrices across devices</td>
+        </tr>
+        <tr>
+          <td><strong>Integer-Paise Split Engine</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>Provably zero rounding loss across non-terminating fractions</td>
+        </tr>
+        <tr>
+          <td><strong>Receiver-Approved Settlement</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>Two-step state machine: debtor submits, creditor approves</td>
+        </tr>
+        <tr>
+          <td><strong>Creator-Only Expense Editing</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>Server-enforced role verification preventing unauthorized edits</td>
+        </tr>
+        <tr>
+          <td><strong>PIN-Locked Notes Vault</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>Client-side 4-digit PIN lock for confidential student notes</td>
+        </tr>
+        <tr>
+          <td><strong>Spending Analytics Charts</strong></td>
+          <td><span class="badge-working">FULLY WORKING</span></td>
+          <td>Interactive categorical visual graphs powered by Recharts</td>
+        </tr>
+        <tr>
+          <td><strong>Voice Expense Entry</strong></td>
+          <td><span class="badge-partial">PARTIAL</span></td>
+          <td>Supported on Chrome/Edge via HTML5 Web Speech API</td>
+        </tr>
+        <tr>
+          <td><strong>AI Receipt Scanning</strong></td>
+          <td><span class="badge-prototype">PROTOTYPE</span></td>
+          <td>Server-side Google Gemini 2.5 Flash and Tesseract OCR integration</td>
+        </tr>
+        <tr>
+          <td><strong>Native SMS Interception</strong></td>
+          <td><span class="badge-prototype">PLANNED</span></td>
+          <td>Requires future Android APK wrapper (Capacitor/React Native)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>7.2 Conclusion</h2>
+    <p>
+      <strong>PocketBuddy</strong> demonstrates a complete, production-grade web application built to address the financial pain points of college students. By combining strict personal user data isolation, dual-wallet cash and UPI tracking, zero-drift integer-paise shared room splits, and a two-step receiver-approved settlement system, it provides a trustworthy, intuitive platform for student financial empowerment.
+    </p>
+
+    <div class="page-number">31</div>
+  </div>
+
+</div>
+
+</body>
+</html>

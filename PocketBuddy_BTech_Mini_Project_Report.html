@@ -1,0 +1,201 @@
+<!-- PocketBuddy B.Tech CSE Mini-Project Report (HTML Printable Version) -->
+<!-- Generated for Aditya Singh (Roll No: 2404220100014), Bansal Institute of Engineering & Technology, Lucknow -->
+<!-- To view or print as PDF: Open http://localhost:3000/report.html in Chrome or Edge and press Ctrl+P -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketBuddy — B.Tech CSE Mini-Project Report (Aditya Singh - 2404220100014)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --primary: #1e3a8a;
+    --text: #1f2937;
+    --border: #374151;
+    --bg-light: #f9fafb;
+    --font-serif: 'Crimson Pro', 'Times New Roman', Times, serif;
+    --font-mono: 'JetBrains Mono', Courier, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-serif);
+    font-size: 14pt;
+    line-height: 1.6;
+    color: var(--text);
+    background-color: #e5e7eb;
+    margin: 0;
+    padding: 20px 0;
+  }
+
+  .no-print-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #111827;
+    color: #ffffff;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    max-width: 210mm;
+    margin: 0 auto 20px auto;
+    border-radius: 8px;
+  }
+
+  .no-print-bar button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .document-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 25mm 25mm 25mm 25mm;
+    margin: 0 auto;
+    background: white;
+    position: relative;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  @media print {
+    body { background: white; padding: 0; font-size: 12pt; }
+    .no-print-bar { display: none !important; }
+    .document-container { box-shadow: none; max-width: 100%; margin: 0; }
+    .page { width: 100%; min-height: auto; padding: 20mm; margin: 0; page-break-after: always !important; }
+    @page { size: A4; margin: 0; }
+  }
+
+  h1, h2, h3, h4 { color: #111827; font-weight: 700; }
+  h1 { font-size: 20pt; text-align: center; text-transform: uppercase; margin-bottom: 20px; }
+  h2 { font-size: 15pt; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; margin-top: 24px; margin-bottom: 14px; text-transform: uppercase; }
+  p { text-align: justify; margin-bottom: 14px; text-indent: 2.5em; }
+  .no-indent { text-indent: 0 !important; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 11pt; }
+  th, td { border: 1px solid #9ca3af; padding: 8px 12px; }
+  th { background-color: #f3f4f6; font-weight: 700; color: #111827; }
+  pre { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; font-size: 9.5pt; font-family: var(--font-mono); border-radius: 4px; margin: 16px 0; overflow-x: auto; }
+  .cover-border { border: 3px double #1f2937; height: 100%; min-height: 247mm; padding: 30px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; }
+  .cover-title { font-size: 24pt; font-weight: 700; color: #1e3a8a; margin: 15px 0 5px 0; }
+  .page-number { position: absolute; bottom: 15mm; left: 0; right: 0; text-align: center; font-size: 11pt; color: #6b7280; }
+</style>
+</head>
+<body>
+<div class="no-print-bar">
+  <div><strong>PocketBuddy — B.Tech CSE Mini-Project Report</strong> | Bansal Institute of Engineering & Technology, Lucknow</div>
+  <div><button onclick="window.print()">🖨️ Print / Save as PDF</button></div>
+</div>
+<div class="document-container">
+  <!-- PAGE 1: COVER PAGE -->
+  <div class="page">
+    <div class="cover-border">
+      <div>
+        <div style="font-size: 13pt; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #4b5563;">A Mini-Project Report On</div>
+        <div class="cover-title">POCKETBUDDY — STUDENT SMART MONEY MANAGER</div>
+        <div style="font-size: 15pt; font-weight: 600; color: #4b5563; margin-bottom: 25px;">An Intelligent Full-Stack Expense Splitting and Pocket Money Management System</div>
+      </div>
+      <div style="margin: 20px 0;">
+        <p class="no-indent" style="font-size: 12pt; color: #374151; margin-bottom: 8px;">Submitted in partial fulfillment of the requirements for the award of the degree of</p>
+        <div style="font-size: 16pt; font-weight: 700; color: #111827;">BACHELOR OF TECHNOLOGY</div>
+        <div style="font-size: 13pt; font-weight: 600; color: #4b5563;">IN COMPUTER SCIENCE & ENGINEERING</div>
+      </div>
+      <div style="display: flex; justify-content: space-between; text-align: left; margin: 30px 10px;">
+        <div style="width: 50%;">
+          <div style="font-size: 11pt; text-transform: uppercase; color: #6b7280;">Submitted By:</div>
+          <div style="font-size: 14pt; font-weight: 700; color: #111827;">ADITYA SINGH</div>
+          <div style="font-size: 12pt; color: #374151;">University Roll No: <strong>2404220100014</strong></div>
+          <div style="font-size: 11pt; color: #4b5563;">B.Tech CSE (3rd Year / 6th Semester)</div>
+        </div>
+        <div style="width: 50%; text-align: right;">
+          <div style="font-size: 11pt; text-transform: uppercase; color: #6b7280;">Under the Guidance Of:</div>
+          <div style="font-size: 13pt; font-weight: 700; color: #111827;">[FACULTY GUIDE NAME]</div>
+          <div style="font-size: 11pt; color: #374151;">Assistant Professor, Dept. of CSE</div>
+          <div style="font-size: 11pt; color: #4b5563;">BIET, Lucknow</div>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #d1d5db; padding-top: 15px;">
+        <div style="font-size: 13pt; font-weight: 700; color: #1e3a8a;">DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING</div>
+        <div style="font-size: 14pt; font-weight: 700; color: #111827; margin: 4px 0;">BANSAL INSTITUTE OF ENGINEERING & TECHNOLOGY, LUCKNOW</div>
+        <div style="font-size: 11pt; color: #4b5563;">Affiliated to Dr. A.P.J. Abdul Kalam Technical University, Lucknow (U.P.)</div>
+        <div style="font-size: 12pt; font-weight: 600; color: #111827; margin-top: 8px;">ACADEMIC SESSION: 2026–2027</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: CERTIFICATE -->
+  <div class="page">
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="font-size: 14pt; font-weight: 700; color: #1e3a8a;">BANSAL INSTITUTE OF ENGINEERING & TECHNOLOGY, LUCKNOW</div>
+      <div style="font-size: 11pt; color: #4b5563;">Department of Computer Science & Engineering</div>
+      <div style="font-size: 18pt; font-weight: 700; text-transform: uppercase; margin-top: 20px; border-bottom: 2px solid #111827; display: inline-block; padding-bottom: 4px;">CERTIFICATE</div>
+    </div>
+    <p>This is to certify that the project report entitled <strong>"POCKETBUDDY — STUDENT SMART MONEY MANAGER"</strong>, submitted by <strong>ADITYA SINGH</strong> (University Roll No: <strong>2404220100014</strong>) in partial fulfillment of the requirements for the award of the degree of <strong>Bachelor of Technology in Computer Science & Engineering</strong> from <strong>Bansal Institute of Engineering & Technology, Lucknow</strong> during the academic session <strong>2026–2027</strong>, is a bona fide record of the work carried out by him under our supervision and guidance.</p>
+    <table style="border: none; margin-top: 80px;">
+      <tr>
+        <td style="width: 50%; border: none; text-align: left;">
+          <div style="border-top: 1px solid #111827; width: 220px; margin-bottom: 6px;"></div>
+          <strong>[FACULTY GUIDE NAME]</strong><br>Project Guide & Designation<br>Department of CSE, BIET Lucknow
+        </td>
+        <td style="width: 50%; border: none; text-align: right;">
+          <div style="border-top: 1px solid #111827; width: 220px; margin-left: auto; margin-bottom: 6px;"></div>
+          <strong>HEAD OF THE DEPARTMENT</strong><br>Department of CSE, BIET Lucknow
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2" style="border: none; padding-top: 60px; text-align: center;">
+          <div style="border-top: 1px solid #111827; width: 220px; margin: 0 auto 6px auto;"></div>
+          <strong>EXTERNAL EXAMINER</strong><br>Date: ________________________
+        </td>
+      </tr>
+    </table>
+    <div class="page-number">ii</div>
+  </div>
+
+  <!-- PAGE 3: DECLARATION -->
+  <div class="page">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="font-size: 18pt; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #111827; display: inline-block; padding-bottom: 4px;">CANDIDATE DECLARATION</div>
+    </div>
+    <p>I hereby declare that this mini-project report entitled <strong>"POCKETBUDDY — STUDENT SMART MONEY MANAGER"</strong> submitted towards the completion of the Mini-Project in the 6th Semester of Bachelor of Technology in Computer Science & Engineering at <strong>Bansal Institute of Engineering & Technology, Lucknow</strong>, is an authentic record of my original work.</p>
+    <p>I further declare that this report has been prepared under the continuous guidance of faculty members in the Department of Computer Science & Engineering. All references and code libraries used have been duly acknowledged.</p>
+    <div style="margin-top: 90px; display: flex; justify-content: space-between;">
+      <div><strong>Date:</strong> October 28, 2026<br><strong>Place:</strong> Lucknow, U.P.</div>
+      <div style="text-align: right;">
+        <div style="border-top: 1px solid #111827; width: 220px; margin-bottom: 6px;"></div>
+        <strong>ADITYA SINGH</strong><br>University Roll No: <strong>2404220100014</strong><br>B.Tech CSE (3rd Year)
+      </div>
+    </div>
+    <div class="page-number">iii</div>
+  </div>
+
+  <!-- PAGE 4: ABSTRACT -->
+  <div class="page">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="font-size: 18pt; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #111827; display: inline-block; padding-bottom: 4px;">ABSTRACT</div>
+    </div>
+    <p>College students face significant hurdles in personal financial management. Limited monthly allowances, the dual circulation of liquid Cash and digital UPI, and frequent shared group expenditures—such as hostel room supplies, shared grocery runs, flat rents, and mess bills—frequently lead to premature budget exhaustion and untracked debts.</p>
+    <p><strong>PocketBuddy — Student Smart Money Manager</strong> is a modern full-stack web application built with React 19, TypeScript, Tailwind CSS, Express.js, and Firebase Firestore. It provides dual-wallet tracking (Cash vs. UPI), collaborative shared room budgeting with zero-loss integer-paise calculations, a two-step receiver-approved settlement protocol, a confidential PIN-protected notes vault, and AI receipt scanning.</p>
+    <p class="no-indent"><strong>Keywords:</strong> Personal Finance, Expense Splitting, Two-Party Settlement, Integer-Paise Arithmetic, React 19, Express.js, Firebase Firestore.</p>
+    <div class="page-number">v</div>
+  </div>
+</div>
+</body>
+</html>
