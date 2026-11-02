@@ -12,10 +12,12 @@ import {
   X,
   Home,
   Calendar,
+  Mail,
 } from 'lucide-react';
 import { Transaction, RoomGroup, RoomExpense } from '../types';
 import { formatINR, formatDate } from '../utils/formatters';
-import { generateLedgerPDF } from '../utils/pdfGenerator';
+import { generateLedgerPDF, generateRoomLedgerPDF } from '../utils/pdfGenerator';
+import { EmailReportModal } from './EmailReportModal';
 
 export type HistoryScope = 'mymoney' | 'myroom' | 'all';
 export type HistoryFilter = 'all' | 'income' | 'expense';
@@ -25,7 +27,7 @@ interface UnifiedHistoryTabProps {
   transactions: Transaction[];
   roomGroups: RoomGroup[];
   currentRoom?: RoomGroup | null;
-  currentUser?: { name?: string; upiId?: string; phone?: string; id?: string } | null;
+  currentUser?: { name?: string; upiId?: string; phone?: string; id?: string; email?: string } | null;
   onEditTransaction?: (transaction: Transaction) => void;
   onDeleteTransaction?: (id: string) => void;
   onViewRoom?: () => void;
@@ -91,6 +93,10 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
   // PDF Export state
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  // Email Report Modal state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailModalReportType, setEmailModalReportType] = useState<'mymoney' | 'myroom'>('mymoney');
 
   // Modal to inspect room expense details
   const [viewingRoomExpense, setViewingRoomExpense] = useState<RoomExpense | null>(null);
@@ -430,6 +436,37 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
     }
   };
 
+  // Handle PDF Export for Room Shared Expenses
+  const handleExportRoomStatement = () => {
+    const targetRoom = currentRoom || (roomGroups.length > 0 ? roomGroups[0] : null);
+    if (!targetRoom) return;
+
+    setIsGeneratingPdf(true);
+    try {
+      generateRoomLedgerPDF({
+        room: targetRoom,
+        currentUserName: effectiveUserName,
+        currentUserId: currentUser?.id,
+      });
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 2500);
+    } catch (err) {
+      console.error('Error exporting room PDF:', err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleOpenEmailPersonalModal = () => {
+    setEmailModalReportType('mymoney');
+    setIsEmailModalOpen(true);
+  };
+
+  const handleOpenEmailRoomModal = () => {
+    setEmailModalReportType('myroom');
+    setIsEmailModalOpen(true);
+  };
+
   // Helper to resolve clean indicator icon
   const getCategoryIcon = (_category?: string, type: string = 'expense') => {
     if (type === 'income') {
@@ -440,8 +477,8 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-20">
-      {/* 1. Header: Small, clean heading with secondary PDF Export */}
-      <div className="flex items-center justify-between gap-3 pt-1">
+      {/* 1. Header: Small, clean heading with PDF Export & Email Report actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
         <div>
           <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
             Transaction History
@@ -451,31 +488,87 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
           </p>
         </div>
 
-        {/* Secondary Action: Export PDF (Preserved) */}
-        {transactions.length > 0 && (
-          <button
-            id="btn-export-history-pdf"
-            type="button"
-            disabled={isGeneratingPdf}
-            onClick={handleExportStatement}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow-2xs ${
-              downloadSuccess
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
-            title="Download Statement"
-          >
-            {isGeneratingPdf ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" />
-            ) : downloadSuccess ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-            ) : (
-              <FileDown className="w-3.5 h-3.5 text-slate-500" />
-            )}
-            <span className="hidden sm:inline">
-              {downloadSuccess ? 'Downloaded' : 'Export PDF'}
-            </span>
-          </button>
+        {/* Action Buttons: Download PDF & Email PDF (Preserved & Enhanced) */}
+        {scope === 'mymoney' ? (
+          transactions.length > 0 && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                id="btn-export-history-pdf"
+                type="button"
+                disabled={isGeneratingPdf}
+                onClick={handleExportStatement}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow-2xs ${
+                  downloadSuccess
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+                title="Download Personal Expense Statement (PDF)"
+              >
+                {isGeneratingPdf ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" />
+                ) : downloadSuccess ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  <FileDown className="w-3.5 h-3.5 text-slate-500" />
+                )}
+                <span className="hidden sm:inline">
+                  {downloadSuccess ? 'Downloaded' : 'Download PDF'}
+                </span>
+                <span className="sm:hidden">PDF</span>
+              </button>
+
+              <button
+                id="btn-email-history-pdf"
+                type="button"
+                onClick={handleOpenEmailPersonalModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border border-indigo-200 bg-indigo-50/90 hover:bg-indigo-100 text-indigo-700 shadow-2xs active:scale-95"
+                title="Email PDF Statement with attachment"
+              >
+                <Mail className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Email PDF</span>
+              </button>
+            </div>
+          )
+        ) : (
+          (roomGroups.length > 0 || currentRoom) && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                id="btn-export-room-pdf"
+                type="button"
+                disabled={isGeneratingPdf}
+                onClick={handleExportRoomStatement}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow-2xs ${
+                  downloadSuccess
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+                title="Download Shared Room Expense Statement (PDF)"
+              >
+                {isGeneratingPdf ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" />
+                ) : downloadSuccess ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  <FileDown className="w-3.5 h-3.5 text-slate-500" />
+                )}
+                <span className="hidden sm:inline">
+                  {downloadSuccess ? 'Downloaded' : 'Download PDF'}
+                </span>
+                <span className="sm:hidden">PDF</span>
+              </button>
+
+              <button
+                id="btn-email-room-pdf"
+                type="button"
+                onClick={handleOpenEmailRoomModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border border-rose-200 bg-rose-50/90 hover:bg-rose-100 text-rose-700 shadow-2xs active:scale-95"
+                title="Email Room PDF Statement with attachment"
+              >
+                <Mail className="w-3.5 h-3.5 text-rose-600" />
+                <span>Email PDF</span>
+              </button>
+            </div>
+          )
         )}
       </div>
 
@@ -1008,6 +1101,17 @@ export const UnifiedHistoryTab: React.FC<UnifiedHistoryTabProps> = ({
           </div>
         </div>
       )}
+
+      {/* Email Expense Report Modal (EmailJS) */}
+      <EmailReportModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        reportType={emailModalReportType}
+        currentUser={currentUser as any}
+        personalTransactions={transactions}
+        roomGroups={roomGroups}
+        currentRoom={currentRoom}
+      />
     </div>
   );
 };

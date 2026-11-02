@@ -41,6 +41,8 @@ import {
   Info,
   Wallet,
   Bell,
+  FileDown,
+  Mail,
 } from 'lucide-react';
 import {
   RoomGroup,
@@ -51,6 +53,8 @@ import {
   StudentUser,
 } from '../types';
 import { formatINR, formatDate, formatDateTime, generateId } from '../utils/formatters';
+import { generateRoomLedgerPDF } from '../utils/pdfGenerator';
+import { EmailReportModal } from './EmailReportModal';
 
 interface RoomExpenseManagerProps {
   currentRoom: RoomGroup | null;
@@ -134,6 +138,29 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // PDF Export and Email Statement State
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+  const handleExportRoomPDF = () => {
+    if (!currentRoom) return;
+    setIsGeneratingPdf(true);
+    try {
+      generateRoomLedgerPDF({
+        room: currentRoom,
+        currentUserName: effectiveUserName,
+        currentUserId: effectiveUserId,
+      });
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 2500);
+    } catch (e) {
+      console.error('Error generating room PDF:', e);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -1187,7 +1214,7 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
           </div>
 
           {/* Header Action Buttons */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap justify-end">
             <button
               onClick={handleManualRefresh}
               disabled={isRefreshing}
@@ -1197,6 +1224,34 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
               <RefreshCw className={`w-3.5 h-3.5 text-red-600 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Sync</span>
             </button>
+
+            <button
+              id="btn-room-download-pdf"
+              onClick={handleExportRoomPDF}
+              disabled={isGeneratingPdf}
+              className="p-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="Download Room PDF Statement"
+            >
+              {isGeneratingPdf ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" />
+              ) : downloadSuccess ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              ) : (
+                <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
+              )}
+              <span className="hidden sm:inline">{downloadSuccess ? 'Downloaded' : 'Download PDF'}</span>
+            </button>
+
+            <button
+              id="btn-room-email-pdf"
+              onClick={() => setIsEmailModalOpen(true)}
+              className="p-1.5 sm:px-3 sm:py-2 rounded-xl border border-rose-200 bg-rose-50/90 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95"
+              title="Email Room PDF Statement with attachment"
+            >
+              <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-600" />
+              <span className="hidden sm:inline">Email PDF</span>
+            </button>
+
             <button
               onClick={() => setIsShareModalOpen(true)}
               className="p-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-rose-50/60 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
@@ -3314,6 +3369,16 @@ export const RoomExpenseManager: React.FC<RoomExpenseManagerProps> = ({
       {/* Create and Join Room Modals for active room view */}
       {renderCreateRoomModal()}
       {renderJoinRoomModal()}
+
+      {/* Email Room Expense Statement Modal (EmailJS) */}
+      <EmailReportModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        reportType="myroom"
+        currentUser={currentUser}
+        roomGroups={allRooms}
+        currentRoom={currentRoom}
+      />
     </div>
   );
 };
